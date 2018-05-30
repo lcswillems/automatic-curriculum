@@ -1,14 +1,14 @@
 import argparse
 import time
 
-from envs import str_to_envs
+import envs
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env", default="Env-D4LuIuBu",
-                    help="name of the environment to be run (default: Env-D4LuIuBu)")
+parser.add_argument("--env", default="SEnv_D4LuIuBu",
+                    help="name of the environment to be run (default: SEnv_D4LuIuBu)")
 parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED)")
 parser.add_argument("--seed", type=int, default=0,
@@ -23,7 +23,7 @@ utils.seed(args.seed)
 
 # Generate environment
 
-env = str_to_envs(args.env, args.seed)[0]
+env = envs.get_envs(args.env, args.seed)[0]
 
 # Define agent
 

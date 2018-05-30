@@ -2,11 +2,10 @@ import os
 from subprocess import call
 import sys
 
-import utils
 import envs
+import utils
 
-for env_id in envs.env_ids:
-    env = "Env-{}".format(env_id)
-    print("> Env: {}".format(env))
-    command = ["python -m scripts.evaluate --env {}".format(env)] + sys.argv[1:]
+for senv_id in envs.get_senv_ids():
+    print("> Env: {}".format(senv_id))
+    command = ["python -m scripts.evaluate --env {}".format(senv_id)] + sys.argv[1:]
     call(" ".join(command), shell=True)

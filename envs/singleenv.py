@@ -4,7 +4,7 @@ from babyai.levels.instrs import Instr, Object
 from gym_minigrid.minigrid import COLOR_NAMES
 from gym_minigrid.envs import DIR_TO_VEC
 
-class Env(RoomGridLevel):
+class SEnv(RoomGridLevel):
     def __init__(self, num_doors=4, locked_proba=0.5, inbox_proba=0.5, blocked_proba=0.5, seed=None):
         self.num_doors = num_doors
         self.locked_proba = locked_proba
@@ -51,3 +51,27 @@ class Env(RoomGridLevel):
 
         obj_color = self._rand_elem(obj_colors)
         self.instrs = [Instr(action="pickup", object=Object("ball", obj_color))]
+
+def get_several_SEnv_D1LnInBn(seed, num_procs=1):
+    return [SEnv(1, 0, 0, 0, seed) for _ in range(num_procs)]
+
+def get_several_SEnv_D1LaInBn(seed, num_procs=1):
+    return [SEnv(1, 1, 0, 0, seed) for _ in range(num_procs)]
+        
+def get_several_SEnv_D1LnInBa(seed, num_procs=1):
+    return [SEnv(1, 0, 0, 1, seed) for _ in range(num_procs)]
+        
+def get_several_SEnv_D1LaInBa(seed, num_procs=1):
+    return [SEnv(1, 1, 0, 1, seed) for _ in range(num_procs)]
+        
+def get_several_SEnv_D1LaIaBn(seed, num_procs=1):
+    return [SEnv(1, 1, 1, 0, seed) for _ in range(num_procs)]
+        
+def get_several_SEnv_D2LnInBn(seed, num_procs=1):
+    return [SEnv(2, 0, 0, 0, seed) for _ in range(num_procs)]
+        
+def get_several_SEnv_D4LnInBn(seed, num_procs=1):
+    return [SEnv(4, 0, 0, 0, seed) for _ in range(num_procs)]
+
+def get_several_SEnv_D4LuIuBu(seed, num_procs=1):
+    return [SEnv(4, 0.5, 0.5, 0.5, seed) for _ in range(num_procs)]

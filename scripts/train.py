@@ -4,14 +4,14 @@ import datetime
 import torch
 import torch_rl
 
-from envs import str_to_envs
+import envs
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env", default="Env-D4LuIuBu",
-                    help="name of the environment to train on (default: Env-D4LuIuBu)")
+parser.add_argument("--env", default="SEnv_D4LuIuBu",
+                    help="name of the environment to train on (default: SEnv_D4LuIuBu)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -60,7 +60,7 @@ utils.seed(args.seed)
 
 # Generate environments
 
-envs = str_to_envs(args.env, args.seed, args.procs)
+envs = envs.get_envs(args.env, args.seed, args.procs)
 
 # Define model name
 
