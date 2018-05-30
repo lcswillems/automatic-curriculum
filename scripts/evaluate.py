@@ -1,23 +1,15 @@
-#!/usr/bin/env python3
-
 import argparse
-import gym
 import time
 import datetime
-import torch
 
-try:
-    import gym_minigrid
-except ImportError:
-    pass
-
+from envs import str_to_envs
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env", required=True,
-                    help="name of the environment to be run (REQUIRED)")
+parser.add_argument("--env", default="Env-D4LuIuBu",
+                    help="name of the environment to be run (default: Env-D4LuIuBu)")
 parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED)")
 parser.add_argument("--episodes", type=int, default=1000,
@@ -34,8 +26,7 @@ utils.seed(args.seed)
 
 # Generate environment
 
-env = gym.make(args.env)
-env.seed(args.seed)
+env = str_to_envs(args.env, args.seed)[0]
 
 # Define agent
 

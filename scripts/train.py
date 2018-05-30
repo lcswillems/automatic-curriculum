@@ -1,26 +1,17 @@
-#!/usr/bin/env python3
-
 import argparse
-import gym
 import time
 import datetime
 import torch
 import torch_rl
 
-try:
-    import gym_minigrid
-except ImportError:
-    pass
-
+from envs import str_to_envs
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--algo", required=True,
-                    help="algorithm to use: a2c | ppo (REQUIRED)")
-parser.add_argument("--env", required=True,
-                    help="name of the environment to train on (REQUIRED)")
+parser.add_argument("--env", default="Env-D4LuIuBu",
+                    help="name of the environment to train on (default: Env-D4LuIuBu)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -35,8 +26,8 @@ parser.add_argument("--save-interval", type=int, default=0,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
-parser.add_argument("--frames-per-proc", type=int, default=None,
-                    help="number of frames per process before update (default: 5 for A2C and 128 for PPO)")
+parser.add_argument("--frames-per-proc", type=int, default=128,
+                    help="number of frames per process before update (default: 128)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--lr", type=float, default=7e-4,
@@ -56,11 +47,11 @@ parser.add_argument("--optim-eps", type=float, default=1e-5,
 parser.add_argument("--optim-alpha", type=float, default=0.99,
                     help="RMSprop optimizer apha (default: 0.99)")
 parser.add_argument("--clip-eps", type=float, default=0.2,
-                    help="clipping epsilon for PPO (default: 0.2)")
+                    help="clipping epsilon (default: 0.2)")
 parser.add_argument("--epochs", type=int, default=4,
-                    help="number of epochs for PPO (default: 4)")
+                    help="number of epochs (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
-                    help="batch size for PPO (default: 256)")
+                    help="batch size (default: 256)")
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -69,16 +60,12 @@ utils.seed(args.seed)
 
 # Generate environments
 
-envs = []
-for i in range(args.procs):
-    env = gym.make(args.env)
-    env.seed(args.seed + i)
-    envs.append(env)
+envs = str_to_envs(args.env, args.seed, args.procs)
 
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_{}_seed{}_{}".format(args.env, args.algo, args.seed, suffix)
+default_model_name = "{}_seed{}_{}".format(args.env, args.seed, suffix)
 model_name = args.model or default_model_name
 
 # Define obss preprocessor
@@ -93,17 +80,10 @@ if torch.cuda.is_available():
 
 # Define actor-critic algo
 
-if args.algo == "a2c":
-    algo = torch_rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
-                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                            args.optim_alpha, args.optim_eps, obss_preprocessor, utils.reshape_reward)
-elif args.algo == "ppo":
-    algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
-                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                            args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
-                            utils.reshape_reward)
-else:
-    raise ValueError("Incorrect algorithm name: {}".format(args.algo))
+algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+                        args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
+                        args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
+                        utils.reshape_reward)
 
 # Define logger and Tensorboard writer
 

@@ -1,23 +1,32 @@
-#!/usr/bin/env python3
-
-import time
 import argparse
+import time
 
-from env import Env
+from envs import str_to_envs
+import utils
+
+# Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--doors", type=int, default=4)
-parser.add_argument("--locked", type=float, default=0.5)
-parser.add_argument("--inbox", type=float, default=0.5)
-parser.add_argument("--blocked", type=float, default=0.5)
-parser.add_argument("--seed", type=int, default=0)
+parser.add_argument("--env", default="Env-D4LuIuBu",
+                    help="name of the environment to test (default: Env-D4LuIuBu)")
+parser.add_argument("--seed", type=int, default=0,
+                    help="random seed (default: 0)")
 args = parser.parse_args()
 
-env = Env(args.doors, args.locked, args.inbox, args.blocked, args.seed)
+# Set seed for all randomness sources
+
+utils.seed(args.seed)
+
+# Generate environment
+
+env = str_to_envs(args.env, args.seed)[0]
+
+# Display interactive environment
 
 def reset():
     obs = env.reset()
-    print("instr:", obs["mission"])
+    print("Instr:", obs["mission"])
+    return obs
 
 def keyDownCb(keyName):
     if keyName == 'BACKSPACE':
