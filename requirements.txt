@@ -1,0 +1,7 @@
+git+https://github.com/lcswillems/pytorch-a2c-ppo.git@master#egg=torch_rl
+git+https://github.com/maximecb/gym-minigrid.git@master#egg=gym_minigrid
+git+https://github.com/maximecb/baby-ai-game.git@master#egg=babyai
+tensorboardX==1.2
+torch==0.4.0
+networkx>=2.1
+numpy>=1.3
