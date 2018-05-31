@@ -3,6 +3,7 @@ import time
 import datetime
 import torch
 import torch_rl
+import tensorboardX
 
 import envs
 import utils
@@ -24,8 +25,6 @@ parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--save-interval", type=int, default=0,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
-parser.add_argument("--tb", action="store_true", default=False,
-                    help="log into Tensorboard")
 parser.add_argument("--frames-per-proc", type=int, default=128,
                     help="number of frames per process before update (default: 128)")
 parser.add_argument("--discount", type=float, default=0.99,
@@ -74,6 +73,7 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
+print(envs[0].action_space)
 acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name)
 if torch.cuda.is_available():
     acmodel.cuda()
@@ -88,9 +88,7 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
 # Define logger and Tensorboard writer
 
 log = utils.Logger(model_name)
-if args.tb:
-    from tensorboardX import SummaryWriter
-    writer = SummaryWriter(utils.get_log_dir(model_name))
+writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
 
 # Log command, availability of CUDA and model
 
@@ -130,20 +128,19 @@ while num_frames < args.frames:
                     *rreturn_per_episode.values(),
                     *num_frames_per_episode.values(),
                     logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]))
-        if args.tb:
-            writer.add_scalar("frames", num_frames, i)
-            writer.add_scalar("FPS", fps, i)
-            writer.add_scalar("duration", total_ellapsed_time, i)
-            for key, value in return_per_episode.items():
-                writer.add_scalar("return_" + key, value, i)
-            for key, value in rreturn_per_episode.items():
-                writer.add_scalar("rreturn_" + key, value, i)
-            for key, value in num_frames_per_episode.items():
-                writer.add_scalar("num_frames_" + key, value, i)
-            writer.add_scalar("entropy", logs["entropy"], i)
-            writer.add_scalar("value", logs["value"], i)
-            writer.add_scalar("policy_loss", logs["policy_loss"], i)
-            writer.add_scalar("value_loss", logs["value_loss"], i)
+        writer.add_scalar("frames", num_frames, i)
+        writer.add_scalar("FPS", fps, i)
+        writer.add_scalar("duration", total_ellapsed_time, i)
+        for key, value in return_per_episode.items():
+            writer.add_scalar("return_" + key, value, i)
+        for key, value in rreturn_per_episode.items():
+            writer.add_scalar("rreturn_" + key, value, i)
+        for key, value in num_frames_per_episode.items():
+            writer.add_scalar("num_frames_" + key, value, i)
+        writer.add_scalar("entropy", logs["entropy"], i)
+        writer.add_scalar("value", logs["value"], i)
+        writer.add_scalar("policy_loss", logs["policy_loss"], i)
+        writer.add_scalar("value_loss", logs["value_loss"], i)
 
     # Save obss preprocessor vocabulary and model
 
