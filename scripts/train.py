@@ -73,7 +73,6 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
-print(envs[0].action_space)
 acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name)
 if torch.cuda.is_available():
     acmodel.cuda()
