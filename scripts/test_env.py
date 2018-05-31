@@ -47,10 +47,9 @@ def keyDownCb(keyName):
     else:
         return
 
-    _, reward, done, _ = env.step(action)
+    _, _, done, _ = env.step(action)
 
-    if done == True:
-        print("Reward:", reward)
+    if done:
         reset()
 
 reset()
