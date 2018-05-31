@@ -46,7 +46,8 @@ while True:
     obs, reward, done, _ = env.step(action)
     agent.analyze_feedback(reward, done)
 
-    if done:
+    if done == True:
+        print("Reward:", reward)
         obs = reset()
 
     if renderer.window is None:

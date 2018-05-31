@@ -18,6 +18,9 @@ class MultiEnv(Env, ABC):
         self.env = None
         self.reset()
     
+    def __getattr__(self, key):
+        return getattr(self.env, key)
+
     @abstractmethod
     def _select_env(self):
         pass
@@ -36,12 +39,11 @@ class MultiEnv(Env, ABC):
             self._update_lr()
         self.returnn = 0
 
-        if self.env is not None:
-            self.env.reset()
         self._select_env()
+        return self.env.reset()
     
     def render(self, mode="human"):
-        self.env.render(mode)
+        return self.env.render(mode)
 
 class MEnv_OnlineGreedy(MultiEnv):
     def __init__(self, envs, ε, α):
@@ -61,10 +63,6 @@ class MEnv_OnlineGreedy(MultiEnv):
     
     def _update_lr(self):
         self.returns[self.env_id].append(self.returnn)
-        returns = list(self.returns[self.env_id])
-        if len(returns) >= 2:
-            lr = returns[-1] - returns[-2]
-            self.lrs[self.env_id] = self.α * lr + (1 - self.α) * self.lrs[self.env_id]
         returns = list(self.returns[self.env_id])
         if len(returns) >= 2:
             lr = returns[-1] - returns[-2]

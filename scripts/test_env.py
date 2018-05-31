@@ -26,7 +26,6 @@ env = envs.get_env(args.env, args.seed)
 def reset():
     obs = env.reset()
     print("Instr:", obs["mission"])
-    return obs
 
 def keyDownCb(keyName):
     if keyName == 'BACKSPACE':
@@ -51,16 +50,15 @@ def keyDownCb(keyName):
     _, reward, done, _ = env.step(action)
 
     if done == True:
-        print("reward:", reward)
+        print("Reward:", reward)
         reset()
 
-renderer = env.render('human')
-renderer.window.setKeyDownCb(keyDownCb)
 reset()
 
 while True:
-    env.render('human')
     time.sleep(0.01)
+    renderer = env.render('human')
+    renderer.window.setKeyDownCb(keyDownCb)
 
     if renderer.window == None:
         break
