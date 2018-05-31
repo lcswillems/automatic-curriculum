@@ -14,7 +14,7 @@ def get_env(s, seed):
 
 def get_senv_ids():
     senv_ids = []
-    for func in dir(envs.generate):
+    for func in sorted(dir(envs.generate)):
         m = re.search("get_several_(SEnv_.+)", func)
         if m:
             senv_ids.append(m.group(1))
