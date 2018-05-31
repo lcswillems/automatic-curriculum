@@ -3,8 +3,9 @@ from gym.core import Env
 import numpy
 
 class MEnv(ABC):
-    def __init__(self, envs):
+    def __init__(self, envs, seed=None):
         self.envs = envs
+        self.rng = numpy.random.RandomState(seed)
 
         self.num_envs = len(self.envs)
         self.env_names = [type(env).__name__ for env in self.envs]
@@ -20,7 +21,7 @@ class MEnv(ABC):
         return getattr(self.env, key)
 
     def _select_env(self):
-        self.env_id = numpy.random.choice(range(self.num_envs), p=self.distrib)
+        self.env_id = self.rng.choice(range(self.num_envs), p=self.distrib)
         self.env = self.envs[self.env_id]
     
     @abstractmethod
@@ -49,11 +50,11 @@ class MEnv(ABC):
         return self.env.render(mode)
 
 class MEnv_OnlineGreedy(MEnv):
-    def __init__(self, envs, ε, α):
+    def __init__(self, envs, ε, α, seed=None):
         self.ε = ε
         self.α = α
 
-        super().__init__(envs)
+        super().__init__(envs, seed)
     
     def _update_lrs(self):
         self.returns[self.env_id].append(self.returnn)
@@ -64,7 +65,7 @@ class MEnv_OnlineGreedy(MEnv):
     
     def _update_distrib(self):
         abs_lrs = numpy.absolute(self.lrs)
-        env_id = numpy.random.choice(numpy.flatnonzero(abs_lrs == abs_lrs.max()))
+        env_id = self.rng.choice(numpy.flatnonzero(abs_lrs == abs_lrs.max()))
 
         self.distrib = self.ε*numpy.ones((self.num_envs))/self.num_envs
         self.distrib[env_id] += 1-self.ε

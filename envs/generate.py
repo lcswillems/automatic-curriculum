@@ -33,5 +33,5 @@ def get_several_MEnv_OnlineGreedy(seed, num_procs):
     menvs = []
     for shift in range(num_procs):
         senvs = envs.get_senvs(seed + shift)
-        menvs.append(MEnv_OnlineGreedy(senvs, 0.1, 0.1))
+        menvs.append(MEnv_OnlineGreedy(senvs, 0.1, 0.1, seed))
     return menvs
