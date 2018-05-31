@@ -3,14 +3,14 @@ from collections import deque
 from gym.core import Env
 import numpy
 
-class MEnv(Env, ABC):
-    def __init__(self, envs, capacity=None):
+class MEnv(ABC):
+    def __init__(self, envs):
         self.envs = envs
-        self.capacity = capacity
 
         self.num_envs = len(self.envs)
-        self.returns = [deque(maxlen=capacity) for _ in range(self.num_envs)]
+        self.returns = [[] for _ in range(self.num_envs)]
         self.lrs = [0]*self.num_envs
+        self.distrib = None
         self.returnn = None
         self.env_id = None
         self.env = None
@@ -19,12 +19,16 @@ class MEnv(Env, ABC):
     def __getattr__(self, key):
         return getattr(self.env, key)
 
-    @abstractmethod
     def _select_env(self):
+        self.env_id = numpy.random.choice(range(self.num_envs), p=self.distrib)
+        self.env = self.envs[self.env_id]
+    
+    @abstractmethod
+    def _update_lrs(self):
         pass
     
     @abstractmethod
-    def _update_lr(self):
+    def _update_distrib(self):
         pass
 
     def step(self, action):
@@ -34,9 +38,10 @@ class MEnv(Env, ABC):
 
     def reset(self):
         if self.returnn is not None:
-            self._update_lr()
+            self._update_lrs()
         self.returnn = 0
 
+        self._update_distrib()
         self._select_env()
         return self.env.reset()
     
@@ -48,20 +53,18 @@ class MEnv_OnlineGreedy(MEnv):
         self.ε = ε
         self.α = α
 
-        super().__init__(envs, capacity=2)
+        super().__init__(envs)
     
-    def _select_env(self):
-        if numpy.random.rand() <= self.ε:
-            env_id = numpy.random.randint(0, self.num_envs)
-        else:
-            abs_lrs = numpy.absolute(self.lrs)
-            env_id = numpy.random.choice(numpy.flatnonzero(abs_lrs == abs_lrs.max()))
-        self.env_id = env_id
-        self.env = self.envs[self.env_id]
-    
-    def _update_lr(self):
+    def _update_lrs(self):
         self.returns[self.env_id].append(self.returnn)
-        returns = list(self.returns[self.env_id])
+        returns = self.returns[self.env_id]
         if len(returns) >= 2:
             lr = returns[-1] - returns[-2]
             self.lrs[self.env_id] = self.α * lr + (1 - self.α) * self.lrs[self.env_id]
+    
+    def _update_distrib(self):
+        abs_lrs = numpy.absolute(self.lrs)
+        env_id = numpy.random.choice(numpy.flatnonzero(abs_lrs == abs_lrs.max()))
+
+        self.distrib = self.ε*numpy.ones((self.num_envs))/self.num_envs
+        self.distrib[env_id] += 1-self.ε
