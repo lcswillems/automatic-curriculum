@@ -5,7 +5,7 @@ import sys
 import envs
 import utils
 
-for senv_id in envs.get_senv_ids():
-    print("> Env: {}".format(senv_id))
-    command = ["python -m scripts.evaluate --env {}".format(senv_id)] + sys.argv[1:]
+for senv_name in envs.get_senv_names():
+    print("> Env: {}".format(senv_name))
+    command = ["python -m scripts.evaluate --env {}".format(senv_name)] + sys.argv[1:]
     call(" ".join(command), shell=True)
