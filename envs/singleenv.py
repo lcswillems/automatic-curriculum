@@ -51,3 +51,35 @@ class SEnv(RoomGridLevel):
 
         obj_color = self._rand_elem(obj_colors)
         self.instrs = [Instr(action="pickup", object=Object("ball", obj_color))]
+
+class SEnv_D1LnInBn(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 0, 0, 0, seed)
+
+class SEnv_D1LaInBn(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 1, 0, 0, seed)
+
+class SEnv_D1LnInBa(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 0, 0, 1, seed)
+
+class SEnv_D1LaInBa(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 1, 0, 1, seed)
+
+class SEnv_D1LaIaBn(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 1, 1, 0, seed)
+
+class SEnv_D2LnInBn(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(2, 0, 0, 0, seed)
+
+class SEnv_D4LnInBn(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(4, 0, 0, 0, seed)
+
+class SEnv_D4LuIuBu(SEnv):
+    def __init__(self, seed=None):
+        super().__init__(4, 0.5, 0.5, 0.5, seed)
