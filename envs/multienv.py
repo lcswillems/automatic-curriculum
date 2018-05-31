@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import deque
 from gym.core import Env
 import numpy
 
