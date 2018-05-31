@@ -8,6 +8,7 @@ class MEnv(ABC):
         self.envs = envs
 
         self.num_envs = len(self.envs)
+        self.env_names = [type(env).__name__ for env in self.envs]
         self.returns = [[] for _ in range(self.num_envs)]
         self.lrs = [0]*self.num_envs
         self.distrib = None
