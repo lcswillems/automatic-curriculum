@@ -4,6 +4,8 @@ import numpy
 import torch
 
 def storage_dir():
+    if "torch_rl_storage_dir" in os.environ:
+        return os.environ["torch_rl_storage_dir"]
     return "storage"
 
 def create_folders_if_necessary(path):
@@ -20,5 +22,5 @@ def seed(seed):
 
 from utils.agent import Agent
 from utils.format import ObssPreprocessor, reshape_reward
-from utils.log import get_log_dir, synthesize, Logger
+from utils.log import get_log_dir, synthesize, get_logger
 from utils.model import get_model_dir, load_model, save_model

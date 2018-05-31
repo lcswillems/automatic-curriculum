@@ -73,7 +73,8 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
-acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name)
+acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name,
+                           create_if_not_exists=True)
 if torch.cuda.is_available():
     acmodel.cuda()
 
@@ -86,14 +87,14 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
 
 # Define logger and Tensorboard writer
 
-log = utils.Logger(model_name)
+logger = utils.get_logger(model_name)
 writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
 
 # Log command, availability of CUDA and model
 
-log(args, to_print=False)
-log("CUDA available: {}".format(torch.cuda.is_available()))
-log(acmodel)
+logger.info(args)
+logger.info("CUDA available: {}".format(torch.cuda.is_available()))
+logger.info(acmodel)
 
 # Train model
 
@@ -121,7 +122,7 @@ while num_frames < args.frames:
         rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-        log(
+        logger.info(
             "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
             .format(i, num_frames, fps, duration,
                     *rreturn_per_episode.values(),
@@ -149,5 +150,6 @@ while num_frames < args.frames:
         if torch.cuda.is_available():
             acmodel.cpu()
         utils.save_model(acmodel, model_name)
+        logger.info("Model successfully saved")
         if torch.cuda.is_available():
             acmodel.cuda()
