@@ -52,26 +52,53 @@ class SEnv(RoomGridLevel):
         obj_color = self._rand_elem(obj_colors)
         self.instrs = [Instr(action="pickup", object=Object("ball", obj_color))]
 
-def get_several_SEnv_D1LnInBn(seed, num_procs=1):
-    return [SEnv(1, 0, 0, 0, seed) for _ in range(num_procs)]
+def get_several(getter, seed, num_procs):
+    return [getter(seed + shift) for shift in range(num_procs)]
 
-def get_several_SEnv_D1LaInBn(seed, num_procs=1):
-    return [SEnv(1, 1, 0, 0, seed) for _ in range(num_procs)]
-        
-def get_several_SEnv_D1LnInBa(seed, num_procs=1):
-    return [SEnv(1, 0, 0, 1, seed) for _ in range(num_procs)]
-        
-def get_several_SEnv_D1LaInBa(seed, num_procs=1):
-    return [SEnv(1, 1, 0, 1, seed) for _ in range(num_procs)]
-        
-def get_several_SEnv_D1LaIaBn(seed, num_procs=1):
-    return [SEnv(1, 1, 1, 0, seed) for _ in range(num_procs)]
-        
-def get_several_SEnv_D2LnInBn(seed, num_procs=1):
-    return [SEnv(2, 0, 0, 0, seed) for _ in range(num_procs)]
-        
-def get_several_SEnv_D4LnInBn(seed, num_procs=1):
-    return [SEnv(4, 0, 0, 0, seed) for _ in range(num_procs)]
+def get_several_SEnv_D1LnInBn(seed, num_procs):
+    return get_several(get_SEnv_D1LnInBn, seed, num_procs)
 
-def get_several_SEnv_D4LuIuBu(seed, num_procs=1):
-    return [SEnv(4, 0.5, 0.5, 0.5, seed) for _ in range(num_procs)]
+def get_SEnv_D1LnInBn(seed):
+    return SEnv(1, 0, 0, 0, seed)
+
+def get_several_SEnv_D1LaInBn(seed, num_procs):
+    return get_several(get_SEnv_D1LaInBn, seed, num_procs)
+
+def get_SEnv_D1LaInBn(seed):
+    return SEnv(1, 1, 0, 0, seed)
+        
+def get_several_SEnv_D1LnInBa(seed, num_procs):
+    return get_several(get_SEnv_D1LnInBa, seed, num_procs)
+
+def get_SEnv_D1LnInBa(seed):
+    return SEnv(1, 0, 0, 1, seed)
+        
+def get_several_SEnv_D1LaInBa(seed, num_procs):
+    return get_several(get_SEnv_D1LaInBa, seed, num_procs)
+
+def get_SEnv_D1LaInBa(seed):
+    return SEnv(1, 1, 0, 1, seed)
+        
+def get_several_SEnv_D1LaIaBn(seed, num_procs):
+    return get_several(get_SEnv_D1LaIaBn, seed, num_procs)
+
+def get_SEnv_D1LaIaBn(seed):
+    return SEnv(1, 1, 1, 0, seed)
+        
+def get_several_SEnv_D2LnInBn(seed, num_procs):
+    return get_several(get_SEnv_D2LnInBn, seed, num_procs)
+
+def get_SEnv_D2LnInBn(seed):
+    return SEnv(2, 0, 0, 0, seed)
+        
+def get_several_SEnv_D4LnInBn(seed, num_procs):
+    return get_several(get_SEnv_D4LnInBn, seed, num_procs)
+
+def get_SEnv_D4LnInBn(seed):
+    return SEnv(4, 0, 0, 0, seed)
+
+def get_several_SEnv_D4LuIuBu(seed, num_procs):
+    return get_several(get_SEnv_D4LuIuBu, seed, num_procs)
+
+def get_SEnv_D4LuIuBu(seed):
+    return SEnv(4, 0.5, 0.5, 0.5, seed)

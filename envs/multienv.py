@@ -3,6 +3,8 @@ from collections import deque
 from gym.core import Env
 import numpy
 
+import envs
+
 class MultiEnv(Env, ABC):
     def __init__(self, envs, capacity=None):
         self.envs = envs
@@ -41,7 +43,7 @@ class MultiEnv(Env, ABC):
     def render(self, mode="human"):
         self.env.render(mode)
 
-class OnlineGreedyEnv(MultiEnv):
+class MEnv_OnlineGreedy(MultiEnv):
     def __init__(self, envs, ε, α):
         self.ε = ε
         self.α = α
@@ -63,3 +65,14 @@ class OnlineGreedyEnv(MultiEnv):
         if len(returns) >= 2:
             lr = returns[-1] - returns[-2]
             self.lrs[self.env_id] = self.α * lr + (1 - self.α) * self.lrs[self.env_id]
+        returns = list(self.returns[self.env_id])
+        if len(returns) >= 2:
+            lr = returns[-1] - returns[-2]
+            self.lrs[self.env_id] = self.α * lr + (1 - self.α) * self.lrs[self.env_id]
+
+def get_several_MEnv_OnlineGreedy(seed, num_procs):
+    menvs = []
+    for shift in range(num_procs):
+        senvs = envs.get_senvs(seed + shift)
+        menvs.append(MEnv_OnlineGreedy(senvs, 0.1, 0.1))
+    return menvs

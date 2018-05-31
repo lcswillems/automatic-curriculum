@@ -19,7 +19,7 @@ utils.seed(args.seed)
 
 # Generate environment
 
-env = envs.get_envs(args.env, args.seed)[0]
+env = envs.get_env(args.env, args.seed)
 
 # Display interactive environment
 
