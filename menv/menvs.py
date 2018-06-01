@@ -57,11 +57,11 @@ class MEnv(ABC):
         return self.env.render(mode)
 
 class MEnv_OnlineGreedy(MEnv):
-    def __init__(self, envs, ε, α, seed=None):
+    def __init__(self, envs_nxgraph, ε, α, seed=None):
         self.ε = ε
         self.α = α
 
-        super().__init__(envs, seed)
+        super().__init__(envs_nxgraph, seed)
     
     def _update_lrs(self):
         self.returns[self.env_id].append(self.returnn)
@@ -76,3 +76,7 @@ class MEnv_OnlineGreedy(MEnv):
 
         self.distrib = self.ε*numpy.ones((self.num_envs))/self.num_envs
         self.distrib[env_id] += 1-self.ε
+
+class MEnv_Uniform(MEnv):
+    def __init__(self, envs_nxgraph, seed=None):
+        super().__init__(envs_nxgraph, seed)

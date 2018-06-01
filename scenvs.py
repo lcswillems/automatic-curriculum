@@ -1,10 +1,11 @@
+from gym.envs.registration import register
 from babyai.levels.levels import RoomGridLevel
 from babyai.levels.roomgrid import Ball, Key, Box
 from babyai.levels.instrs import Instr, Object
 from gym_minigrid.minigrid import COLOR_NAMES
 from gym_minigrid.envs import DIR_TO_VEC
 
-class SEnv(RoomGridLevel):
+class SCEnv(RoomGridLevel):
     def __init__(self, num_doors=4, locked_proba=0.5, inbox_proba=0.5, blocked_proba=0.5, seed=None):
         self.num_doors = num_doors
         self.locked_proba = locked_proba
@@ -52,34 +53,74 @@ class SEnv(RoomGridLevel):
         obj_color = self._rand_elem(obj_colors)
         self.instrs = [Instr(action="pickup", object=Object("ball", obj_color))]
 
-class SEnv_D1LnInBn(SEnv):
+class SCEnv_D1LnInBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 0, 0, 0, seed)
 
-class SEnv_D1LaInBn(SEnv):
+class SCEnv_D1LaInBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 1, 0, 0, seed)
 
-class SEnv_D1LnInBa(SEnv):
+class SCEnv_D1LnInBa(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 0, 0, 1, seed)
 
-class SEnv_D1LaInBa(SEnv):
+class SCEnv_D1LaInBa(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 1, 0, 1, seed)
 
-class SEnv_D1LaIaBn(SEnv):
+class SCEnv_D1LaIaBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 1, 1, 0, seed)
 
-class SEnv_D2LnInBn(SEnv):
+class SCEnv_D2LnInBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(2, 0, 0, 0, seed)
 
-class SEnv_D4LnInBn(SEnv):
+class SCEnv_D4LnInBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(4, 0, 0, 0, seed)
 
-class SEnv_D4LuIuBu(SEnv):
+class SCEnv_D4LuIuBu(SCEnv):
     def __init__(self, seed=None):
         super().__init__(4, 0.5, 0.5, 0.5, seed)
+
+register(
+    id="SC-D1LnInBn-v0",
+    entry_point="scenvs:SCEnv_D1LnInBn"
+)
+
+register(
+    id="SC-D1LaInBn-v0",
+    entry_point="scenvs:SCEnv_D1LaInBn"
+)
+
+register(
+    id="SC-D1LnInBa-v0",
+    entry_point="scenvs:SCEnv_D1LnInBa"
+)
+
+register(
+    id="SC-D1LaInBa-v0",
+    entry_point="scenvs:SCEnv_D1LaInBa"
+)
+
+register(
+    id="SC-D1LaIaBn-v0",
+    entry_point="scenvs:SCEnv_D1LaIaBn"
+)
+
+register(
+    id="SC-D2LnInBn-v0",
+    entry_point="scenvs:SCEnv_D2LnInBn"
+)
+
+register(
+    id="SC-D4LnInBn-v0",
+    entry_point="scenvs:SCEnv_D4LnInBn"
+)
+
+register(
+    id="SC-D4LuIuBu-v0",
+    entry_point="scenvs:SCEnv_D4LuIuBu"
+)
