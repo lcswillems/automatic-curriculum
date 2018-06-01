@@ -2,15 +2,19 @@ from abc import ABC, abstractmethod
 from gym.core import Env
 import numpy
 
+from envs.menvs.tb_logger import TbLogger
+
 class MEnv(ABC):
-    def __init__(self, envs, seed=None):
-        self.envs = envs
+    def __init__(self, envs_nxgraph, seed=None):
+        self.envs_nxgraph = envs_nxgraph
         self.rng = numpy.random.RandomState(seed)
 
+        self.tb_logger = None
+        self.envs = list(self.envs_nxgraph.nodes)
         self.num_envs = len(self.envs)
         self.returns = [[] for _ in range(self.num_envs)]
-        self.lrs = [0]*self.num_envs
-        self.distrib = None
+        self.lrs = numpy.zeros(self.num_envs)
+        self.distrib = numpy.ones(self.num_envs)/self.num_envs
         self.returnn = None
         self.env_id = None
         self.env = None
@@ -39,10 +43,14 @@ class MEnv(ABC):
     def reset(self):
         if self.returnn is not None:
             self._update_lrs()
-        self.returnn = 0
+            self._update_distrib()
 
-        self._update_distrib()
+            if self.tb_logger is not None:
+                self.tb_logger.log()
+
+        self.returnn = 0
         self._select_env()
+        
         return self.env.reset()
     
     def render(self, mode="human"):

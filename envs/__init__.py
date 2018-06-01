@@ -2,6 +2,7 @@ import re
 
 import envs.senvs.generate
 import envs.menvs.generate
+from envs.menvs.tb_logger import TbLogger
 
 def get_envs(s, seed, num_procs):
     loader = "get_several_" + s

@@ -6,6 +6,7 @@ import torch_rl
 import tensorboardX
 
 import envs
+from envs import TbLogger
 import utils
 
 # Parse arguments
@@ -89,6 +90,7 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
 
 logger = utils.get_logger(model_name)
 writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
+envs[0].tb_logger = TbLogger(envs[0], writer)
 
 # Log command, availability of CUDA and model
 
