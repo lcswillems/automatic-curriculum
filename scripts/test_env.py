@@ -1,14 +1,13 @@
 import argparse
 import time
 
-import envs
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env", default="SEnv_D4LuIuBu",
-                    help="name of the environment to test (default: SEnv_D4LuIuBu)")
+parser.add_argument("--env", required=True,
+                    help="name of the environment to test (REQUIRED)")
 parser.add_argument("--seed", type=int, default=0,
                     help="random seed (default: 0)")
 args = parser.parse_args()
@@ -19,7 +18,7 @@ utils.seed(args.seed)
 
 # Generate environment
 
-env = envs.get_env(args.env, args.seed)
+env = utils.make_env(args.env, args.seed)
 
 # Display interactive environment
 

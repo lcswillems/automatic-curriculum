@@ -5,15 +5,16 @@ import torch
 import torch_rl
 import tensorboardX
 
-import envs
-from envs import TbLogger
+# import menv
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env", default="SEnv_D4LuIuBu",
-                    help="name of the environment to train on (default: SEnv_D4LuIuBu)")
+parser.add_argument("--env", default=None,
+                    help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
+parser.add_argument("--graph", default=None,
+                    help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -54,13 +55,15 @@ parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size (default: 256)")
 args = parser.parse_args()
 
+assert args.env is not None or args.graph is not None, "--env or --graph must be specified."
+
 # Set seed for all randomness sources
 
 utils.seed(args.seed)
 
 # Generate environments
 
-envs = envs.get_envs(args.env, args.seed, args.procs)
+envs = utils.make_envs(args.env, args.seed, args.procs)
 
 # Define model name
 
@@ -90,7 +93,7 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
 
 logger = utils.get_logger(model_name)
 writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
-envs[0].tb_logger = TbLogger(envs[0], writer)
+# envs[0].tb_logger = menv.TbLogger(envs[0], writer)
 
 # Log command, availability of CUDA and model
 
