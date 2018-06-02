@@ -3,15 +3,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from tensorboardX import SummaryWriter
 
-class TbLogger:
+class MEnvLogger:
     def __init__(self, menv, writer):
         self.menv = menv
         self.writer = writer
 
-        self.num_episodes = 0
+        self.num_episode = 0
 
     def log(self):
-        self.num_episodes += 1
+        self.num_episode += 1
 
         current_env_name = type(self.menv.env).__name__
         # node_labels = {}
@@ -23,15 +23,15 @@ class TbLogger:
                 self.writer.add_scalar(
                     "return_pe_{}".format(env_name),
                     self.menv.returnn,
-                    self.num_episodes)
+                    self.num_episode)
                 self.writer.add_scalar(
                     "lr_pe_{}".format(env_name),
                     self.menv.lrs[self.menv.env_id],
-                    self.num_episodes)
+                    self.num_episode)
             self.writer.add_scalar(
                 "proba_pe_{}".format(env_name),
                 self.menv.returnn,
-                self.num_episodes)
+                self.num_episode)
             # node_labels[env] = env_name
         
         # G = self.menv.envs_nxgraph
