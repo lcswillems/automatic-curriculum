@@ -25,8 +25,8 @@ class MEnvLogger:
                     self.menv.returnn,
                     self.num_episode)
                 self.writer.add_scalar(
-                    "lr_pe_{}".format(env_name),
-                    self.menv.lrs[self.menv.env_id],
+                    "lp_pe_{}".format(env_name),
+                    self.menv.lps[self.menv.env_id],
                     self.num_episode)
             self.writer.add_scalar(
                 "proba_pe_{}".format(env_name),
