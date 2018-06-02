@@ -66,7 +66,7 @@ class AbsWindowLrComputer(WindowLrComputer):
         if lr is not None:
             return abs(lr)
 
-class AbsLinresLrComputer(LrComputer):
+class AbsLinregLrComputer(LrComputer):
     def __init__(self, G, N):
         super().__init__(G)
 
