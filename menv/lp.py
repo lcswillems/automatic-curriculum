@@ -49,14 +49,14 @@ class AbsOnlineLpComputer(OnlineLpComputer):
             return abs(lp)
 
 class WindowLpComputer(TSLpComputer):
-    def __init__(self, G, α, N):
+    def __init__(self, G, α, K):
         super().__init__(G, α)
 
-        self.N = N
+        self.K = K
 
     def compute_direct_lp(self, env_id):
-        timesteps = self.timesteps[env_id][-self.N:]
-        returns = self.returns[env_id][-self.N:]
+        timesteps = self.timesteps[env_id][-self.K:]
+        returns = self.returns[env_id][-self.K:]
         if len(timesteps) >= 2:
             return scipy.stats.linregress(timesteps, returns)[0]
 
@@ -67,15 +67,15 @@ class AbsWindowLpComputer(WindowLpComputer):
             return abs(lp)
 
 class AbsLinregLpComputer(LpComputer):
-    def __init__(self, G, N):
+    def __init__(self, G, K):
         super().__init__(G)
 
-        self.N = N
+        self.K = K
 
     def __call__(self, env_id, returnn):
         super().__call__(env_id, returnn)
-        timesteps = self.timesteps[env_id][-self.N:]
-        returns = self.returns[env_id][-self.N:]
+        timesteps = self.timesteps[env_id][-self.K:]
+        returns = self.returns[env_id][-self.K:]
         if len(timesteps) >= 2:
             self.lps[env_id] = scipy.stats.linregress(timesteps, returns)[0]
         return self.lps
