@@ -13,24 +13,22 @@ class MEnvLogger:
     def log(self):
         self.num_episode += 1
 
-        current_env_name = type(self.menv.env).__name__
         # node_labels = {}
 
-        for env in self.menv.envs:
+        for env_id, env in enumerate(self.menv.envs):
             env_name = type(env).__name__
-
-            if current_env_name == env_name:
+            if env_id in self.menv.returns.keys():
                 self.writer.add_scalar(
-                    "return_pe_{}".format(env_name),
-                    self.menv.returnn,
+                    "return_{}".format(env_name),
+                    self.menv.returns[env_id],
                     self.num_episode)
                 self.writer.add_scalar(
-                    "lp_pe_{}".format(env_name),
-                    self.menv.lps[self.menv.env_id],
+                    "lp_{}".format(env_name),
+                    self.menv.lps[env_id],
                     self.num_episode)
             self.writer.add_scalar(
-                "proba_pe_{}".format(env_name),
-                self.menv.returnn,
+                "proba_{}".format(env_name),
+                self.menv.distrib[env_id],
                 self.num_episode)
             # node_labels[env] = env_name
         
