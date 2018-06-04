@@ -1,6 +1,22 @@
 from abc import ABC, abstractmethod
 import numpy
-import scipy.stats
+
+def linregress(x, y):
+    # number of observations/points
+    n = numpy.size(x)
+ 
+    # mean of x and y vector
+    m_x, m_y = numpy.mean(x), numpy.mean(y)
+ 
+    # calculating cross-deviation and deviation about x
+    SS_xy = numpy.sum(y*x - n*m_y*m_x)
+    SS_xx = numpy.sum(x*x - n*m_x*m_x)
+ 
+    # calculating regression coefficients
+    a = SS_xy / SS_xx
+    b = m_y - a*m_x
+ 
+    return a, b
 
 class LpComputer(ABC):
     def __init__(self, G):
@@ -62,7 +78,7 @@ class WindowLpComputer(TSLpComputer):
         timesteps = self.timesteps[env_id][-self.K:]
         returns = self.returns[env_id][-self.K:]
         if len(timesteps) >= 2:
-            return scipy.stats.linregress(timesteps, returns)[0]
+            return linregress(timesteps, returns)[0]
 
 class AbsWindowLpComputer(WindowLpComputer):
     def _compute_direct_lp(self, env_id):
@@ -81,4 +97,4 @@ class AbsLinregLpComputer(LpComputer):
         timesteps = self.timesteps[env_id][-self.K:]
         returns = self.returns[env_id][-self.K:]
         if len(timesteps) >= 2:
-            self.lps[env_id] = scipy.stats.linregress(timesteps, returns)[0]
+            self.lps[env_id] = linregress(timesteps, returns)[0]
