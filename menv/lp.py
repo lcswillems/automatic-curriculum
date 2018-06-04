@@ -17,6 +17,7 @@ class LpComputer(ABC):
         self.timestep += 1
         for env_id, returnn in returns.items():
             self._compute_lp(env_id, returnn)
+        return self.lps
 
     @abstractmethod
     def _compute_lp(self, env_id, returnn):
@@ -38,7 +39,6 @@ class TSLpComputer(LpComputer):
         lp = self._compute_direct_lp(env_id)
         if lp is not None:
             self.lps[env_id] = self.α * lp + (1 - self.α) * self.lps[env_id]
-        return self.lps
 
 class OnlineLpComputer(TSLpComputer):
     def _compute_direct_lp(self, env_id):
@@ -82,4 +82,3 @@ class AbsLinregLpComputer(LpComputer):
         returns = self.returns[env_id][-self.K:]
         if len(timesteps) >= 2:
             self.lps[env_id] = scipy.stats.linregress(timesteps, returns)[0]
-        return self.lps

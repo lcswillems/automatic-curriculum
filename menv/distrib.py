@@ -12,9 +12,11 @@ class GreedyAmaxDistribComputer:
         return distrib
 
 class PropDistribComputer:
+    ρ = 1e-5
+
     def __call__(self, lps):
-        lps = numpy.absolute(lps)
-        return lps/(numpy.sum(lps)+1e-8)
+        lps = numpy.absolute(lps) + self.ρ
+        return lps/numpy.sum(lps)
 
 class GreedyPropDistribComputer(PropDistribComputer):
     def __init__(self, ε):
@@ -31,8 +33,8 @@ class ClippedPropDistribComputer(PropDistribComputer):
 
     def __call__(self, lps):
         distrib = super().__call__(lps)
-        n = len(lps)
-        γ = numpy.argmin(lps)
+        n = len(distrib)
+        γ = numpy.amin(distrib)
         if γ < self.ε/n:
             distrib = (self.ε/n - 1/n)/(γ - 1/n)*(distrib - 1/n) + 1/n
         return distrib

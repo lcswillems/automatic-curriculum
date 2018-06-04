@@ -21,8 +21,8 @@ parser.add_argument("--lp-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
 parser.add_argument("--lp-K", type=float, default=10,
                     help="window size for some learning progress computers (default: 10)")
-parser.add_argument("--distrib", default="ClippedProportional",
-                    help="name of the distribution computer (default: ClippedProportional)")
+parser.add_argument("--distrib", default="ClippedProp",
+                    help="name of the distribution computer (default: ClippedProp)")
 parser.add_argument("--distrib-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution computers (default: 0.1)")
 parser.add_argument("--distrib-tau", type=float, default=4e-4,
@@ -93,18 +93,19 @@ elif args.graph is not None:
     }[args.lp]
     compute_distrib = {
         "GreedyAmax": menv.GreedyAmaxDistribComputer(args.distrib_eps),
-        "GreedyProp": menv.PropDistribComputer(args.distrib_eps),
+        "GreedyProp": menv.GreedyPropDistribComputer(args.distrib_eps),
         "ClippedProp": menv.ClippedPropDistribComputer(args.distrib_eps),
         "Boltzmann": menv.BoltzmannDistribComputer(args.distrib_tau),
         None: None
     }[args.distrib]
     
     env = menv.MEnv(G, compute_lp, compute_distrib, args.distrib_automatic_update)
+    envs = [env]
 
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_seed{}_{}".format(args.env, args.seed, suffix)
+default_model_name = "{}_seed{}_{}".format(args.env or args.graph, args.seed, suffix)
 model_name = args.model or default_model_name
 
 # Define obss preprocessor

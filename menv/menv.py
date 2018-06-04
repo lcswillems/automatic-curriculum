@@ -31,11 +31,11 @@ class MEnv(ABC):
         self.returns = {env_id: [] for env_id in range(self.num_envs)}
 
     def _synthesize_returns(self):
+        new_returns = {}
         for env_id, returnn in self.returns.items():
             if len(returnn) > 0:
-                self.returns[env_id] = numpy.mean(returnn)
-            else:
-                del self.returns[env_id]
+                new_returns[env_id] = numpy.mean(returnn)
+        self.returns = new_returns
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
