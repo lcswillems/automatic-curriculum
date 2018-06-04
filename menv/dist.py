@@ -1,45 +1,45 @@
 import numpy
 
-class GreedyAmaxDistribComputer:
+class GreedyAmaxDistComputer:
     def __init__(self, ε):
         self.ε = ε
 
     def __call__(self, lps):
         lps = numpy.absolute(lps)
         env_id = numpy.random.choice(numpy.flatnonzero(lps == lps.max()))
-        distrib = self.ε*numpy.ones((len(lps)))/len(lps)
-        distrib[env_id] += 1-self.ε
-        return distrib
+        dist = self.ε*numpy.ones((len(lps)))/len(lps)
+        dist[env_id] += 1-self.ε
+        return dist
 
-class PropDistribComputer:
+class PropDistComputer:
     ρ = 1e-5
 
     def __call__(self, lps):
         lps = numpy.absolute(lps) + self.ρ
         return lps/numpy.sum(lps)
 
-class GreedyPropDistribComputer(PropDistribComputer):
+class GreedyPropDistComputer(PropDistComputer):
     def __init__(self, ε):
         self.ε = ε
 
     def __call__(self, lps):
-        distrib = super().__call__(lps)
+        dist = super().__call__(lps)
         uniform = numpy.ones((len(lps)))/len(lps)
-        return (1-self.ε)*distrib + self.ε*uniform
+        return (1-self.ε)*dist + self.ε*uniform
 
-class ClippedPropDistribComputer(PropDistribComputer):
+class ClippedPropDistComputer(PropDistComputer):
     def __init__(self, ε):
         self.ε = ε
 
     def __call__(self, lps):
-        distrib = super().__call__(lps)
-        n = len(distrib)
-        γ = numpy.amin(distrib)
+        dist = super().__call__(lps)
+        n = len(dist)
+        γ = numpy.amin(dist)
         if γ < self.ε/n:
-            distrib = (self.ε/n - 1/n)/(γ - 1/n)*(distrib - 1/n) + 1/n
-        return distrib
+            dist = (self.ε/n - 1/n)/(γ - 1/n)*(dist - 1/n) + 1/n
+        return dist
 
-class BoltzmannDistribComputer:
+class BoltzmannDistComputer:
     def __init__(self, τ):
         self.τ = τ
     
