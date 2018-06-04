@@ -11,12 +11,12 @@ class GreedyAmaxDistribComputer:
         distrib[env_id] += 1-self.ε
         return distrib
 
-class ProportionalDistribComputer:
+class PropDistribComputer:
     def __call__(self, lps):
         lps = numpy.absolute(lps)
         return lps/(numpy.sum(lps)+1e-8)
 
-class GreedyProportionalDistribComputer(ProportionalDistribComputer):
+class GreedyPropDistribComputer(PropDistribComputer):
     def __init__(self, ε):
         self.ε = ε
 
@@ -25,7 +25,7 @@ class GreedyProportionalDistribComputer(ProportionalDistribComputer):
         uniform = numpy.ones((len(lps)))/len(lps)
         return (1-self.ε)*distrib + self.ε*uniform
 
-class ClippedProportionalDistribComputer(ProportionalDistribComputer):
+class ClippedPropDistribComputer(PropDistribComputer):
     def __init__(self, ε):
         self.ε = ε
 
