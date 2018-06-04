@@ -28,7 +28,7 @@ class MEnvLogger:
                     self.num_episode)
             self.writer.add_scalar(
                 "proba_{}".format(env_name),
-                self.menv.distrib[env_id],
+                self.menv.dist[env_id],
                 self.num_episode)
             # node_labels[env] = env_name
         

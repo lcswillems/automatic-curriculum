@@ -21,13 +21,13 @@ parser.add_argument("--lp-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
 parser.add_argument("--lp-K", type=float, default=10,
                     help="window size for some learning progress computers (default: 10)")
-parser.add_argument("--distrib", default="ClippedProp",
+parser.add_argument("--dist", default="ClippedProp",
                     help="name of the distribution computer (default: ClippedProp)")
-parser.add_argument("--distrib-eps", type=float, default=0.1,
+parser.add_argument("--dist-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution computers (default: 0.1)")
-parser.add_argument("--distrib-tau", type=float, default=4e-4,
+parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution computer (default: 4e-4)")
-parser.add_argument("--distrib-automatic-update", action="store_true", default=False,
+parser.add_argument("--dist-automatic-update", action="store_true", default=False,
                     help="update the distribution at the end of each episode (default: False)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
@@ -91,15 +91,15 @@ elif args.graph is not None:
         "AbsWindow": menv.AbsWindowLpComputer(G, args.lp_alpha, args.lp_K),
         "AbsLinreg": menv.AbsLinregLpComputer(G, args.lp_K)
     }[args.lp]
-    compute_distrib = {
-        "GreedyAmax": menv.GreedyAmaxDistribComputer(args.distrib_eps),
-        "GreedyProp": menv.GreedyPropDistribComputer(args.distrib_eps),
-        "ClippedProp": menv.ClippedPropDistribComputer(args.distrib_eps),
-        "Boltzmann": menv.BoltzmannDistribComputer(args.distrib_tau),
+    compute_dist = {
+        "GreedyAmax": menv.GreedyAmaxDistComputer(args.dist_eps),
+        "GreedyProp": menv.GreedyPropDistComputer(args.dist_eps),
+        "ClippedProp": menv.ClippedPropDistComputer(args.dist_eps),
+        "Boltzmann": menv.BoltzmannDistComputer(args.dist_tau),
         None: None
-    }[args.distrib]
+    }[args.dist]
     
-    env = menv.MEnv(G, compute_lp, compute_distrib, args.distrib_automatic_update)
+    env = menv.MEnv(G, compute_lp, compute_dist, args.dist_automatic_update)
     envs = [env]
 
 # Define model name
@@ -149,8 +149,8 @@ while num_frames < args.frames:
 
     update_start_time = time.time()
     logs = algo.update_parameters()
-    if args.graph is not None and not(args.distrib_automatic_update):
-        envs[0].update_distrib()
+    if args.graph is not None and not(args.dist_automatic_update):
+        envs[0].update_dist()
     update_end_time = time.time()
     
     num_frames += logs["num_frames"]
