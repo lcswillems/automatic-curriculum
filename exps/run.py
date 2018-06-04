@@ -17,7 +17,7 @@ for seed, graph, lp_cp, dist_cp, dist_aut_upd in itertools.product(seeds, graphs
     model_name = "{}_{}_{}_{}/seed{}".format(graph, lp_cp, dist_cp, dist_aut_upd, seed)
     subprocess.Popen(
         "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --dist {} {} --save-interval 10 --procs 1 --frames-per-proc 2048 --frames 3000"
-        .format("sbatch --account=def-bengioy --time=0:20:0 --ntasks=1" if not args.no_cluster else "",
+        .format("sbatch --account=def-bengioy --time=3:0:0 --ntasks=1" if not args.no_cluster else "",
                 seed, graph, lp_cp, dist_cp,
                 "--dist-automatic-update" if dist_aut_upd else ""),
         shell=True)
