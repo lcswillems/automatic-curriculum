@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 import numpy
 
 def linregress(x, y):
+    x = numpy.array(x)
+    y = numpy.array(y)
+
     # number of observations/points
     n = numpy.size(x)
  
