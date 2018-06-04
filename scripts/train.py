@@ -89,7 +89,8 @@ elif args.graph is not None:
         "AbsOnline": menv.AbsOnlineLpComputer(G, args.lp_alpha),
         "Window": menv.WindowLpComputer(G, args.lp_alpha, args.lp_K),
         "AbsWindow": menv.AbsWindowLpComputer(G, args.lp_alpha, args.lp_K),
-        "AbsLinreg": menv.AbsLinregLpComputer(G, args.lp_K)
+        "AbsLinreg": menv.AbsLinregLpComputer(G, args.lp_K),
+        None: None
     }[args.lp]
     compute_dist = {
         "GreedyAmax": menv.GreedyAmaxDistComputer(args.dist_eps),
