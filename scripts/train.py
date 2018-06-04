@@ -5,7 +5,7 @@ import torch
 import torch_rl
 import tensorboardX
 
-# import menv
+import menv
 import utils
 
 # Parse arguments
@@ -15,6 +15,20 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
 parser.add_argument("--graph", default=None,
                     help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
+parser.add_argument("--lp", default="AbsLinreg",
+                    help="name of the learning progress computer (default: AbsLinreg)")
+parser.add_argument("--lp-alpha", type=float, default=0.1,
+                    help="learning rate for TS learning progress computers (default: 0.2)")
+parser.add_argument("--lp-K", type=float, default=10,
+                    help="window size for some learning progress computers (default: 10)")
+parser.add_argument("--distrib", default="ClippedProportional",
+                    help="name of the distribution computer (default: ClippedProportional)")
+parser.add_argument("--distrib-eps", type=float, default=0.1,
+                    help="exploration coefficient for some distribution computers (default: 0.1)")
+parser.add_argument("--distrib-tau", type=float, default=4e-4,
+                    help="temperature for Boltzmann distribution computer (default: 4e-4)")
+parser.add_argument("--distrib-automatic-update", action="store_true", default=False,
+                    help="update the distribution at the end of each episode (default: False)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -63,7 +77,29 @@ utils.seed(args.seed)
 
 # Generate environments
 
-envs = utils.make_envs(args.env, args.seed, args.procs)
+if args.env is not None:
+    envs = utils.make_envs(args.env, args.seed, args.procs)
+elif args.graph is not None:
+    assert args.procs == 1, "No more processes allowed for the moment"
+
+    G = utils.make_envs_graph(args.graph, args.seed)
+
+    compute_lp = {
+        "Online": menv.OnlineLpComputer(G, args.lp_alpha),
+        "AbsOnline": menv.AbsOnlineLpComputer(G, args.lp_alpha),
+        "Window": menv.WindowLpComputer(G, args.lp_alpha, args.lp_K),
+        "AbsWindow": menv.AbsWindowLpComputer(G, args.lp_alpha, args.lp_K),
+        "AbsLinreg": menv.AbsLinregLpComputer(G, args.lp_K)
+    }[args.lp]
+    compute_distrib = {
+        "GreedyAmax": menv.GreedyAmaxDistribComputer(args.distrib_eps),
+        "GreedyProp": menv.PropDistribComputer(args.distrib_eps),
+        "ClippedProp": menv.ClippedPropDistribComputer(args.distrib_eps),
+        "Boltzmann": menv.BoltzmannDistribComputer(args.distrib_tau),
+        None: None
+    }[args.distrib]
+    
+    env = menv.MEnv(G, compute_lp, compute_distrib, args.distrib_automatic_update)
 
 # Define model name
 
@@ -93,7 +129,7 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
 
 logger = utils.get_logger(model_name)
 writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
-# envs[0].tb_logger = menv.TbLogger(envs[0], writer)
+envs[0].menv_logger = menv.MEnvLogger(envs[0], writer)
 
 # Log command, availability of CUDA and model
 
@@ -112,6 +148,8 @@ while num_frames < args.frames:
 
     update_start_time = time.time()
     logs = algo.update_parameters()
+    if args.graph is not None and not(args.distrib_automatic_update):
+        envs[0].update_distrib()
     update_end_time = time.time()
     
     num_frames += logs["num_frames"]
