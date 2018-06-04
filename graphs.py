@@ -30,6 +30,7 @@ graphs["SC-Normal"] = G
 
 G = nx.Graph()
 G.add_edges_from([
+    ("BabyAI-Unlock-v0", "BabyAI-UnlockPickup-v0"),
     ("BabyAI-UnlockPickup-v0", "BabyAI-BlockedUnlockPickup-v0")
 ])
 graphs["BabyAI-BlockedUnlockPickup"] = G
