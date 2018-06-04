@@ -67,6 +67,10 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size (default: 256)")
+parser.add_argument("--no-instr", action="store_true", default=False,
+                    help="don't use instructions in the model")
+parser.add_argument("--no-mem", action="store_true", default=False,
+                    help="don't use memory in the model")
 args = parser.parse_args()
 
 assert args.env is not None or args.graph is not None, "--env or --graph must be specified."
@@ -116,6 +120,7 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 # Define actor-critic model
 
 acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name,
+                           not(args.no_instr), not(args.no_mem),
                            create_if_not_exists=True)
 if torch.cuda.is_available():
     acmodel.cuda()

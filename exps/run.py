@@ -8,7 +8,7 @@ parser.add_argument("--no-cluster", action="store_true", default=False)
 args = parser.parse_args()
 
 seeds = range(1, 4)
-graphs = ["SC-Edgeless", "BabyAI-BlockedUnlockPickup"]
+graphs = ["SC-Edgeless", "BabyAI-BlockedUnlockPickup --no-instr --no-mem"]
 lp_cps = ["Online", "AbsOnline", "Window", "AbsWindow", "AbsLinreg"]
 dist_cps = ["GreedyAmax", "GreedyProp", "ClippedProp", "Boltzmann"]
 dist_aut_upds = [True, False]

@@ -14,8 +14,12 @@ def initialize_parameters(m):
             m.bias.data.fill_(0)
 
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
-    def __init__(self, obs_space, action_space):
+    def __init__(self, obs_space, action_space, use_instr=False, use_memory=False):
         super().__init__()
+
+        # Decide which components are enabled
+        self.use_instr = use_instr
+        self.use_memory = use_memory
 
         # Define image embedding
         self.image_embedding_size = 64
@@ -30,16 +34,20 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         )
 
         # Define memory
-        self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
+        if self.use_memory:
+            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
 
         # Define instruction embedding
-        self.word_embedding_size = 32
-        self.word_embedding = nn.Embedding(obs_space["instr"], self.word_embedding_size)
-        self.instr_embedding_size = 128
-        self.instr_rnn = nn.GRU(self.word_embedding_size, self.instr_embedding_size, batch_first=True)
+        if self.use_instr:
+            self.word_embedding_size = 32
+            self.word_embedding = nn.Embedding(obs_space["instr"], self.word_embedding_size)
+            self.instr_embedding_size = 128
+            self.instr_rnn = nn.GRU(self.word_embedding_size, self.instr_embedding_size, batch_first=True)
 
         # Resize image embedding
-        self.embedding_size = self.semi_memory_size + self.instr_embedding_size
+        self.embedding_size = self.semi_memory_size
+        if self.use_instr:
+            self.embedding_size += self.instr_embedding_size
 
         # Define actor's model
         self.actor = nn.Sequential(
@@ -71,13 +79,17 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         x = self.image_conv(x)
         x = x.reshape(x.shape[0], -1)
 
-        hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
-        hidden = self.memory_rnn(x, hidden)
-        embedding = hidden[0]
-        memory = torch.cat(hidden, dim=1)
-
-        embed_instr = self._get_embed_instr(obs.instr)
-        embedding = torch.cat((embedding, embed_instr), dim=1)
+        if self.use_memory:
+            hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
+            hidden = self.memory_rnn(x, hidden)
+            embedding = hidden[0]
+            memory = torch.cat(hidden, dim=1)
+        else:
+            embedding = x
+        
+        if self.use_instr:
+            embed_instr = self._get_embed_instr(obs.instr)
+            embedding = torch.cat((embedding, embed_instr), dim=1)
 
         x = self.actor(embedding)
         dist = Categorical(logits=F.log_softmax(x, dim=1))
