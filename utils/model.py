@@ -27,4 +27,4 @@ def load_model(observation_space, action_space, model_name,
 def save_model(acmodel, model_name):
     path = get_model_path(model_name)
     utils.create_folders_if_necessary(path)
-    torch.save(acmodel.state_dict(), path)
+    torch.save(acmodel, path)
