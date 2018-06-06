@@ -25,4 +25,4 @@ from utils.env import make_env, make_envs
 from utils.format import ObssPreprocessor, reshape_reward
 from utils.graph import make_envs_graph, get_graph_env_ids
 from utils.log import get_log_dir, synthesize, get_logger
-from utils.model import get_model_dir, get_model_path, load_model, save_model
+from utils.model import get_model_dir, load_model, save_model
