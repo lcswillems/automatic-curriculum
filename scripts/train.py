@@ -77,6 +77,19 @@ args = parser.parse_args()
 
 assert args.env is not None or args.graph is not None, "--env or --graph must be specified."
 
+# Define model name
+
+suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+default_model_name = "{}_seed{}_{}".format(args.env or args.graph, args.seed, suffix)
+model_name = args.model or default_model_name
+
+# Define logger and Tensorboard writer and log script arguments
+
+logger = utils.get_logger(model_name)
+writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
+
+logger.info("{}\n".format(args))
+
 # Set seed for all randomness sources
 
 utils.seed(args.seed)
@@ -107,13 +120,8 @@ elif args.graph is not None:
     }[args.dist]
     
     env = menv.MEnv(G, compute_lp, compute_dist, args.dist_automatic_update)
+    env.menv_logger = menv.MEnvLogger(envs[0], writer)    
     envs = [env]
-
-# Define model name
-
-suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_seed{}_{}".format(args.env or args.graph, args.seed, suffix)
-model_name = args.model or default_model_name
 
 # Define obss preprocessor
 
@@ -121,12 +129,15 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
-if os.path.exists(utils.get_model_path(model_name)):
-    acmodel = utils.load_model(model_name)
-else:
+acmodel = utils.load_model(model_name, raise_not_found=False)
+if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
+    logger.info("Model successfully created\n")
+logger.info("{}\n".format(acmodel))
+
 if torch.cuda.is_available():
     acmodel.cuda()
+logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Define actor-critic algo
 
@@ -134,18 +145,6 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                         args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
                         utils.reshape_reward)
-
-# Define logger and Tensorboard writer
-
-logger = utils.get_logger(model_name)
-writer = tensorboardX.SummaryWriter(utils.get_log_dir(model_name))
-envs[0].menv_logger = menv.MEnvLogger(envs[0], writer)
-
-# Log command, availability of CUDA and model
-
-logger.info(args)
-logger.info("CUDA available: {}".format(torch.cuda.is_available()))
-logger.info(acmodel)
 
 # Train model
 
