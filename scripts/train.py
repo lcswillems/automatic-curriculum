@@ -8,6 +8,7 @@ import tensorboardX
 
 import menv
 import utils
+from model import ACModel
 
 # Parse arguments
 
@@ -123,7 +124,7 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 if os.path.exists(utils.get_model_path(model_name)):
     acmodel = utils.load_model(model_name)
 else:
-    acmodel = utils.create_model(obss_preprocessor.obs_space, envs[0].action_space)
+    acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
 if torch.cuda.is_available():
     acmodel.cuda()
 
