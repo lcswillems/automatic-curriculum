@@ -43,11 +43,22 @@ Ks = [
     100
 ]
 
+times = {
+    "BabyAI-BlockedUnlockPickup": "1:30:0",
+    "BabyAI-UnlockPickupDist": "4:0:0",
+    "BabyAI-FourObjs": "4:0:0",
+    "SC-Edgeless": "4:0:0",
+    "SC-Normal": "4:0:0",
+    "BabyAI-FindObj": "4:0:0",
+    "BabyAI-KeyCorridor": "4:0:0"
+}
+
 for seed, graph, lp_cp, dist_cp, ε, K in itertools.product(seeds, graphs, lp_cps, dist_cps, εs, Ks):
+    cluster_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[graph])
     model_name = "{}_{}_{}_eps{}_K{}/seed{}".format(graph, lp_cp, dist_cp, ε, K, seed)
     subprocess.Popen(
         "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --lp-K {} --dist {} --dist-eps {} --model {} --save-interval 10 --procs 1 --frames-per-proc 2048"
-        .format("sbatch --account=def-bengioy --time=3:0:0 --ntasks=1" if not args.no_cluster else "",
+        .format(cluster_cmd if not args.no_cluster else "",
                 seed, graph, lp_cp, ε, dist_cp, K, model_name),
         shell=True)
     time.sleep(1)
