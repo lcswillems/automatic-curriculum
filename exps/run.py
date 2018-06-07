@@ -59,6 +59,6 @@ for seed, graph, lp_cp, dist_cp, ε, K in itertools.product(seeds, graphs, lp_cp
     subprocess.Popen(
         "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --lp-K {} --dist {} --dist-eps {} --model {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(cluster_cmd if not args.no_cluster else "",
-                seed, graph, lp_cp, ε, dist_cp, K, model_name),
+                seed, graph, lp_cp, K, dist_cp, ε, model_name),
         shell=True)
     time.sleep(1)
