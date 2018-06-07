@@ -69,7 +69,7 @@ class AbsWindowLpComputer(WindowLpComputer):
         if lp is not None:
             return abs(lp)
 
-class AbsLinregLpComputer(LpComputer):
+class LinregLpComputer(LpComputer):
     def __init__(self, G, K):
         super().__init__(G)
 
@@ -80,4 +80,4 @@ class AbsLinregLpComputer(LpComputer):
         timesteps = self.timesteps[env_id][-self.K:]
         returns = self.returns[env_id][-self.K:]
         if len(timesteps) >= 2:
-            self.lps[env_id] = abs(numpy.polyfit(timesteps, returns, 1)[0])
+            self.lps[env_id] = numpy.polyfit(timesteps, returns, 1)[0]

@@ -17,8 +17,8 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
 parser.add_argument("--graph", default=None,
                     help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--lp", default="AbsLinreg",
-                    help="name of the learning progress computer (default: AbsLinreg)")
+parser.add_argument("--lp", default="Linreg",
+                    help="name of the learning progress computer (default: Linreg)")
 parser.add_argument("--lp-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
 parser.add_argument("--lp-K", type=float, default=10,
@@ -108,7 +108,7 @@ elif args.graph is not None:
         "AbsOnline": menv.AbsOnlineLpComputer(G, args.lp_alpha),
         "Window": menv.WindowLpComputer(G, args.lp_alpha, args.lp_K),
         "AbsWindow": menv.AbsWindowLpComputer(G, args.lp_alpha, args.lp_K),
-        "AbsLinreg": menv.AbsLinregLpComputer(G, args.lp_K),
+        "Linreg": menv.LinregLpComputer(G, args.lp_K),
         None: None
     }[args.lp]
     compute_dist = {
