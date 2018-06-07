@@ -21,7 +21,7 @@ parser.add_argument("--lp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
 parser.add_argument("--lp-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
-parser.add_argument("--lp-K", type=float, default=10,
+parser.add_argument("--lp-K", type=int, default=10,
                     help="window size for some learning progress computers (default: 10)")
 parser.add_argument("--dist", default="GreedyProp",
                     help="name of the distribution computer (default: GreedyProp)")
