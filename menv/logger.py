@@ -17,15 +17,16 @@ class MEnvLogger:
 
         for env_id, env in enumerate(self.menv.envs):
             env_name = type(env).__name__
-            if env_id in self.menv.returns.keys():
+            if env_id in self.menv.synthesized_returns.keys():
                 self.writer.add_scalar(
                     "return_{}".format(env_name),
-                    self.menv.returns[env_id],
+                    self.menv.synthesized_returns[env_id],
                     self.num_episode)
-                self.writer.add_scalar(
-                    "lp_{}".format(env_name),
-                    self.menv.lps[env_id],
-                    self.num_episode)
+                if self.menv.lps is not None:
+                    self.writer.add_scalar(
+                        "lp_{}".format(env_name),
+                        self.menv.lps[env_id],
+                        self.num_episode)
             self.writer.add_scalar(
                 "proba_{}".format(env_name),
                 self.menv.dist[env_id],

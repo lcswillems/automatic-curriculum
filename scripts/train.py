@@ -118,7 +118,7 @@ elif args.graph is not None:
     }[args.dist]
     
     env = menv.MEnv(G, compute_lp, compute_dist)
-    env.menv_logger = menv.MEnvLogger(env, writer)    
+    menv_logger = menv.MEnvLogger(env, writer)
     envs = [env]
 
 # Define obss preprocessor
@@ -157,6 +157,7 @@ while num_frames < args.frames:
     logs = algo.update_parameters()
     if args.graph is not None:
         envs[0].update_dist()
+        menv_logger.log()
     update_end_time = time.time()
     
     num_frames += logs["num_frames"]

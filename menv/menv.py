@@ -8,7 +8,6 @@ class MEnv(ABC):
         self.compute_lp = compute_lp
         self.compute_dist = compute_dist
 
-        self.menv_logger = None
         self.envs = list(self.G.nodes)
         self.num_envs = len(self.envs)
         self.env = None
@@ -30,11 +29,10 @@ class MEnv(ABC):
         self.returns = {env_id: [] for env_id in range(self.num_envs)}
 
     def _synthesize_returns(self):
-        new_returns = {}
+        self.synthesized_returns = {}
         for env_id, returnn in self.returns.items():
             if len(returnn) > 0:
-                new_returns[env_id] = numpy.mean(returnn)
-        self.returns = new_returns
+                self.synthesized_returns[env_id] = numpy.mean(returnn)
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
@@ -42,13 +40,11 @@ class MEnv(ABC):
         return obs, reward, done, info
 
     def update_dist(self):
-        if self.compute_lp is not None and self.compute_dist is not None:
-            self._synthesize_returns()
-            self.lps = self.compute_lp(self.returns)
-            self.dist = self.compute_dist(self.lps)
-            if self.menv_logger is not None:
-                self.menv_logger.log()
+        self._synthesize_returns()
         self._reset_returns()
+        if self.compute_lp is not None and self.compute_dist is not None:
+            self.lps = self.compute_lp(self.synthesized_returns)
+            self.dist = self.compute_dist(self.lps)
 
     def reset(self):
         if self.returnn is not None:
