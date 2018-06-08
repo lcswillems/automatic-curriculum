@@ -10,11 +10,8 @@ class MEnv(ABC):
 
         self.envs = list(self.G.nodes)
         self.num_envs = len(self.envs)
-        self.env = None
-        self.env_id = None
         self.returnn = None
         self._reset_returns()
-        self.lps = None
         self.dist = numpy.ones((self.num_envs))/self.num_envs
         self.reset()
     
