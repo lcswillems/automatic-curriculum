@@ -3,11 +3,10 @@ from gym.core import Env
 import numpy
 
 class MEnv(ABC):
-    def __init__(self, G, compute_lp=None, compute_dist=None, automatic_update=False):
+    def __init__(self, G, compute_lp=None, compute_dist=None):
         self.G = G
         self.compute_lp = compute_lp
         self.compute_dist = compute_dist
-        self.automatic_update = automatic_update
 
         self.menv_logger = None
         self.envs = list(self.G.nodes)
@@ -54,8 +53,6 @@ class MEnv(ABC):
     def reset(self):
         if self.returnn is not None:
             self.returns[self.env_id].append(self.returnn)
-            if self.automatic_update:
-                self.update_dist()
         self.returnn = 0
         self._select_env()
         return self.env.reset()

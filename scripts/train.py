@@ -29,8 +29,6 @@ parser.add_argument("--dist-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution computers (default: 0.1)")
 parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution computer (default: 4e-4)")
-parser.add_argument("--dist-automatic-update", action="store_true", default=False,
-                    help="update the distribution at the end of each episode (default: False)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -119,7 +117,7 @@ elif args.graph is not None:
         None: None
     }[args.dist]
     
-    env = menv.MEnv(G, compute_lp, compute_dist, args.dist_automatic_update)
+    env = menv.MEnv(G, compute_lp, compute_dist)
     env.menv_logger = menv.MEnvLogger(env, writer)    
     envs = [env]
 
@@ -157,7 +155,7 @@ while num_frames < args.frames:
 
     update_start_time = time.time()
     logs = algo.update_parameters()
-    if args.graph is not None and not(args.dist_automatic_update):
+    if args.graph is not None:
         envs[0].update_dist()
     update_end_time = time.time()
     
