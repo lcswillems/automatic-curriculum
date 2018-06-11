@@ -3,7 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from tensorboardX import SummaryWriter
 
-class MEnvLogger:
+class MultiEnvLogger:
     def __init__(self, menv, writer):
         self.menv = menv
         self.writer = writer

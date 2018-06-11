@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from gym.core import Env
 import numpy
 
-class MEnv(ABC):
+class MultiEnv(ABC):
     def __init__(self, G, compute_lp=None, compute_dist=None):
         self.G = G
         self.compute_lp = compute_lp

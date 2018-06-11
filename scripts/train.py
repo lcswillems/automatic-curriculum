@@ -123,8 +123,8 @@ elif args.graph is not None:
     if args.exp_graph:
         compute_dist = menv.GraphDistComputer(G, compute_dist)
     
-    env = menv.MEnv(G, compute_lp, compute_dist)
-    menv_logger = menv.MEnvLogger(env, writer)
+    env = menv.MultiEnv(G, compute_lp, compute_dist)
+    menv_logger = menv.MultiEnvLogger(env, writer)
     envs = [env]
 
 # Define obss preprocessor
