@@ -1,6 +1,16 @@
+from abc import ABC, abstractmethod
 import numpy
 
-class GreedyAmaxDistComputer:
+class DistComputer(ABC):
+    @abstractmethod
+    def __init__(self):
+        pass
+    
+    @abstractmethod
+    def __call__(self, lps):
+        pass
+
+class GreedyAmaxDistComputer(DistComputer):
     def __init__(self, ε):
         self.ε = ε
 
@@ -11,7 +21,7 @@ class GreedyAmaxDistComputer:
         dist[env_id] += 1-self.ε
         return dist
 
-class PropDistComputer:
+class PropDistComputer(DistComputer):
     ρ = 1e-5
 
     def __call__(self, lps):
@@ -39,7 +49,7 @@ class ClippedPropDistComputer(PropDistComputer):
             dist = (self.ε/n - 1/n)/(γ - 1/n)*(dist - 1/n) + 1/n
         return dist
 
-class BoltzmannDistComputer:
+class BoltzmannDistComputer(DistComputer):
     def __init__(self, τ):
         self.τ = τ
     
