@@ -1,7 +1,6 @@
 import os
 import networkx as nx
 import matplotlib.pyplot as plt
-from tensorboardX import SummaryWriter
 
 class MultiEnvLogger:
     def __init__(self, menv, writer):
