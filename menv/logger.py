@@ -21,16 +21,16 @@ class MultiEnvLogger:
                 self.writer.add_scalar(
                     "return_{}".format(env_name),
                     self.menv.synthesized_returns[env_id],
-                    self.num_episode)
+                    self.num_update)
                 if self.menv.lps is not None:
                     self.writer.add_scalar(
                         "lp_{}".format(env_name),
                         self.menv.lps[env_id],
-                        self.num_episode)
+                        self.num_update)
             self.writer.add_scalar(
                 "proba_{}".format(env_name),
                 self.menv.dist[env_id],
-                self.num_episode)
+                self.num_update)
             # node_labels[env] = env_name
         
         # G = self.menv.envs_nxgraph
