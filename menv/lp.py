@@ -2,11 +2,9 @@ from abc import ABC, abstractmethod
 import numpy
 
 class LpComputer(ABC):
-    def __init__(self, G):
-        self.G = G
+    def __init__(self, num_envs):
+        self.num_envs = num_envs
 
-        self.envs = list(self.G.nodes)
-        self.num_envs = len(self.envs)
         self.timestep = 0
         self.timesteps = [[] for _ in range(self.num_envs)]
         self.returns = [[] for _ in range(self.num_envs)]
@@ -24,8 +22,8 @@ class LpComputer(ABC):
         self.returns[env_id].append(returnn)
 
 class TSLpComputer(LpComputer):
-    def __init__(self, G, α):
-        super().__init__(G)
+    def __init__(self, num_envs, α):
+        super().__init__(num_envs)
 
         self.α = α
 
@@ -52,8 +50,8 @@ class AbsOnlineLpComputer(OnlineLpComputer):
             return abs(lp)
 
 class WindowLpComputer(TSLpComputer):
-    def __init__(self, G, α, K):
-        super().__init__(G, α)
+    def __init__(self, num_envs, α, K):
+        super().__init__(num_envs, α)
 
         self.K = K
 
@@ -70,8 +68,8 @@ class AbsWindowLpComputer(WindowLpComputer):
             return abs(lp)
 
 class LinregLpComputer(LpComputer):
-    def __init__(self, G, K):
-        super().__init__(G)
+    def __init__(self, num_envs, K):
+        super().__init__(num_envs)
 
         self.K = K
 

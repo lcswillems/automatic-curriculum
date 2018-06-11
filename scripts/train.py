@@ -102,11 +102,11 @@ elif args.graph is not None:
     G = utils.make_envs_graph(args.graph, args.seed)
 
     compute_lp = {
-        "Online": menv.OnlineLpComputer(G, args.lp_alpha),
-        "AbsOnline": menv.AbsOnlineLpComputer(G, args.lp_alpha),
-        "Window": menv.WindowLpComputer(G, args.lp_alpha, args.lp_K),
-        "AbsWindow": menv.AbsWindowLpComputer(G, args.lp_alpha, args.lp_K),
-        "Linreg": menv.LinregLpComputer(G, args.lp_K),
+        "Online": menv.OnlineLpComputer(args.procs, args.lp_alpha),
+        "AbsOnline": menv.AbsOnlineLpComputer(args.procs, args.lp_alpha),
+        "Window": menv.WindowLpComputer(args.procs, args.lp_alpha, args.lp_K),
+        "AbsWindow": menv.AbsWindowLpComputer(args.procs, args.lp_alpha, args.lp_K),
+        "Linreg": menv.LinregLpComputer(args.procs, args.lp_K),
         None: None
     }[args.lp]
     compute_dist = {
