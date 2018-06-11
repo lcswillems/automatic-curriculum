@@ -73,21 +73,21 @@ class GraphDistComputer(DistComputer):
         def all_or_none(array):
             return numpy.all(array == True) or numpy.all(array == False)
 
-        focused_envs = numpy.argwhere(self.focusing == True).reshape(-1)
-        for env in focused_envs:
-            predecessors = list(self.G.predecessors(env))
-            successors = list(self.G.successors(env))
+        focused_env_ids = numpy.argwhere(self.focusing == True).reshape(-1)
+        for env_id in focused_env_ids:
+            predecessors = list(self.G.predecessors(env_id))
+            successors = list(self.G.successors(env_id))
             neighboors = predecessors + successors
-            self.focusing[neighboors] = lps[neighboors] > lps[env]
+            self.focusing[neighboors] = lps[neighboors] > lps[env_id]
             if (numpy.any(self.focusing[predecessors + successors]) and all_or_none(self.focusing[predecessors]) and all_or_none(self.focusing[successors])):
-                self.focusing[env] = False
+                self.focusing[env_id] = False
 
-        focused_envs = numpy.argwhere(self.focusing == True).reshape(-1)
+        focused_env_ids = numpy.argwhere(self.focusing == True).reshape(-1)
         dist = numpy.zeros(len(lps))
-        for env, proba in enumerate(self.compute_dist(lps[focused_envs])):
-            predecessors = list(self.G.predecessors(env))
-            successors = list(self.G.successors(env))
-            family = [env] + predecessors + successors
+        for env_id, proba in enumerate(self.compute_dist(lps[focused_env_ids])):
+            predecessors = list(self.G.predecessors(env_id))
+            successors = list(self.G.successors(env_id))
+            family = [env_id] + predecessors + successors
             dist[family] += proba*self.compute_dist(lps[family])
 
         return dist
