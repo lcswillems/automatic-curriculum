@@ -8,10 +8,10 @@ class MultiEnvLogger:
         self.menv = menv
         self.writer = writer
 
-        self.num_episode = 0
+        self.num_update = 0
 
     def log(self):
-        self.num_episode += 1
+        self.num_update += 1
 
         # node_labels = {}
 
