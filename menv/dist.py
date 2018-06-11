@@ -22,7 +22,7 @@ class GreedyAmaxDistComputer(DistComputer):
         return dist
 
 class PropDistComputer(DistComputer):
-    ρ = 1e-5
+    ρ = 1e-8
 
     def __call__(self, lps):
         lps = numpy.absolute(lps) + self.ρ
