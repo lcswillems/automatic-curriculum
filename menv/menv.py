@@ -14,6 +14,7 @@ class MEnv(ABC):
         self._reset_returns()
         self.dist = numpy.ones((self.num_envs))/self.num_envs
         self.reset()
+        self.update_dist()
     
     def __getattr__(self, key):
         return getattr(self.env, key)

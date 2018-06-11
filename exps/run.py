@@ -24,6 +24,16 @@ lp_cps = [
     # "Online",
     # "AbsOnline"
 ]
+Ks = [
+    # 10,
+    20,
+    # 50,
+    # 100
+]
+exps_graph = [
+    True,
+    False
+]
 dist_cps = [
     "GreedyProp",
     # "ClippedProp",
@@ -31,16 +41,10 @@ dist_cps = [
     # "GreedyAmax"
 ]
 εs = [
-    0.1,
+    # 0.1,
     0.2,
-    0.5,
-    1
-]
-Ks = [
-    10,
-    20,
-    50,
-    100
+    # 0.5,
+    # 1
 ]
 
 times = {
@@ -53,12 +57,13 @@ times = {
     "BabyAI-KeyCorridor": "4:0:0"
 }
 
-for seed, graph, lp_cp, dist_cp, ε, K in itertools.product(seeds, graphs, lp_cps, dist_cps, εs, Ks):
+for seed, graph, lp_cp, K, dist_cp, ε, exp_graph in itertools.product(seeds, graphs, lp_cps, Ks, dist_cps, εs, exps_graph):
     cluster_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[graph])
-    model_name = "{}_{}_{}_eps{}_K{}/seed{}".format(graph, lp_cp, dist_cp, ε, K, seed)
+    exp_graph = "--exp-graph" if exp_graph else ""
+    model_name = "{}_{}_{}_K{}_eps{}_eg{}/seed{}".format(graph, lp_cp, dist_cp, K, ε, exp_graph, seed)
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --lp-K {} --dist {} --dist-eps {} --model {} --save-interval 10 --procs 1 --frames-per-proc 2048"
+        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --lp-K {} --dist {} --dist-eps {} {} --model {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(cluster_cmd if not args.no_cluster else "",
-                seed, graph, lp_cp, K, dist_cp, ε, model_name),
+                seed, graph, lp_cp, K, dist_cp, ε, exp_graph, model_name),
         shell=True)
     time.sleep(1)

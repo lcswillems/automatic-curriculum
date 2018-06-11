@@ -29,6 +29,8 @@ parser.add_argument("--dist-eps", type=float, default=0.2,
                     help="exploration coefficient for some distribution computers (default: 0.1)")
 parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution computer (default: 4e-4)")
+parser.add_argument("--exp-graph", action="store_true", default=False,
+                    help="exploit the graph organization of environments for computing distribution (default: False)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -100,15 +102,17 @@ elif args.graph is not None:
     assert args.procs == 1, "No more processes allowed for the moment"
 
     G = utils.make_envs_graph(args.graph, args.seed)
+    num_envs = len(G.nodes)
 
     compute_lp = {
-        "Online": menv.OnlineLpComputer(args.procs, args.lp_alpha),
-        "AbsOnline": menv.AbsOnlineLpComputer(args.procs, args.lp_alpha),
-        "Window": menv.WindowLpComputer(args.procs, args.lp_alpha, args.lp_K),
-        "AbsWindow": menv.AbsWindowLpComputer(args.procs, args.lp_alpha, args.lp_K),
-        "Linreg": menv.LinregLpComputer(args.procs, args.lp_K),
+        "Online": menv.OnlineLpComputer(num_envs, args.lp_alpha),
+        "AbsOnline": menv.AbsOnlineLpComputer(num_envs, args.lp_alpha),
+        "Window": menv.WindowLpComputer(num_envs, args.lp_alpha, args.lp_K),
+        "AbsWindow": menv.AbsWindowLpComputer(num_envs, args.lp_alpha, args.lp_K),
+        "Linreg": menv.LinregLpComputer(num_envs, args.lp_K),
         None: None
     }[args.lp]
+
     compute_dist = {
         "GreedyAmax": menv.GreedyAmaxDistComputer(args.dist_eps),
         "GreedyProp": menv.GreedyPropDistComputer(args.dist_eps),
@@ -116,6 +120,8 @@ elif args.graph is not None:
         "Boltzmann": menv.BoltzmannDistComputer(args.dist_tau),
         None: None
     }[args.dist]
+    if args.exp_graph:
+        compute_dist = menv.GraphDistComputer(G, compute_dist)
     
     env = menv.MEnv(G, compute_lp, compute_dist)
     menv_logger = menv.MEnvLogger(env, writer)

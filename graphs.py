@@ -1,12 +1,12 @@
 import networkx as nx
 
 def get_edgeless_graph(nodes):
-    G = nx.Graph()
+    G = nx.DiGraph()
     G.add_nodes_from(nodes)
     return G
 
 def get_sequence_graph(nodes):
-    G = nx.Graph()
+    G = nx.DiGraph()
     G.add_edges_from([(nodes[i], nodes[i+1]) for i in range(len(nodes)-1)])
     return G
 
@@ -23,7 +23,7 @@ graphs["SC-Edgeless"] = get_edgeless_graph([
     "SC-D4LuIuBu-v0"
 ])
 
-G = nx.Graph()
+G = nx.DiGraph()
 G.add_edges_from([
     ("SC-D1LaInBn-v0", "SC-D1LaIaBn-v0"),
     ("SC-D1LaIaBn-v0", "SC-D1LaInBa-v0"),

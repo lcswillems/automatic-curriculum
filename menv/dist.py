@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy
+import networkx as nx
 
 class DistComputer(ABC):
     @abstractmethod
@@ -57,3 +58,36 @@ class BoltzmannDistComputer(DistComputer):
         lps = numpy.absolute(lps)
         temperatured_lps = numpy.exp(lps/self.τ)
         return temperatured_lps / numpy.sum(temperatured_lps)
+
+class GraphDistComputer(DistComputer):
+    def __init__(self, G, compute_dist):
+        self.G = G
+        self.compute_dist = compute_dist
+
+        mapping = {env: env_id for env_id, env in enumerate(self.G.nodes)}
+        self.G = nx.relabel_nodes(self.G, mapping)
+
+        self.focusing = numpy.array([idegree == 0 for env, idegree in G.in_degree()])
+
+    def __call__(self, lps):
+        def all_or_none(array):
+            return numpy.all(array == True) or numpy.all(array == False)
+
+        focused_envs = numpy.argwhere(self.focusing == True).reshape(-1)
+        for env in focused_envs:
+            predecessors = list(self.G.predecessors(env))
+            successors = list(self.G.successors(env))
+            neighboors = predecessors + successors
+            self.focusing[neighboors] = lps[neighboors] > lps[env]
+            if (numpy.any(self.focusing[predecessors + successors]) and all_or_none(self.focusing[predecessors]) and all_or_none(self.focusing[successors])):
+                self.focusing[env] = False
+
+        focused_envs = numpy.argwhere(self.focusing == True).reshape(-1)
+        dist = numpy.zeros(len(lps))
+        for env, proba in enumerate(self.compute_dist(lps[focused_envs])):
+            predecessors = list(self.G.predecessors(env))
+            successors = list(self.G.successors(env))
+            family = [env] + predecessors + successors
+            dist[family] += proba*self.compute_dist(lps[family])
+
+        return dist
