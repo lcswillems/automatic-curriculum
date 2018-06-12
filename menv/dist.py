@@ -70,7 +70,7 @@ class GraphDistComputer(DistComputer):
         self.focusing = numpy.array([idegree == 0 for env, idegree in G.in_degree()])
 
     def __call__(self, lps):
-        lps = abs(lps)
+        lps = numpy.absolute(lps)
 
         def all_or_none(array):
             return numpy.all(array == True) or numpy.all(array == False)
