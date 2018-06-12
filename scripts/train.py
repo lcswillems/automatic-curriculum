@@ -168,7 +168,6 @@ while num_frames < args.frames:
     logs = algo.update_parameters()
     if args.graph is not None:
         head_menv.update_dist()
-        print(head_menv.dist)
     update_end_time = time.time()
     
     num_frames += logs["num_frames"]
@@ -214,6 +213,9 @@ while num_frames < args.frames:
                         writer.add_scalar("alp_{}".format(env_key),
                                           abs(head_menv.lps[env_id]),
                                           i)
+                if args.exp_graph:
+                    writer.add_scalar("focus_{}".format(env_key),
+                                      int(compute_dist.focusing[env_id]))
                 writer.add_scalar("proba_{}".format(env_key),
                                   head_menv.dist[env_id],
                                   i)
