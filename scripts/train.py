@@ -21,11 +21,11 @@ parser.add_argument("--lp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
 parser.add_argument("--lp-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
-parser.add_argument("--lp-K", type=int, default=20,
+parser.add_argument("--lp-K", type=int, default=10,
                     help="window size for some learning progress computers (default: 10)")
 parser.add_argument("--dist", default="GreedyProp",
                     help="name of the distribution computer (default: GreedyProp)")
-parser.add_argument("--dist-eps", type=float, default=0.2,
+parser.add_argument("--dist-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution computers (default: 0.1)")
 parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution computer (default: 4e-4)")
