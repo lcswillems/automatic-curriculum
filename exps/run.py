@@ -12,8 +12,8 @@ graphs = [
     # "SC-Edgeless",
     # "SC-Normal",
     "BabyAI-BlockedUnlockPickup",
-    "BabyAI-UnlockPickupDist",
-    "BabyAI-FourObjs",
+    # "BabyAI-UnlockPickupDist",
+    # "BabyAI-FourObjs",
     # "BabyAI-FindObj",
     # "BabyAI-KeyCorridor"
 ]
@@ -25,8 +25,8 @@ lp_cps = [
     # "AbsOnline"
 ]
 Ks = [
-    10,
-    # 20,
+    # 10,
+    20,
     # 50,
     # 100
 ]
@@ -41,8 +41,8 @@ dist_cps = [
     # "GreedyAmax"
 ]
 εs = [
-    0.1,
-    # 0.2,
+    # 0.1,
+    0.2,
     # 0.5,
     # 1
 ]
