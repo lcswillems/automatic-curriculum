@@ -208,15 +208,15 @@ while num_frames < args.frames:
             for env_id, env_key in enumerate(G.nodes):
                 if env_id in head_menv.synthesized_returns.keys():
                     writer.add_scalar("return_{}".format(env_key),
-                                    head_menv.synthesized_returns[env_id],
-                                    i)
+                                      head_menv.synthesized_returns[env_id],
+                                      i)
                     if hasattr(head_menv, "lps"):
-                        writer.add_scalar("lp_{}".format(env_key),
-                                        head_menv.lps[env_id],
-                                        i)
+                        writer.add_scalar("alp_{}".format(env_key),
+                                          abs(head_menv.lps[env_id]),
+                                          i)
                 writer.add_scalar("proba_{}".format(env_key),
-                                head_menv.dist[env_id],
-                                i)
+                                  head_menv.dist[env_id],
+                                  i)
 
     # Save obss preprocessor vocabulary and model
 
