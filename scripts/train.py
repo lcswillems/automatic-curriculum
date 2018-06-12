@@ -126,7 +126,7 @@ elif args.graph is not None:
         compute_dist = menv.GraphDistComputer(G_with_ids, compute_dist)
 
     # Create the head of the multi-environments
-    head_menv = menv.HeadMultiEnv(args.procs, compute_lp, compute_dist)
+    head_menv = menv.HeadMultiEnv(args.procs, num_envs, compute_lp, compute_dist)
 
     # Create all the multi-environments
     envs = [menv.MultiEnv(utils.make_envs_from_graph(G, args.seed + i), head_menv.remotes[i])

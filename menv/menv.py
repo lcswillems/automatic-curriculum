@@ -11,7 +11,8 @@ def recv_conns(conns):
     return data
 
 class HeadMultiEnv:
-    def __init__(self, num_envs, compute_lp=None, compute_dist=None):
+    def __init__(self, num_menvs, num_envs, compute_lp=None, compute_dist=None):
+        self.num_menvs = num_menvs
         self.num_envs = num_envs
         self.compute_lp = compute_lp
         self.compute_dist = compute_dist
@@ -21,7 +22,7 @@ class HeadMultiEnv:
         self.update_dist()
 
     def _init_connections(self):
-        self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_envs)])
+        self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_menvs)])
 
     def _reset_returns(self):
         self.returns = {env_id: [] for env_id in range(self.num_envs)}
