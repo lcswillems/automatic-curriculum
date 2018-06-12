@@ -215,7 +215,8 @@ while num_frames < args.frames:
                                           i)
                 if args.exp_graph:
                     writer.add_scalar("focus_{}".format(env_key),
-                                      int(compute_dist.focusing[env_id]))
+                                      int(compute_dist.focusing[env_id]),
+                                      i)
                 writer.add_scalar("proba_{}".format(env_key),
                                   head_menv.dist[env_id],
                                   i)

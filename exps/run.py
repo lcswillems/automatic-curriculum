@@ -62,7 +62,7 @@ for seed, graph, lp_cp, K, dist_cp, ε, exp_graph in itertools.product(seeds, gr
     model_name = "{}_{}_{}_K{}_eps{}_eg{}/seed{}".format(graph, lp_cp, dist_cp, K, ε, exp_graph, seed)
     exp_graph = "--exp-graph" if exp_graph else ""
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --lp-K {} --dist {} --dist-eps {} {} --model {} --save-interval 10"
+        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --lp {} --lp-K {} --dist {} --dist-eps {} {} --model {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(cluster_cmd if not args.no_cluster else "",
                 seed, graph, lp_cp, K, dist_cp, ε, exp_graph, model_name),
         shell=True)
