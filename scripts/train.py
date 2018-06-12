@@ -99,11 +99,12 @@ utils.seed(args.seed)
 if args.env is not None:
     envs = utils.make_envs(args.env, args.seed, args.procs)
 elif args.graph is not None:
-    assert args.procs == 1, "No more processes allowed for the moment"
+    # Load the graph and IDify it
+    G = utils.load_graph(args.graph)
+    G_with_ids = utils.idify_graph(G)
 
-    G = utils.make_envs_graph(args.graph, args.seed)
+    # Create the good learning progress computer
     num_envs = len(G.nodes)
-
     compute_lp = {
         "Online": menv.OnlineLpComputer(num_envs, args.lp_alpha),
         "AbsOnline": menv.AbsOnlineLpComputer(num_envs, args.lp_alpha),
@@ -113,6 +114,7 @@ elif args.graph is not None:
         None: None
     }[args.lp]
 
+    # Create the good distribution computer
     compute_dist = {
         "GreedyAmax": menv.GreedyAmaxDistComputer(args.dist_eps),
         "GreedyProp": menv.GreedyPropDistComputer(args.dist_eps),
@@ -121,11 +123,14 @@ elif args.graph is not None:
         None: None
     }[args.dist]
     if args.exp_graph:
-        compute_dist = menv.GraphDistComputer(G, compute_dist)
-    
-    env = menv.MultiEnv(G, compute_lp, compute_dist)
-    menv_logger = menv.MultiEnvLogger(env, writer)
-    envs = [env]
+        compute_dist = menv.GraphDistComputer(G_with_ids, compute_dist)
+
+    # Create the head of the multi-environments
+    head_menv = menv.HeadMultiEnv(args.procs, compute_lp, compute_dist)
+
+    # Create all the multi-environments
+    envs = [menv.MultiEnv(utils.make_envs_from_graph(G, args.seed + i), head_menv.remotes[i])
+            for i in range(args.procs)]
 
 # Define obss preprocessor
 
@@ -162,8 +167,8 @@ while num_frames < args.frames:
     update_start_time = time.time()
     logs = algo.update_parameters()
     if args.graph is not None:
-        envs[0].update_dist()
-        menv_logger.log()
+        head_menv.update_dist()
+        print(head_menv.dist)
     update_end_time = time.time()
     
     num_frames += logs["num_frames"]
@@ -198,6 +203,20 @@ while num_frames < args.frames:
         writer.add_scalar("value", logs["value"], i)
         writer.add_scalar("policy_loss", logs["policy_loss"], i)
         writer.add_scalar("value_loss", logs["value_loss"], i)
+
+        if args.graph is not None:
+            for env_id, env_key in enumerate(G.nodes):
+                if env_id in head_menv.synthesized_returns.keys():
+                    writer.add_scalar("return_{}".format(env_key),
+                                    head_menv.synthesized_returns[env_id],
+                                    i)
+                    if hasattr(head_menv, "lps"):
+                        writer.add_scalar("lp_{}".format(env_key),
+                                        head_menv.lps[env_id],
+                                        i)
+                writer.add_scalar("proba_{}".format(env_key),
+                                head_menv.dist[env_id],
+                                i)
 
     # Save obss preprocessor vocabulary and model
 

@@ -18,7 +18,7 @@ except ValueError:
 
 # Evaluate on each environment of the graph
 
-for env_id in utils.get_graph_env_ids(graph_id):
-    print("> Env: {}".format(env_id))    
-    command = ["python -m scripts.evaluate --env {}".format(env_id)] + args
+for env_key in utils.load_graph(graph_id).nodes:
+    print("> Env: {}".format(env_key))    
+    command = ["python -m scripts.evaluate --env {}".format(env_key)] + args
     call(" ".join(command), shell=True)

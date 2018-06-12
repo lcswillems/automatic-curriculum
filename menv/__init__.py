@@ -1,4 +1,3 @@
 from menv.dist import *
 from menv.lp import *
-from menv.logger import MultiEnvLogger
-from menv.menv import MultiEnv
+from menv.menv import HeadMultiEnv, MultiEnv
