@@ -107,9 +107,7 @@ elif args.graph is not None:
     num_envs = len(G.nodes)
     compute_lp = {
         "Online": menv.OnlineLpComputer(num_envs, args.lp_alpha),
-        "AbsOnline": menv.AbsOnlineLpComputer(num_envs, args.lp_alpha),
         "Window": menv.WindowLpComputer(num_envs, args.lp_alpha, args.lp_K),
-        "AbsWindow": menv.AbsWindowLpComputer(num_envs, args.lp_alpha, args.lp_K),
         "Linreg": menv.LinregLpComputer(num_envs, args.lp_K),
         None: None
     }[args.lp]
