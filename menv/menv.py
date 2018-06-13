@@ -11,14 +11,14 @@ def recv_conns(conns):
     return data
 
 class HeadMultiEnv:
-    def __init__(self, num_menvs, num_envs, compute_lp=None, compute_dist=None):
+    def __init__(self, num_menvs, num_envs, compute_dist=None):
         self.num_menvs = num_menvs
         self.num_envs = num_envs
-        self.compute_lp = compute_lp
         self.compute_dist = compute_dist
 
         self._init_connections()
         self._reset_returns()
+        self.dist = numpy.ones((self.num_envs))/self.num_envs
         self.update_dist()
 
     def _init_connections(self):
@@ -47,11 +47,8 @@ class HeadMultiEnv:
         self._synthesize_returns()
         self._reset_returns()
 
-        if self.compute_lp is not None and self.compute_dist is not None:
-            self.lps = self.compute_lp(self.synthesized_returns)
-            self.dist = self.compute_dist(self.lps)
-        else:
-            self.dist = numpy.ones((self.num_envs))/self.num_envs
+        if self.compute_dist is not None:
+            self.dist = self.compute_dist(self.synthesized_returns)
 
         self._send_dist()
 

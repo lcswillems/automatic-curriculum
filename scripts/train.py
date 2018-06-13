@@ -17,20 +17,20 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
 parser.add_argument("--graph", default=None,
                     help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--lp", default="Linreg",
+parser.add_argument("--dist-cp", default="Lp",
+                    help="name of the distribution computer (default: Lp)")
+parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
-parser.add_argument("--lp-alpha", type=float, default=0.1,
+parser.add_argument("--dist-cr", default="GreedyProp",
+                    help="name of the distribution creator (default: GreedyProp)")
+parser.add_argument("--dist-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
-parser.add_argument("--lp-K", type=int, default=10,
+parser.add_argument("--dist-K", type=int, default=10,
                     help="window size for some learning progress computers (default: 10)")
-parser.add_argument("--dist", default="GreedyProp",
-                    help="name of the distribution computer (default: GreedyProp)")
 parser.add_argument("--dist-eps", type=float, default=0.1,
-                    help="exploration coefficient for some distribution computers (default: 0.1)")
+                    help="exploration coefficient for some distribution creators (default: 0.1)")
 parser.add_argument("--dist-tau", type=float, default=4e-4,
-                    help="temperature for Boltzmann distribution computer (default: 4e-4)")
-parser.add_argument("--exp-graph", action="store_true", default=False,
-                    help="exploit the graph organization of environments for computing distribution (default: False)")
+                    help="temperature for Boltzmann distribution creator (default: 4e-4)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -103,30 +103,35 @@ elif args.graph is not None:
     G = utils.load_graph(args.graph)
     G_with_ids = utils.idify_graph(G)
 
-    # Create the good learning progress computer
+    # Instantiate the learning progress computer
     num_envs = len(G.nodes)
     compute_lp = {
-        "Online": menv.OnlineLpComputer(num_envs, args.lp_alpha),
-        "Window": menv.WindowLpComputer(num_envs, args.lp_alpha, args.lp_K),
-        "Linreg": menv.LinregLpComputer(num_envs, args.lp_K),
-        None: None
-    }[args.lp]
+        "Online": menv.OnlineLpComputer(num_envs, args.dist_alpha),
+        "Window": menv.WindowLpComputer(num_envs, args.dist_alpha, args.dist_K),
+        "Linreg": menv.LinregLpComputer(num_envs, args.dist_K),
+        "None": None
+    }[args.lp_cp]
 
-    # Create the good distribution computer
+    # Instantiate the distribution creator
+    create_dist = {
+        "GreedyAmax": menv.GreedyAmaxDistCreator(args.dist_eps),
+        "GreedyProp": menv.GreedyPropDistCreator(args.dist_eps),
+        "ClippedProp": menv.ClippedPropDistCreator(args.dist_eps),
+        "Boltzmann": menv.BoltzmannDistCreator(args.dist_tau),
+        "None": None
+    }[args.dist_cr]
+
+    # Instantiate the distribution computer
     compute_dist = {
-        "GreedyAmax": menv.GreedyAmaxDistComputer(args.dist_eps),
-        "GreedyProp": menv.GreedyPropDistComputer(args.dist_eps),
-        "ClippedProp": menv.ClippedPropDistComputer(args.dist_eps),
-        "Boltzmann": menv.BoltzmannDistComputer(args.dist_tau),
-        None: None
-    }[args.dist]
-    if args.exp_graph:
-        compute_dist = menv.GraphDistComputer(G_with_ids, compute_dist)
+        "Lp": menv.LpDistComputer(compute_lp, create_dist),
+        "ActiveGraph": menv.ActiveGraphDistComputer(G_with_ids, compute_lp, create_dist),
+        "None": None
+    }[args.dist_cp]
 
-    # Create the head of the multi-environments
-    head_menv = menv.HeadMultiEnv(args.procs, num_envs, compute_lp, compute_dist)
+    # Instantiate the head of the multi-environments
+    head_menv = menv.HeadMultiEnv(args.procs, num_envs, compute_dist)
 
-    # Create all the multi-environments
+    # Instantiate all the multi-environments
     envs = [menv.MultiEnv(utils.make_envs_from_graph(G, args.seed + i), head_menv.remotes[i])
             for i in range(args.procs)]
 
@@ -203,21 +208,17 @@ while num_frames < args.frames:
 
         if args.graph is not None:
             for env_id, env_key in enumerate(G.nodes):
+                writer.add_scalar("proba_{}".format(env_key),
+                                  head_menv.dist[env_id], i)
                 if env_id in head_menv.synthesized_returns.keys():
                     writer.add_scalar("return_{}".format(env_key),
-                                      head_menv.synthesized_returns[env_id],
-                                      i)
-                    if hasattr(head_menv, "lps"):
-                        writer.add_scalar("alp_{}".format(env_key),
-                                          abs(head_menv.lps[env_id]),
-                                          i)
-                if args.exp_graph:
+                                        head_menv.synthesized_returns[env_id], i)
+                if args.dist_cp in ["ActiveGraph"]:
                     writer.add_scalar("focus_{}".format(env_key),
-                                      int(compute_dist.focusing[env_id]),
-                                      i)
-                writer.add_scalar("proba_{}".format(env_key),
-                                  head_menv.dist[env_id],
-                                  i)
+                                      int(compute_dist.focusing[env_id]), i)
+                if args.dist_cp in ["Lp", "ActiveGraph"]:
+                    writer.add_scalar("lp_{}".format(env_key),
+                                      compute_lp.lps[env_id], i)
 
     # Save obss preprocessor vocabulary and model
 
