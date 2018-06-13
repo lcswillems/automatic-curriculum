@@ -14,8 +14,24 @@ class LpDistComputer(DistComputer):
     
     def __call__(self, returns):
         lps = self.compute_lp(returns)
-        alps = numpy.absolute(lps)
-        dist = self.create_dist(alps)
+        a_lps = numpy.absolute(lps)
+        dist = self.create_dist(a_lps)
+
+        return dist
+
+class LpPotDistComputer(DistComputer):
+    def __init__(self, compute_lp, compute_pot, create_dist, pot_coeff):
+        self.compute_lp = compute_lp
+        self.compute_pot = compute_pot
+        self.create_dist = create_dist
+        self.pot_coeff = pot_coeff
+    
+    def __call__(self, returns):
+        lps = self.compute_lp(returns)
+        pots = self.compute_pot(returns)
+        energies = lps + self.pot_coeff * pots
+        a_energies = numpy.absolute(energies)
+        dist = self.create_dist(a_energies)
 
         return dist
 
@@ -31,7 +47,7 @@ class ActiveGraphDistComputer(DistComputer):
 
     def __call__(self, returns):
         lps = self.compute_lp(returns)
-        alps = numpy.absolute(lps)
+        a_lps = numpy.absolute(lps)
 
         def all_or_none(array):
             return numpy.all(array == True) or numpy.all(array == False)
@@ -41,16 +57,16 @@ class ActiveGraphDistComputer(DistComputer):
             predecessors = list(self.G.predecessors(env_id))
             successors = list(self.G.successors(env_id))
             neighboors = predecessors + successors
-            self.focusing[neighboors] = alps[neighboors] > alps[env_id]
+            self.focusing[neighboors] = a_lps[neighboors] > a_lps[env_id]
             if (numpy.any(self.focusing[predecessors + successors]) and all_or_none(self.focusing[predecessors]) and all_or_none(self.focusing[successors])):
                 self.focusing[env_id] = False
 
         focused_env_ids = numpy.argwhere(self.focusing == True).reshape(-1)
-        dist = numpy.zeros(len(alps))
-        for env_id, proba in enumerate(self.create_dist(alps[focused_env_ids])):
+        dist = numpy.zeros(len(a_lps))
+        for env_id, proba in enumerate(self.create_dist(a_lps[focused_env_ids])):
             predecessors = list(self.G.predecessors(env_id))
             successors = list(self.G.successors(env_id))
             family = [env_id] + predecessors + successors
-            dist[family] += proba*self.create_dist(alps[family])
+            dist[family] += proba*self.create_dist(a_lps[family])
 
         return dist
