@@ -19,20 +19,22 @@ class PotComputer(ABC):
         pass
 
 class VariablePotComputer(PotComputer):
-    def __init__(self, num_envs, K, max_returns=None):
+    def __init__(self, num_envs, K, returns=None, max_returns=None):
         super().__init__(num_envs)
 
+        returns = [float("+inf")]*self.num_envs if returns is None else returns
         self.max_returns = [float("-inf")]*self.num_envs if max_returns is None else max_returns
         self.K = K
 
-        self.min_returns = [float("+inf")]*self.num_envs
+        for env_id in range(len(self.pots)):
+            returnn = returns[env_id]
+            max_return = self.max_returns[env_id]
+            self.pots[env_id] = max(max_return - returnn, 0)
 
     def _compute_pot(self, env_id):
         returns = self.returns[env_id][-self.K:]
-        mean_return = numpy.mean(returns)
-        min_return = min(self.min_returns[env_id], mean_return)
-        max_return = max(self.max_returns[env_id], mean_return)
-        self.pots[env_id] = (mean_return - min_return) / (max_return - min_return)
+        returnn = numpy.mean(returns)
+        max_return = max(self.max_returns[env_id], returnn)
+        self.pots[env_id] = max_return - returnn
         if len(returns) >= self.K:
-            self.min_returns[env_id] = min_return
             self.max_returns[env_id] = max_return
