@@ -23,9 +23,10 @@ class VariablePotComputer(PotComputer):
         super().__init__(len(max_returns))
 
         self.max_returns = max_returns
-        self.min_returns = [float("+inf")] * self.num_envs
         self.K = K
     
+        self.min_returns = [float("+inf")] * self.num_envs
+
     def _compute_pot(self, env_id):
         returns = self.returns[env_id][-self.K:]
         mean_return = numpy.mean(returns)
