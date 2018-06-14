@@ -53,9 +53,10 @@ class HeadMultiEnv:
         self._send_dist()
 
 class MultiEnv:
-    def __init__(self, envs, head_conn):
+    def __init__(self, envs, head_conn, seed=None):
         self.envs = envs
         self.head_conn = head_conn
+        self.rng = numpy.random.RandomState(seed)
 
         self.num_envs = len(envs)
         self.returnn = None
@@ -71,7 +72,7 @@ class MultiEnv:
 
     def _select_env(self):
         self._recv_dist()
-        self.env_id = numpy.random.choice(range(self.num_envs), p=self.dist)
+        self.env_id = self.rng.choice(range(self.num_envs), p=self.dist)
         self.env = self.envs[self.env_id]
     
     def _send_return(self):

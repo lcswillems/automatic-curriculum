@@ -145,7 +145,7 @@ elif args.graph is not None:
     head_menv = menv.HeadMultiEnv(args.procs, num_envs, compute_dist)
 
     # Instantiate all the multi-environments
-    envs = [menv.MultiEnv(utils.make_envs_from_graph(G, args.seed + i), head_menv.remotes[i])
+    envs = [menv.MultiEnv(utils.make_envs_from_graph(G, args.seed + i), head_menv.remotes[i], args.seed + i)
             for i in range(args.procs)]
 
 # Define obss preprocessor
