@@ -18,7 +18,8 @@ graphs = [
     # "BabyAI-KeyCorridor"
 ]
 dist_cps = [
-    "Lp",
+    # "Lp",
+    "LpPot",
     # "ActiveGraph"
 ]
 lp_cps = [
