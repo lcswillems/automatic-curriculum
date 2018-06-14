@@ -25,9 +25,7 @@ dist_cps = [
 lp_cps = [
     "Linreg",
     # "Window",
-    # "AbsWindow",
     # "Online",
-    # "AbsOnline"
 ]
 dist_crs = [
     "GreedyProp",
