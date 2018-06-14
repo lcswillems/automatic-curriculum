@@ -185,7 +185,7 @@ while num_frames < args.frames:
     if args.graph is not None:
         head_menv.update_dist()
     update_end_time = time.time()
-    
+
     num_frames += logs["num_frames"]
     i += 1
 
@@ -200,24 +200,25 @@ while num_frames < args.frames:
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
         logger.info(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
+            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f} | ∇ {:.3f}"
             .format(i, num_frames, fps, duration,
                     *rreturn_per_episode.values(),
                     *num_frames_per_episode.values(),
-                    logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]))
-        writer.add_scalar("frames", num_frames, i)
-        writer.add_scalar("FPS", fps, i)
-        writer.add_scalar("duration", total_ellapsed_time, i)
+                    logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"], logs["grad_norm"]))
+        writer.add_scalar("frames", num_frames, num_frames)
+        writer.add_scalar("FPS", fps, num_frames)
+        writer.add_scalar("duration", total_ellapsed_time, num_frames)
         for key, value in return_per_episode.items():
-            writer.add_scalar("return_" + key, value, i)
+            writer.add_scalar("return_" + key, value, num_frames)
         for key, value in rreturn_per_episode.items():
-            writer.add_scalar("rreturn_" + key, value, i)
+            writer.add_scalar("rreturn_" + key, value, num_frames)
         for key, value in num_frames_per_episode.items():
-            writer.add_scalar("num_frames_" + key, value, i)
-        writer.add_scalar("entropy", logs["entropy"], i)
-        writer.add_scalar("value", logs["value"], i)
-        writer.add_scalar("policy_loss", logs["policy_loss"], i)
-        writer.add_scalar("value_loss", logs["value_loss"], i)
+            writer.add_scalar("num_frames_" + key, value, num_frames)
+        writer.add_scalar("entropy", logs["entropy"], num_frames)
+        writer.add_scalar("value", logs["value"], num_frames)
+        writer.add_scalar("policy_loss", logs["policy_loss"], num_frames)
+        writer.add_scalar("value_loss", logs["value_loss"], num_frames)
+        writer.add_scalar("grad_norm", logs["grad_norm"], num_frames)
 
         if args.graph is not None:
             for env_id, env_key in enumerate(G.nodes):
