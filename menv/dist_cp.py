@@ -13,8 +13,8 @@ class LpDistComputer(DistComputer):
         self.create_dist = create_dist
     
     def __call__(self, returns):
-        lps = self.compute_lp(returns)
-        a_lps = numpy.absolute(lps)
+        self.lps = self.compute_lp(returns)
+        a_lps = numpy.absolute(self.lps)
         dist = self.create_dist(a_lps)
 
         return dist
@@ -27,10 +27,10 @@ class LpPotDistComputer(DistComputer):
         self.pot_coeff = pot_coeff
     
     def __call__(self, returns):
-        lps = self.compute_lp(returns)
-        pots = self.compute_pot(returns)
-        energies = lps + self.pot_coeff * pots
-        a_energies = numpy.absolute(energies)
+        self.lps = self.compute_lp(returns)
+        self.pots = self.compute_pot(returns)
+        self.energies = self.lps + self.pot_coeff * self.pots
+        a_energies = numpy.absolute(self.energies)
         dist = self.create_dist(a_energies)
 
         return dist
@@ -46,8 +46,8 @@ class ActiveGraphDistComputer(DistComputer):
         self.focusing = numpy.array([idegree == 0 for env, idegree in G.in_degree()])
 
     def __call__(self, returns):
-        lps = self.compute_lp(returns)
-        a_lps = numpy.absolute(lps)
+        self.lps = self.compute_lp(returns)
+        a_lps = numpy.absolute(self.lps)
 
         def all_or_none(array):
             return numpy.all(array == True) or numpy.all(array == False)
