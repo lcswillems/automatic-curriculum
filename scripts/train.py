@@ -229,9 +229,14 @@ while num_frames < args.frames:
                 if args.dist_cp in ["ActiveGraph"]:
                     writer.add_scalar("focus_{}".format(env_key),
                                       int(compute_dist.focusing[env_id]), i)
-                if args.dist_cp in ["Lp", "ActiveGraph"]:
+                if args.dist_cp in ["Lp", "LpPot", "ActiveGraph"]:
                     writer.add_scalar("lp_{}".format(env_key),
-                                      compute_lp.lps[env_id], i)
+                                      compute_dist.lps[env_id], i)
+                if args.dist_cp in ["LpPot"]:
+                    writer.add_scalar("pot_{}".format(env_key),
+                                      compute_dist.pots[env_id], i)
+                    writer.add_scalar("energy_{}".format(env_key),
+                                      compute_dist.energies[env_id], i)
 
     # Save obss preprocessor vocabulary and model
 
