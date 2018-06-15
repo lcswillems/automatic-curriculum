@@ -28,4 +28,4 @@ from utils.env import make_env
 from utils.format import ObssPreprocessor, reshape_reward
 from utils.graph import load_graph, make_envs_from_graph, idify_graph
 from utils.log import synthesize, get_logger
-from utils.model import load_model, save_model
+from utils.model import model_exists, load_model, save_model, load_status, save_status
