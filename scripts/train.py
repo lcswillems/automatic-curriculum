@@ -232,21 +232,22 @@ while num_frames < args.frames:
         if args.graph is not None:
             for env_id, env_key in enumerate(G.nodes):
                 writer.add_scalar("proba_{}".format(env_key),
-                                  head_menv.dist[env_id], i)
+                                  head_menv.dist[env_id], num_frames)
                 if env_id in head_menv.synthesized_returns.keys():
                     writer.add_scalar("return_{}".format(env_key),
-                                        head_menv.synthesized_returns[env_id], i)
+                                      head_menv.synthesized_returns[env_id], num_frames)
                 if args.dist_cp in ["ActiveGraph"]:
                     writer.add_scalar("focus_{}".format(env_key),
-                                      int(compute_dist.focusing[env_id]), i)
+                                      int(compute_dist.focusing[env_id]), num_frames)
                 if args.dist_cp in ["Lp", "LpPot", "ActiveGraph"]:
                     writer.add_scalar("lp_{}".format(env_key),
-                                      compute_dist.lps[env_id], i)
+                                      compute_dist.lps[env_id], num_frames)
+                if args.dist_cp in ["Lp", "LpPot"]:
+                    writer.add_scalar("attention_{}".format(env_key),
+                                      compute_dist.attentions[env_id], num_frames)
                 if args.dist_cp in ["LpPot"]:
                     writer.add_scalar("pot_{}".format(env_key),
-                                      compute_dist.pots[env_id], i)
-                    writer.add_scalar("energy_{}".format(env_key),
-                                      compute_dist.energies[env_id], i)
+                                      compute_dist.pots[env_id], num_frames)
 
     # Save obss preprocessor, vocabulary and model
 

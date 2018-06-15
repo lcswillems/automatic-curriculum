@@ -11,11 +11,11 @@ class LpDistComputer(DistComputer):
     def __init__(self, compute_lp, create_dist):
         self.compute_lp = compute_lp
         self.create_dist = create_dist
-    
+
     def __call__(self, returns):
         self.lps = self.compute_lp(returns)
-        a_lps = numpy.absolute(self.lps)
-        dist = self.create_dist(a_lps)
+        self.attentions = numpy.absolute(self.lps)
+        dist = self.create_dist(self.attentions)
 
         return dist
 
@@ -25,13 +25,12 @@ class LpPotDistComputer(DistComputer):
         self.compute_pot = compute_pot
         self.create_dist = create_dist
         self.pot_coeff = pot_coeff
-    
+
     def __call__(self, returns):
         self.lps = self.compute_lp(returns)
         self.pots = self.compute_pot(returns)
-        self.energies = self.lps + self.pot_coeff * self.pots
-        a_energies = numpy.absolute(self.energies)
-        dist = self.create_dist(a_energies)
+        self.attentions = numpy.absolute(self.lps) + self.pot_coeff * self.pots
+        dist = self.create_dist(self.attentions)
 
         return dist
 
