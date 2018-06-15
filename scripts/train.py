@@ -101,7 +101,9 @@ utils.seed(args.seed)
 # Generate environments
 
 if args.env is not None:
-    envs = utils.make_envs(args.env, args.seed, args.procs)
+    envs = []
+    for i in range(args.procs):
+        envs.append(utils.make_env(args.env, args.seed + 10000*i))
 elif args.graph is not None:
     # Load the graph and IDify it
     G = utils.load_graph(args.graph)
@@ -145,8 +147,10 @@ elif args.graph is not None:
     head_menv = menv.HeadMultiEnv(args.procs, num_envs, compute_dist)
 
     # Instantiate all the multi-environments
-    envs = [menv.MultiEnv(utils.make_envs_from_graph(G, args.seed + i), head_menv.remotes[i], args.seed + i)
-            for i in range(args.procs)]
+    envs = []
+    for i in range(args.procs):
+        seed = args.seed + 10000*i
+        envs.append(menv.MultiEnv(utils.make_envs_from_graph(G, seed), head_menv.remotes[i], seed))
 
 # Define obss preprocessor
 
