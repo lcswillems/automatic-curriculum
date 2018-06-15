@@ -140,6 +140,7 @@ elif args.graph is not None:
     compute_dist = {
         "Lp": menv.LpDistComputer(compute_lp, create_dist),
         "LpRwpot": menv.LpRwpotDistComputer(compute_lp, compute_rwpot, create_dist, args.pot_coeff),
+        "LpLppot": menv.LpLppotDistComputer(G_with_ids, compute_lp, compute_rwpot, create_dist, args.pot_coeff),
         "ActiveGraph": menv.ActiveGraphDistComputer(G_with_ids, compute_lp, create_dist),
         "None": None
     }[args.dist_cp]
@@ -239,15 +240,18 @@ while num_frames < args.frames:
                 if args.dist_cp in ["ActiveGraph"]:
                     writer.add_scalar("focus_{}".format(env_key),
                                       int(compute_dist.focusing[env_id]), num_frames)
-                if args.dist_cp in ["Lp", "LpRwpot", "ActiveGraph"]:
+                if args.dist_cp in ["Lp", "LpRwpot", "LpLppot", "ActiveGraph"]:
                     writer.add_scalar("lp_{}".format(env_key),
                                       compute_dist.lps[env_id], num_frames)
-                if args.dist_cp in ["Lp", "LpRwpot"]:
+                if args.dist_cp in ["Lp", "LpRwpot", "LpLppot"]:
                     writer.add_scalar("attention_{}".format(env_key),
                                       compute_dist.attentions[env_id], num_frames)
-                if args.dist_cp in ["LpRwpot"]:
+                if args.dist_cp in ["LpRwpot", "LpLppot"]:
                     writer.add_scalar("rwpot_{}".format(env_key),
                                       compute_dist.rwpots[env_id], num_frames)
+                if args.dist_cp in ["LpLppot"]:
+                    writer.add_scalar("lppot_{}".format(env_key),
+                                      compute_dist.lppots[env_id], num_frames)
 
     # Save obss preprocessor, vocabulary and model
 

@@ -20,6 +20,7 @@ graphs = [
 dist_cps = [
     # "Lp",
     "LpRwpot",
+    "LpLppot",
     # "ActiveGraph"
 ]
 lp_cps = [
