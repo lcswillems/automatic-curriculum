@@ -17,12 +17,12 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
 parser.add_argument("--graph", default=None,
                     help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--dist-cp", default="LpPot",
-                    help="name of the distribution computer (default: LpPot)")
+parser.add_argument("--dist-cp", default="LpRwpot",
+                    help="name of the distribution computer (default: LpRwpot)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
-parser.add_argument("--pot-cp", default="Variable",
-                    help="name of the potential computer (default: Variable)")
+parser.add_argument("--rwpot-cp", default="Variable",
+                    help="name of the reward potential computer (default: Variable)")
 parser.add_argument("--dist-cr", default="GreedyProp",
                     help="name of the distribution creator (default: GreedyProp)")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
@@ -34,7 +34,7 @@ parser.add_argument("--dist-eps", type=float, default=0.1,
 parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution creator (default: 4e-4)")
 parser.add_argument("--pot-coeff", type=float, default=0.1,
-                    help="potential term coefficient in energy (default: 0.1)")
+                    help="potential term coefficient in attention (default: 0.1)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -119,13 +119,13 @@ elif args.graph is not None:
         "None": None
     }[args.lp_cp]
 
-    # Instantiate the potential computer
+    # Instantiate the reward potential computer
     returns = [0]*num_envs
     max_returns = [0.5]*num_envs
-    compute_pot = {
-        "Variable": menv.VariablePotComputer(num_envs, args.dist_K, returns, max_returns),
+    compute_rwpot = {
+        "Variable": menv.VariableRwpotComputer(num_envs, args.dist_K, returns, max_returns),
         "None": None
-    }[args.pot_cp]
+    }[args.rwpot_cp]
 
     # Instantiate the distribution creator
     create_dist = {
@@ -139,7 +139,7 @@ elif args.graph is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(compute_lp, create_dist),
-        "LpPot": menv.LpPotDistComputer(compute_lp, compute_pot, create_dist, args.pot_coeff),
+        "LpRwpot": menv.LpRwpotDistComputer(compute_lp, compute_rwpot, create_dist, args.pot_coeff),
         "ActiveGraph": menv.ActiveGraphDistComputer(G_with_ids, compute_lp, create_dist),
         "None": None
     }[args.dist_cp]
@@ -239,15 +239,15 @@ while num_frames < args.frames:
                 if args.dist_cp in ["ActiveGraph"]:
                     writer.add_scalar("focus_{}".format(env_key),
                                       int(compute_dist.focusing[env_id]), num_frames)
-                if args.dist_cp in ["Lp", "LpPot", "ActiveGraph"]:
+                if args.dist_cp in ["Lp", "LpRwpot", "ActiveGraph"]:
                     writer.add_scalar("lp_{}".format(env_key),
                                       compute_dist.lps[env_id], num_frames)
-                if args.dist_cp in ["Lp", "LpPot"]:
+                if args.dist_cp in ["Lp", "LpRwpot"]:
                     writer.add_scalar("attention_{}".format(env_key),
                                       compute_dist.attentions[env_id], num_frames)
-                if args.dist_cp in ["LpPot"]:
-                    writer.add_scalar("pot_{}".format(env_key),
-                                      compute_dist.pots[env_id], num_frames)
+                if args.dist_cp in ["LpRwpot"]:
+                    writer.add_scalar("rwpot_{}".format(env_key),
+                                      compute_dist.rwpots[env_id], num_frames)
 
     # Save obss preprocessor, vocabulary and model
 

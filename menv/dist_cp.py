@@ -19,17 +19,17 @@ class LpDistComputer(DistComputer):
 
         return dist
 
-class LpPotDistComputer(DistComputer):
-    def __init__(self, compute_lp, compute_pot, create_dist, pot_coeff):
+class LpRwpotDistComputer(DistComputer):
+    def __init__(self, compute_lp, compute_rwpot, create_dist, pot_coeff):
         self.compute_lp = compute_lp
-        self.compute_pot = compute_pot
+        self.compute_rwpot = compute_rwpot
         self.create_dist = create_dist
         self.pot_coeff = pot_coeff
 
     def __call__(self, returns):
         self.lps = self.compute_lp(returns)
-        self.pots = self.compute_pot(returns)
-        self.attentions = numpy.absolute(self.lps) + self.pot_coeff * self.pots
+        self.rwpots = self.compute_rwpot(returns)
+        self.attentions = numpy.absolute(self.lps) + self.pot_coeff * self.rwpots
         dist = self.create_dist(self.attentions)
 
         return dist
