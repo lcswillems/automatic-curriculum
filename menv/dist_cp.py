@@ -48,8 +48,8 @@ class LpLppotDistComputer(DistComputer):
         self.lppots = numpy.zeros(len(self.G.nodes))
         for env_id in range(len(self.lppots)):
             predecessors = list(self.G.predecessors(env_id))
-            predecessors_rwpot = numpy.mean(self.rwpots[predecessors]) if len(predecessors) > 0 else 1
-            self.lppots[env_id] = predecessors_rwpot - self.rwpots[env_id]
+            predecessors_rwpot = numpy.mean(self.rwpots[predecessors]) if len(predecessors) > 0 else 0
+            self.lppots[env_id] = self.rwpots[env_id] - predecessors_rwpot
         self.attentions = numpy.absolute(self.lps) + self.pot_coeff * numpy.absolute(self.lppots)
         dist = self.create_dist(self.attentions)
 
