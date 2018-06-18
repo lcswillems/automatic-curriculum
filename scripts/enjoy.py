@@ -28,7 +28,8 @@ env = utils.make_env(args.env, args.seed)
 
 # Define agent
 
-agent = utils.Agent(args.model, env.observation_space, args.deterministic)
+run_dir = utils.get_run_dir(args.model)
+agent = utils.Agent(run_dir, env.observation_space, args.deterministic)
 
 # Run the agent
 
