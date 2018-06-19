@@ -241,6 +241,8 @@ while num_frames < args.frames:
                                       compute_dist.lps[env_id], num_frames)
                     writer.add_scalar("attention_{}".format(env_key),
                                       compute_dist.attentions[env_id], num_frames)
+                    writer.add_scalar("lp/attention_{}".format(env_key),
+                                      abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id], num_frames)
                 if args.dist_cp in ["LpRwpot", "LpLppot"]:
                     writer.add_scalar("rwpot_{}".format(env_key),
                                       compute_dist.rwpots[env_id], num_frames)
