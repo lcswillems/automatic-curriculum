@@ -141,7 +141,6 @@ elif args.graph is not None:
         "Lp": menv.LpDistComputer(compute_lp, create_dist),
         "LpRwpot": menv.LpRwpotDistComputer(compute_lp, compute_rwpot, create_dist, args.pot_coeff),
         "LpLppot": menv.LpLppotDistComputer(G_with_ids, compute_lp, compute_rwpot, create_dist, args.pot_coeff),
-        "ActiveGraph": menv.ActiveGraphDistComputer(G_with_ids, compute_lp, create_dist),
         "None": None
     }[args.dist_cp]
 
@@ -237,13 +236,9 @@ while num_frames < args.frames:
                 if env_id in head_menv.synthesized_returns.keys():
                     writer.add_scalar("return_{}".format(env_key),
                                       head_menv.synthesized_returns[env_id], num_frames)
-                if args.dist_cp in ["ActiveGraph"]:
-                    writer.add_scalar("focus_{}".format(env_key),
-                                      int(compute_dist.focusing[env_id]), num_frames)
-                if args.dist_cp in ["Lp", "LpRwpot", "LpLppot", "ActiveGraph"]:
+                if args.dist_cp in ["Lp", "LpRwpot", "LpLppot"]:
                     writer.add_scalar("lp_{}".format(env_key),
                                       compute_dist.lps[env_id], num_frames)
-                if args.dist_cp in ["Lp", "LpRwpot", "LpLppot"]:
                     writer.add_scalar("attention_{}".format(env_key),
                                       compute_dist.attentions[env_id], num_frames)
                 if args.dist_cp in ["LpRwpot", "LpLppot"]:
