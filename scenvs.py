@@ -73,6 +73,10 @@ class SCEnv_D1LaIaBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 1, 1, 0, seed)
 
+class SCEnv_D1LaIaBa(SCEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 1, 1, 1, seed)
+
 class SCEnv_D1LuIuBu(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 0.5, 0.5, 0.5, seed)
@@ -112,6 +116,11 @@ register(
 register(
     id="SC-D1LaIaBn-v0",
     entry_point="scenvs:SCEnv_D1LaIaBn"
+)
+
+register(
+    id="SC-D1LaIaBa-v0",
+    entry_point="scenvs:SCEnv_D1LaIaBa"
 )
 
 register(
