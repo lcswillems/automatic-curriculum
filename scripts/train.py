@@ -247,6 +247,10 @@ while num_frames < args.frames:
                 if args.pot_cp in ["Rwpot", "Lppot"]:
                     writer.add_scalar("rwpot_{}".format(env_key),
                                       compute_pot.rwpots[env_id], num_frames)
+                    writer.add_scalar("minrt_{}".format(env_key),
+                                      compute_pot.min_returns[env_id], num_frames)
+                    writer.add_scalar("maxrt_{}".format(env_key),
+                                      compute_pot.max_returns[env_id], num_frames)
                 if args.pot_cp in ["Lppot"]:
                     writer.add_scalar("lppot_{}".format(env_key),
                                       compute_pot.lppots[env_id], num_frames)
