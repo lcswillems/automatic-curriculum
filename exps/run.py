@@ -59,11 +59,12 @@ pot_cfs = [
 ]
 
 times = {
+    "SC-D1LaIaBa": "1:30:0",
+    "SC-D1LuIuBu": "3:0:0",
+    "SC-D4LuIuBu": "6:0:0",
     "BabyAI-BlockedUnlockPickup": "1:30:0",
     "BabyAI-UnlockPickupDist": "4:0:0",
     "BabyAI-FourObjs": "4:0:0",
-    "SC-Edgeless": "4:0:0",
-    "SC-Normal": "4:0:0",
     "BabyAI-FindObj": "4:0:0",
     "BabyAI-KeyCorridor": "4:0:0"
 }

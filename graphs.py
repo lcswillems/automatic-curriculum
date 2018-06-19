@@ -12,29 +12,34 @@ def get_sequence_graph(nodes):
 
 graphs = {}
 
-graphs["SC-Edgeless"] = get_edgeless_graph([
-    "SC-D1LnInBn-v0",
-    "SC-D1LaInBn-v0",
-    "SC-D1LnInBa-v0",
-    "SC-D1LaInBa-v0",
-    "SC-D1LaIaBn-v0",
-    "SC-D2LnInBn-v0",
-    "SC-D4LnInBn-v0",
-    "SC-D4LuIuBu-v0"
+G = nx.DiGraph()
+G.add_edges_from([
+    ("SC-D1LaInBn-v0", "SC-D1LaIaBn-v0"),
+    ("SC-D1LaIaBn-v0", "SC-D1LaIaBa-v0")
 ])
+graphs["SC-D1LaIaBa"] = G
+
+G = nx.DiGraph()
+G.add_edges_from([
+    ("SC-D1LaInBn-v0", "SC-D1LaInBa-v0"),
+    ("SC-D1LaInBa-v0", "SC-D1LuIuBu-v0"),
+    ("SC-D1LnInBn-v0", "SC-D1LnInBa-v0"),
+    ("SC-D1LnInBa-v0", "SC-D1LuIuBu-v0")
+])
+graphs["SC-D1LuIuBu"] = G
 
 G = nx.DiGraph()
 G.add_edges_from([
     ("SC-D1LaInBn-v0", "SC-D1LaIaBn-v0"),
-    ("SC-D1LaIaBn-v0", "SC-D1LaInBa-v0"),
-    ("SC-D1LaInBa-v0", "SC-D4LuIuBu-v0"),
+    ("SC-D1LaIaBn-v0", "SC-D1LaIaBa-v0"),
+    ("SC-D1LaIaBa-v0", "SC-D4LuIuBu-v0"),
     ("SC-D1LnInBn-v0", "SC-D1LnInBa-v0"),
     ("SC-D1LnInBa-v0", "SC-D4LuIuBu-v0"),
     ("SC-D1LnInBn-v0", "SC-D2LnInBn-v0"),
     ("SC-D2LnInBn-v0", "SC-D4LnInBn-v0"),
     ("SC-D4LnInBn-v0", "SC-D4LuIuBu-v0")
 ])
-graphs["SC-Normal"] = G
+graphs["SC-D4LuIuBu"] = G
 
 graphs["BabyAI-BlockedUnlockPickup"] = get_sequence_graph([
     "BabyAI-Unlock-v0",

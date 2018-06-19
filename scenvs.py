@@ -22,7 +22,7 @@ class SCEnv(RoomGridLevel):
     def gen_mission(self):
         door_colors = self._rand_subset(COLOR_NAMES, self.num_doors)
         obj_colors = self._rand_subset(COLOR_NAMES[1:], self.num_doors)
-        
+
         for i in range(self.num_doors):
             vec = DIR_TO_VEC[i]
 
@@ -73,6 +73,10 @@ class SCEnv_D1LaIaBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(1, 1, 1, 0, seed)
 
+class SCEnv_D1LuIuBu(SCEnv):
+    def __init__(self, seed=None):
+        super().__init__(1, 0.5, 0.5, 0.5, seed)
+
 class SCEnv_D2LnInBn(SCEnv):
     def __init__(self, seed=None):
         super().__init__(2, 0, 0, 0, seed)
@@ -108,6 +112,11 @@ register(
 register(
     id="SC-D1LaIaBn-v0",
     entry_point="scenvs:SCEnv_D1LaIaBn"
+)
+
+register(
+    id="SC-D1LuIuBu-v0",
+    entry_point="scenvs:SCEnv_D1LuIuBu"
 )
 
 register(
