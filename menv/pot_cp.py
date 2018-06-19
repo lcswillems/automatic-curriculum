@@ -19,32 +19,34 @@ class PotComputer(ABC):
         pass
 
 class RwpotPotComputer(PotComputer):
-    def __init__(self, num_envs, K, returns=None, max_returns=None):
+    def __init__(self, num_envs, K, min_returns=None, max_returns=None):
         super().__init__(num_envs)
 
         self.K = K
-        returns = [float("+inf")]*self.num_envs if returns is None else returns
+        self.min_returns = [float("+inf")]*self.num_envs if min_returns is None else min_returns
         self.max_returns = [float("-inf")]*self.num_envs if max_returns is None else max_returns
 
         self.rwpots = numpy.zeros((self.num_envs))
         self.pots = self.rwpots
 
         for env_id in range(len(self.rwpots)):
-            returnn = returns[env_id]
+            min_return = self.min_returns[env_id]
             max_return = self.max_returns[env_id]
-            self.rwpots[env_id] = max(max_return - returnn, 0)
+            self.rwpots[env_id] = max(max_return - min_return, 0)
 
     def _compute_pot(self, env_id):
         returns = self.returns[env_id][-self.K:]
         returnn = numpy.mean(returns)
+        min_return = min(self.min_returns[env_id], returnn)
         max_return = max(self.max_returns[env_id], returnn)
         self.rwpots[env_id] = max_return - returnn
         if len(returns) >= self.K:
+            self.min_returns[env_id] = min_return
             self.max_returns[env_id] = max_return
 
 class LppotPotComputer(RwpotPotComputer):
-    def __init__(self, G, K, returns=None, max_returns=None):
-        super().__init__(len(G.nodes), K, returns, max_returns)
+    def __init__(self, G, K, min_returns=None, max_returns=None):
+        super().__init__(len(G.nodes), K, min_returns, max_returns)
 
         self.G = G
 

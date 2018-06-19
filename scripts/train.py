@@ -120,11 +120,11 @@ elif args.graph is not None:
     }[args.lp_cp]
 
     # Instantiate the reward potential computer
-    returns = [0]*num_envs
+    min_returns = [0]*num_envs
     max_returns = [0.5]*num_envs
     compute_pot = {
-        "Rwpot": menv.RwpotPotComputer(num_envs, args.dist_K, returns, max_returns),
-        "Lppot": menv.LppotPotComputer(G_with_ids, args.dist_K, returns, max_returns),
+        "Rwpot": menv.RwpotPotComputer(num_envs, args.dist_K, min_returns, max_returns),
+        "Lppot": menv.LppotPotComputer(G_with_ids, args.dist_K, min_returns, max_returns),
         "None": None
     }[args.pot_cp]
 
