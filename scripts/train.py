@@ -17,12 +17,12 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
 parser.add_argument("--graph", default=None,
                     help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--dist-cp", default="LpRwpot",
-                    help="name of the distribution computer (default: LpRwpot)")
+parser.add_argument("--dist-cp", default="LpPot",
+                    help="name of the distribution computer (default: LpPot)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
-parser.add_argument("--rwpot-cp", default="Variable",
-                    help="name of the reward potential computer (default: Variable)")
+parser.add_argument("--pot-cp", default="Lppot",
+                    help="name of the reward potential computer (default: Lppot)")
 parser.add_argument("--dist-cr", default="GreedyProp",
                     help="name of the distribution creator (default: GreedyProp)")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
@@ -122,10 +122,11 @@ elif args.graph is not None:
     # Instantiate the reward potential computer
     returns = [0]*num_envs
     max_returns = [0.5]*num_envs
-    compute_rwpot = {
-        "Variable": menv.VariableRwpotComputer(num_envs, args.dist_K, returns, max_returns),
+    compute_pot = {
+        "Rwpot": menv.RwpotPotComputer(num_envs, args.dist_K, returns, max_returns),
+        "Lppot": menv.LppotPotComputer(G_with_ids, args.dist_K, returns, max_returns),
         "None": None
-    }[args.rwpot_cp]
+    }[args.pot_cp]
 
     # Instantiate the distribution creator
     create_dist = {
@@ -139,8 +140,7 @@ elif args.graph is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(compute_lp, create_dist),
-        "LpRwpot": menv.LpRwpotDistComputer(compute_lp, compute_rwpot, create_dist, args.pot_coeff),
-        "LpLppot": menv.LpLppotDistComputer(G_with_ids, compute_lp, compute_rwpot, create_dist, args.pot_coeff),
+        "LpPot": menv.LpPotDistComputer(compute_lp, compute_pot, create_dist, args.pot_coeff),
         "None": None
     }[args.dist_cp]
 
@@ -236,19 +236,20 @@ while num_frames < args.frames:
                 if env_id in head_menv.synthesized_returns.keys():
                     writer.add_scalar("return_{}".format(env_key),
                                       head_menv.synthesized_returns[env_id], num_frames)
-                if args.dist_cp in ["Lp", "LpRwpot", "LpLppot"]:
+                if args.dist_cp in ["Lp", "LpPot"]:
                     writer.add_scalar("lp_{}".format(env_key),
                                       compute_dist.lps[env_id], num_frames)
                     writer.add_scalar("attention_{}".format(env_key),
                                       compute_dist.attentions[env_id], num_frames)
-                    writer.add_scalar("lp/attention_{}".format(env_key),
-                                      abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id], num_frames)
-                if args.dist_cp in ["LpRwpot", "LpLppot"]:
+                    if compute_dist.attentions[env_id] != 0:
+                        writer.add_scalar("lp_over_attention_{}".format(env_key),
+                                          abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id], num_frames)
+                if args.pot_cp in ["Rwpot", "Lppot"]:
                     writer.add_scalar("rwpot_{}".format(env_key),
-                                      compute_dist.rwpots[env_id], num_frames)
-                if args.dist_cp in ["LpLppot"]:
+                                      compute_pot.rwpots[env_id], num_frames)
+                if args.pot_cp in ["Lppot"]:
                     writer.add_scalar("lppot_{}".format(env_key),
-                                      compute_dist.lppots[env_id], num_frames)
+                                      compute_pot.lppots[env_id], num_frames)
 
     # Save obss preprocessor, vocabulary and model
 
