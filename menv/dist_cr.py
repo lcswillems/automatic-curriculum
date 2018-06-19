@@ -34,22 +34,10 @@ class GreedyPropDistCreator(PropDistCreator):
         uniform = numpy.ones(len(values))/len(values)
         return (1-self.ε)*dist + self.ε*uniform
 
-class ClippedPropDistCreator(PropDistCreator):
-    def __init__(self, ε):
-        self.ε = ε
-
-    def __call__(self, values):
-        dist = super().__call__(values)
-        n = len(dist)
-        γ = numpy.amin(dist)
-        if γ < self.ε/n:
-            dist = (self.ε/n - 1/n)/(γ - 1/n)*(dist - 1/n) + 1/n
-        return dist
-
 class BoltzmannDistCreator(DistCreator):
     def __init__(self, τ):
         self.τ = τ
-    
+
     def __call__(self, values):
         temperatured_values = numpy.exp(values/self.τ)
         return temperatured_values / numpy.sum(temperatured_values)
