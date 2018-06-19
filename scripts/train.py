@@ -33,7 +33,7 @@ parser.add_argument("--dist-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution creators (default: 0.1)")
 parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution creator (default: 4e-4)")
-parser.add_argument("--pot-coeff", type=float, default=0.1,
+parser.add_argument("--pot-coef", type=float, default=0.1,
                     help="potential term coefficient in attention (default: 0.1)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
@@ -140,7 +140,7 @@ elif args.graph is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(compute_lp, create_dist),
-        "LpPot": menv.LpPotDistComputer(compute_lp, compute_pot, create_dist, args.pot_coeff),
+        "LpPot": menv.LpPotDistComputer(compute_lp, compute_pot, create_dist, args.pot_coef),
         "None": None
     }[args.dist_cp]
 

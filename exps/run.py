@@ -83,7 +83,7 @@ for seed, graph, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf in itertools.pro
     model_name = "{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(graph, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
     no_comp = no_comps[graph]
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --dist-cp {} --lp-cp {} --pot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coeff {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
+        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --dist-cp {} --lp-cp {} --pot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(cluster_cmd if not args.no_cluster else "",
                 seed, graph, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
         shell=True)
