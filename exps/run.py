@@ -68,13 +68,24 @@ times = {
     "BabyAI-FindObj": "4:0:0",
     "BabyAI-KeyCorridor": "4:0:0"
 }
+no_comps = {
+    "SC-D1LaIaBa": "--no-instr",
+    "SC-D1LuIuBu": "--no-instr",
+    "SC-D4LuIuBu": "",
+    "BabyAI-BlockedUnlockPickup": "--no-instr",
+    "BabyAI-UnlockPickupDist": "",
+    "BabyAI-FourObjs": "",
+    "BabyAI-FindObj": "",
+    "BabyAI-KeyCorridor": "--no-instr"
+}
 
 for seed, graph, dist_cp, lp_cp, rwpot_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, graphs, dist_cps, lp_cps, rwpot_cps, dist_crs, Ks, εs, pot_cfs):
     cluster_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[graph])
     model_name = "{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(graph, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
+    no_comp = no_comps[graph]
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --dist-cp {} --lp-cp {} --rwpot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coeff {} --model {} --save-interval 10 --procs 1 --frames-per-proc 2048"
+        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --dist-cp {} --lp-cp {} --rwpot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coeff {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(cluster_cmd if not args.no_cluster else "",
-                seed, graph, dist_cp, lp_cp, rwpot_cp, dist_cr, K, ε, pot_cf, model_name),
+                seed, graph, dist_cp, lp_cp, rwpot_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
         shell=True)
     time.sleep(1)
