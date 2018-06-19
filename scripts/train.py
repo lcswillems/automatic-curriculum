@@ -132,7 +132,6 @@ elif args.graph is not None:
     create_dist = {
         "GreedyAmax": menv.GreedyAmaxDistCreator(args.dist_eps),
         "GreedyProp": menv.GreedyPropDistCreator(args.dist_eps),
-        "ClippedProp": menv.ClippedPropDistCreator(args.dist_eps),
         "Boltzmann": menv.BoltzmannDistCreator(args.dist_tau),
         "None": None
     }[args.dist_cr]

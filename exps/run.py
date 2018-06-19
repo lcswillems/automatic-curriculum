@@ -32,7 +32,6 @@ pot_cps = [
 ]
 dist_crs = [
     "GreedyProp",
-    # "ClippedProp",
     # "Boltzmann",
     # "GreedyAmax"
 ]
