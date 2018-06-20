@@ -154,7 +154,7 @@ elif args.graph is not None:
 
 # Define obss preprocessor
 
-obss_preprocessor = utils.ObssPreprocessor(run_dir, envs[0].observation_space)
+preprocess_obss = utils.ObssPreprocessor(run_dir, envs[0].observation_space)
 
 # Define actor-critic model
 
@@ -163,7 +163,7 @@ if utils.model_exists(run_dir):
     status = utils.load_status(run_dir)
     logger.info("Model successfully loaded\n")
 else:
-    acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
+    acmodel = ACModel(preprocess_obss.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
     status = {"num_frames": 0, "i": 0}
     logger.info("Model successfully created\n")
 logger.info("{}\n".format(acmodel))
@@ -176,7 +176,7 @@ logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                        args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
+                        args.optim_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)
 
 # Train model
@@ -257,13 +257,14 @@ while num_frames < args.frames:
     # Save obss preprocessor, vocabulary and model
 
     if args.save_interval > 0 and i % args.save_interval == 0:
-        obss_preprocessor.vocab.save()
+        preprocess_obss.vocab.save()
 
         if torch.cuda.is_available():
             acmodel.cpu()
         utils.save_model(acmodel, run_dir)
-        status = {"num_frames": num_frames, "i": i}
-        utils.save_status(status, run_dir)
         logger.info("Model successfully saved")
         if torch.cuda.is_available():
             acmodel.cuda()
+
+        status = {"num_frames": num_frames, "i": i}
+        utils.save_status(status, run_dir)
