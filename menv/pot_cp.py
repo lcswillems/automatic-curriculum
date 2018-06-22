@@ -1,16 +1,22 @@
 from abc import ABC, abstractmethod
 import numpy
 
+from menv import create_gaussian_smooth_seq
+
+create_return_seq = create_gaussian_smooth_seq
+
 class PotComputer(ABC):
     def __init__(self, num_envs):
         self.num_envs = num_envs
 
-        self.returns = [[] for _ in range(self.num_envs)]
+        self.timestep = 0
+        self.returns = [create_return_seq() for _ in range(self.num_envs)]
         self.pots = None
 
     def __call__(self, returns):
+        self.timestep += 1
         for env_id, returnn in returns.items():
-            self.returns[env_id].append(returnn)
+            self.returns[env_id].append(self.timestep, returnn)
             self._compute_pot(env_id)
         return self.pots
 
@@ -33,7 +39,7 @@ class RwpotPotComputer(PotComputer):
             RwpotPotComputer._compute_pot(self, env_id)
 
     def _compute_pot(self, env_id):
-        returns = self.returns[env_id][-self.K:]
+        _, returns = self.returns[env_id][-self.K:]
         min_return = self.min_returns[env_id]
         max_return = self.max_returns[env_id]
         returnn = min_return
