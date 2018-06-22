@@ -1,22 +1,15 @@
 from abc import ABC, abstractmethod
 import numpy
 
-from menv import create_gaussian_smooth_seq
-
-create_return_seq = create_gaussian_smooth_seq
-
 class PotComputer(ABC):
-    def __init__(self, num_envs):
-        self.num_envs = num_envs
+    def __init__(self, return_hists):
+        self.return_hists = return_hists
 
-        self.timestep = 0
-        self.returns = [create_return_seq() for _ in range(self.num_envs)]
+        self.num_envs = len(self.return_hists)
         self.pots = None
 
-    def __call__(self, returns):
-        self.timestep += 1
-        for env_id, returnn in returns.items():
-            self.returns[env_id].append(self.timestep, returnn)
+    def __call__(self):
+        for env_id in range(self.num_envs):
             self._compute_pot(env_id)
         return self.pots
 
@@ -25,8 +18,8 @@ class PotComputer(ABC):
         pass
 
 class RwpotPotComputer(PotComputer):
-    def __init__(self, num_envs, K, min_returns=None, max_returns=None):
-        super().__init__(num_envs)
+    def __init__(self, return_hists, K, min_returns=None, max_returns=None):
+        super().__init__(return_hists)
 
         self.K = K
         self.min_returns = numpy.full(self.num_envs, numpy.inf) if min_returns is None else numpy.array(min_returns)
@@ -39,7 +32,7 @@ class RwpotPotComputer(PotComputer):
             RwpotPotComputer._compute_pot(self, env_id)
 
     def _compute_pot(self, env_id):
-        _, returns = self.returns[env_id][-self.K:]
+        _, returns = self.return_hists[env_id][-self.K:]
         min_return = self.min_returns[env_id]
         max_return = self.max_returns[env_id]
         returnn = min_return
@@ -53,8 +46,8 @@ class RwpotPotComputer(PotComputer):
             self.max_returns[env_id] = max_return
 
 class LppotPotComputer(RwpotPotComputer):
-    def __init__(self, G, K, min_returns=None, max_returns=None):
-        super().__init__(len(G.nodes), K, min_returns, max_returns)
+    def __init__(self, return_hists, G, K, min_returns=None, max_returns=None):
+        super().__init__(return_hists, K, min_returns, max_returns)
 
         self.G = G
 
@@ -62,7 +55,7 @@ class LppotPotComputer(RwpotPotComputer):
         self.pots = self.lppots
 
         for env_id in range(len(self.lppots)):
-            self._compute_pot(env_id)
+            LppotPotComputer._compute_pot(self, env_id)
 
     def _compute_pot(self, env_id):
         super()._compute_pot(env_id)

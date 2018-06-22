@@ -1,22 +1,15 @@
 from abc import ABC, abstractmethod
 import numpy
 
-from menv.sm_seq import create_gaussian_smooth_seq
-
-create_return_seq = create_gaussian_smooth_seq
-
 class LpComputer(ABC):
-    def __init__(self, num_envs):
-        self.num_envs = num_envs
+    def __init__(self, return_hists):
+        self.return_hists = return_hists
 
-        self.timestep = 0
-        self.returns = [create_return_seq() for _ in range(self.num_envs)]
+        self.num_envs = len(self.return_hists)
         self.lps = numpy.zeros((self.num_envs))
 
-    def __call__(self, returns):
-        self.timestep += 1
-        for env_id, returnn in returns.items():
-            self.returns[env_id].append(self.timestep, returnn)
+    def __call__(self):
+        for env_id in range(self.num_envs):
             self._compute_lp(env_id)
         return self.lps
 
@@ -41,9 +34,9 @@ class TSLpComputer(LpComputer):
 
 class OnlineLpComputer(TSLpComputer):
     def _compute_direct_lp(self, env_id):
-        timesteps, returns = self.returns[env_id][-2:]
+        steps, returns = self.return_hists[env_id][-2:]
         if len(returns) >= 2:
-            return numpy.polyfit(timesteps, returns, 1)[0]
+            return numpy.polyfit(steps, returns, 1)[0]
 
 class WindowLpComputer(TSLpComputer):
     def __init__(self, num_envs, α, K):
@@ -52,9 +45,9 @@ class WindowLpComputer(TSLpComputer):
         self.K = K
 
     def _compute_direct_lp(self, env_id):
-        timesteps, returns = self.returns[env_id][-self.K:]
-        if len(timesteps) >= 2:
-            return numpy.polyfit(timesteps, returns, 1)[0]
+        steps, returns = self.return_hists[env_id][-self.K:]
+        if len(steps) >= 2:
+            return numpy.polyfit(steps, returns, 1)[0]
 
 class LinregLpComputer(LpComputer):
     def __init__(self, num_envs, K):
@@ -63,6 +56,6 @@ class LinregLpComputer(LpComputer):
         self.K = K
 
     def _compute_lp(self, env_id):
-        timesteps, returns = self.returns[env_id][-self.K:]
-        if len(timesteps) >= 2:
-            self.lps[env_id] = numpy.polyfit(timesteps, returns, 1)[0]
+        steps, returns = self.return_hists[env_id][-self.K:]
+        if len(steps) >= 2:
+            self.lps[env_id] = numpy.polyfit(steps, returns, 1)[0]

@@ -17,6 +17,10 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
 parser.add_argument("--graph", default=None,
                     help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
+parser.add_argument("--rt-hist", default="Gaussian",
+                    help="name of the return history (default: Gaussian)")
+parser.add_argument("--rt-sigma", type=int, default=10,
+                    help="standard deviation for gaussian return history (default: 10)")
 parser.add_argument("--dist-cp", default="LpPot",
                     help="name of the distribution computer (default: LpPot)")
 parser.add_argument("--lp-cp", default="Linreg",
@@ -106,16 +110,24 @@ if args.env is not None:
     for i in range(args.procs):
         envs.append(utils.make_env(args.env, args.seed + 10000*i))
 elif args.graph is not None:
-    # Load the graph and IDify it
+    # Load the graph, IDify it and compute the number of environments
     G = utils.load_graph(args.graph)
     G_with_ids = utils.idify_graph(G)
+    num_envs = len(G.nodes)
+
+    # Instantiate the return history for each environment
+    return_hists = [{
+            "Normal": menv.ReturnHistory(),
+            "Gaussian": menv.GaussianReturnHistory(args.rt_sigma),
+        }[args.rt_hist]
+        for _ in range(num_envs)
+    ]
 
     # Instantiate the learning progress computer
-    num_envs = len(G.nodes)
     compute_lp = {
-        "Online": menv.OnlineLpComputer(num_envs, args.dist_alpha),
-        "Window": menv.WindowLpComputer(num_envs, args.dist_alpha, args.dist_K),
-        "Linreg": menv.LinregLpComputer(num_envs, args.dist_K),
+        "Online": menv.OnlineLpComputer(return_hists, args.dist_alpha),
+        "Window": menv.WindowLpComputer(return_hists, args.dist_alpha, args.dist_K),
+        "Linreg": menv.LinregLpComputer(return_hists, args.dist_K),
         "None": None
     }[args.lp_cp]
 
@@ -123,8 +135,8 @@ elif args.graph is not None:
     min_returns = [0]*num_envs
     max_returns = [0.5]*num_envs
     compute_pot = {
-        "Rwpot": menv.RwpotPotComputer(num_envs, args.dist_K, min_returns, max_returns),
-        "Lppot": menv.LppotPotComputer(G_with_ids, args.dist_K, min_returns, max_returns),
+        "Rwpot": menv.RwpotPotComputer(return_hists, args.dist_K, min_returns, max_returns),
+        "Lppot": menv.LppotPotComputer(return_hists, G_with_ids, args.dist_K, min_returns, max_returns),
         "None": None
     }[args.pot_cp]
 
@@ -138,8 +150,8 @@ elif args.graph is not None:
 
     # Instantiate the distribution computer
     compute_dist = {
-        "Lp": menv.LpDistComputer(compute_lp, create_dist),
-        "LpPot": menv.LpPotDistComputer(compute_lp, compute_pot, create_dist, args.pot_coef),
+        "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
+        "LpPot": menv.LpPotDistComputer(return_hists, compute_lp, compute_pot, create_dist, args.pot_coef),
         "None": None
     }[args.dist_cp]
 
@@ -230,28 +242,30 @@ while num_frames < args.frames:
 
         if args.graph is not None:
             for env_id, env_key in enumerate(G.nodes):
-                writer.add_scalar("proba_{}".format(env_key),
+                writer.add_scalar("proba/{}".format(env_key),
                                   head_menv.dist[env_id], num_frames)
                 if env_id in head_menv.synthesized_returns.keys():
-                    writer.add_scalar("return_{}".format(env_key),
+                    writer.add_scalar("return/{}".format(env_key),
                                       head_menv.synthesized_returns[env_id], num_frames)
+                    writer.add_scalar("return_hist/{}".format(env_key),
+                                      compute_dist.return_hists[env_id][-1][1], num_frames)
                 if args.dist_cp in ["Lp", "LpPot"]:
-                    writer.add_scalar("lp_{}".format(env_key),
+                    writer.add_scalar("lp/{}".format(env_key),
                                       compute_dist.lps[env_id], num_frames)
-                    writer.add_scalar("attention_{}".format(env_key),
+                    writer.add_scalar("attention/{}".format(env_key),
                                       compute_dist.attentions[env_id], num_frames)
                     if compute_dist.attentions[env_id] != 0:
-                        writer.add_scalar("lp_over_attention_{}".format(env_key),
+                        writer.add_scalar("lp_over_attention/{}".format(env_key),
                                           abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id], num_frames)
                 if args.pot_cp in ["Rwpot", "Lppot"]:
-                    writer.add_scalar("rwpot_{}".format(env_key),
+                    writer.add_scalar("rwpot/{}".format(env_key),
                                       compute_pot.rwpots[env_id], num_frames)
-                    writer.add_scalar("minrt_{}".format(env_key),
+                    writer.add_scalar("minrt/{}".format(env_key),
                                       compute_pot.min_returns[env_id], num_frames)
-                    writer.add_scalar("maxrt_{}".format(env_key),
+                    writer.add_scalar("maxrt/{}".format(env_key),
                                       compute_pot.max_returns[env_id], num_frames)
                 if args.pot_cp in ["Lppot"]:
-                    writer.add_scalar("lppot_{}".format(env_key),
+                    writer.add_scalar("lppot/{}".format(env_key),
                                       compute_pot.lppots[env_id], num_frames)
 
     # Save obss preprocessor, vocabulary and model
