@@ -10,7 +10,7 @@ def recv_conns(conns):
         wconns = mp.connection.wait(conns, timeout=.0)
     return data
 
-class HeadMultiEnv:
+class MultiEnvHead:
     def __init__(self, num_menvs, num_envs, compute_dist=None):
         self.num_menvs = num_menvs
         self.num_envs = num_envs
@@ -26,12 +26,12 @@ class HeadMultiEnv:
 
     def _reset_returns(self):
         self.returns = {env_id: [] for env_id in range(self.num_envs)}
-    
+
     def _recv_returns(self):
         data = recv_conns(self.locals)
         for env_id, returnn in data:
             self.returns[env_id].append(returnn)
-    
+
     def _synthesize_returns(self):
         self.synthesized_returns = {}
         for env_id, returnn in self.returns.items():
@@ -61,7 +61,7 @@ class MultiEnv:
         self.num_envs = len(envs)
         self.returnn = None
         self.reset()
-    
+
     def __getattr__(self, key):
         return getattr(self.env, key)
 
@@ -74,7 +74,7 @@ class MultiEnv:
         self._recv_dist()
         self.env_id = self.rng.choice(range(self.num_envs), p=self.dist)
         self.env = self.envs[self.env_id]
-    
+
     def _send_return(self):
         if self.returnn is not None:
             self.head_conn.send((self.env_id, self.returnn))

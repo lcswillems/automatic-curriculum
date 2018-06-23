@@ -156,13 +156,13 @@ elif args.graph is not None:
     }[args.dist_cp]
 
     # Instantiate the head of the multi-environments
-    head_menv = menv.HeadMultiEnv(args.procs, num_envs, compute_dist)
+    menv_head = menv.MultiEnvHead(args.procs, num_envs, compute_dist)
 
     # Instantiate all the multi-environments
     envs = []
     for i in range(args.procs):
         seed = args.seed + 10000*i
-        envs.append(menv.MultiEnv(utils.make_envs_from_graph(G, seed), head_menv.remotes[i], seed))
+        envs.append(menv.MultiEnv(utils.make_envs_from_graph(G, seed), menv_head.remotes[i], seed))
 
 # Define obss preprocessor
 
@@ -203,7 +203,7 @@ while num_frames < args.frames:
     update_start_time = time.time()
     logs = algo.update_parameters()
     if args.graph is not None:
-        head_menv.update_dist()
+        menv_head.update_dist()
     update_end_time = time.time()
 
     num_frames += logs["num_frames"]
@@ -243,10 +243,10 @@ while num_frames < args.frames:
         if args.graph is not None:
             for env_id, env_key in enumerate(G.nodes):
                 writer.add_scalar("proba/{}".format(env_key),
-                                  head_menv.dist[env_id], num_frames)
-                if env_id in head_menv.synthesized_returns.keys():
+                                  menv_head.dist[env_id], num_frames)
+                if env_id in menv_head.synthesized_returns.keys():
                     writer.add_scalar("return/{}".format(env_key),
-                                      head_menv.synthesized_returns[env_id], num_frames)
+                                      menv_head.synthesized_returns[env_id], num_frames)
                     writer.add_scalar("return_hist/{}".format(env_key),
                                       compute_dist.return_hists[env_id][-1][1], num_frames)
                 if args.dist_cp in ["Lp", "LpPot"]:
