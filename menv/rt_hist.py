@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 import numpy
 
 class ReturnHistory:
+    """The return history.
+
+    It tracks the return given by an environment over time."""
+
     def __init__(self):
         self.steps = []
         self.returns = []

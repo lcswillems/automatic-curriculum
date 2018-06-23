@@ -3,6 +3,12 @@ import numpy
 import networkx as nx
 
 class DistComputer(ABC):
+    """A distribution computer.
+
+    It receives returns for some environments, updates the return history
+    given by each environment and computes a distribution over
+    environments given these histories of return."""
+
     def __init__(self, return_hists):
         self.return_hists = return_hists
 
@@ -15,6 +21,11 @@ class DistComputer(ABC):
             self.return_hists[env_id].append(self.step, returnn)
 
 class LpDistComputer(DistComputer):
+    """A distribution computer based on learning progress.
+
+    It associates an attention a_i to each environment i that is equal
+    to the learning progress of this environment, i.e. a_i = lp_i."""
+
     def __init__(self, return_hists, compute_lp, create_dist):
         super().__init__(return_hists)
 
@@ -32,6 +43,14 @@ class LpDistComputer(DistComputer):
         return dist
 
 class LpPotDistComputer(DistComputer):
+    """A distribution computer based on learning progress and some
+    potential.
+
+    It associates an attention a_i to each environment i that is a
+    combinaison of the learning progress and potential of this
+    environment, i.e. a_i = lp_i + \alpha pot_i where \alpha is the
+    potential coefficient."""
+
     def __init__(self, return_hists, compute_lp, compute_pot, create_dist, pot_coef):
         super().__init__(return_hists)
 
