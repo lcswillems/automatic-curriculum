@@ -5,6 +5,7 @@ import torch
 import torch_rl
 import os
 import tensorboardX
+import sys
 
 import menv
 import utils
@@ -92,11 +93,15 @@ default_model_name = "{}_seed{}_{}".format(args.env or args.graph, args.seed, su
 model_name = args.model or default_model_name
 run_dir = utils.get_run_dir(model_name)
 
-# Define logger and Tensorboard writer and log script arguments
+# Define logger, CSV writer and Tensorboard writer
 
 logger = utils.get_logger(run_dir)
-writer = tensorboardX.SummaryWriter(run_dir)
+csv_writer = utils.get_csv_writer(run_dir)
+tb_writer = tensorboardX.SummaryWriter(run_dir)
 
+# Log command and all script arguments
+
+logger.info("{}\n".format(" ".join(sys.argv)))
 logger.info("{}\n".format(args))
 
 # Set seed for all randomness sources
@@ -176,7 +181,7 @@ if utils.model_exists(run_dir):
     logger.info("Model successfully loaded\n")
 else:
     acmodel = ACModel(preprocess_obss.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
-    status = {"num_frames": 0, "i": 0}
+    status = {"num_frames": 0, "update": 0}
     logger.info("Model successfully created\n")
 logger.info("{}\n".format(acmodel))
 
@@ -195,10 +200,10 @@ algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args
 
 num_frames = status["num_frames"]
 total_start_time = time.time()
-i = status["i"]
+update = status["update"]
 
 while num_frames < args.frames:
-    # Update parameters
+    # Update model parameters
 
     update_start_time = time.time()
     logs = algo.update_parameters()
@@ -207,11 +212,11 @@ while num_frames < args.frames:
     update_end_time = time.time()
 
     num_frames += logs["num_frames"]
-    i += 1
+    update += 1
 
     # Print logs
 
-    if i % args.log_interval == 0:
+    if update % args.log_interval == 0:
         total_ellapsed_time = int(time.time() - total_start_time)
         fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = datetime.timedelta(seconds=total_ellapsed_time)
@@ -219,58 +224,62 @@ while num_frames < args.frames:
         rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
+        header = ["update", "frames", "FPS", "duration"]
+        data = [update, num_frames, fps, duration]
+        header += ["rreturn_" + key for key in rreturn_per_episode.keys()]
+        data += rreturn_per_episode.values()
+        header += ["num_frames_" + key for key in num_frames_per_episode.keys()]
+        data += num_frames_per_episode.values()
+        header += ["entropy", "value", "policy_loss", "value_loss", "grad_norm"]
+        data += [logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"], logs["grad_norm"]]
+
         logger.info(
             "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f} | ∇ {:.3f}"
-            .format(i, num_frames, fps, duration,
-                    *rreturn_per_episode.values(),
-                    *num_frames_per_episode.values(),
-                    logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"], logs["grad_norm"]))
-        writer.add_scalar("frames", num_frames, num_frames)
-        writer.add_scalar("FPS", fps, num_frames)
-        writer.add_scalar("duration", total_ellapsed_time, num_frames)
-        for key, value in return_per_episode.items():
-            writer.add_scalar("return_" + key, value, num_frames)
-        for key, value in rreturn_per_episode.items():
-            writer.add_scalar("rreturn_" + key, value, num_frames)
-        for key, value in num_frames_per_episode.items():
-            writer.add_scalar("num_frames_" + key, value, num_frames)
-        writer.add_scalar("entropy", logs["entropy"], num_frames)
-        writer.add_scalar("value", logs["value"], num_frames)
-        writer.add_scalar("policy_loss", logs["policy_loss"], num_frames)
-        writer.add_scalar("value_loss", logs["value_loss"], num_frames)
-        writer.add_scalar("grad_norm", logs["grad_norm"], num_frames)
+            .format(*data))
 
+        header += ["return_" + key for key in return_per_episode.keys()]
+        data += return_per_episode.values()
         if args.graph is not None:
             for env_id, env_key in enumerate(G.nodes):
-                writer.add_scalar("proba/{}".format(env_key),
-                                  menv_head.dist[env_id], num_frames)
+                header += ["proba/{}".format(env_key)]
+                data += [menv_head.dist[env_id]]
                 if env_id in menv_head.synthesized_returns.keys():
-                    writer.add_scalar("return/{}".format(env_key),
-                                      menv_head.synthesized_returns[env_id], num_frames)
-                    writer.add_scalar("return_hist/{}".format(env_key),
-                                      compute_dist.return_hists[env_id][-1][1], num_frames)
+                    header += ["return/{}".format(env_key)]
+                    data += [menv_head.synthesized_returns[env_id]]
+                    header += ["return_hist/{}".format(env_key)]
+                    data += [compute_dist.return_hists[env_id][-1][1]]
                 if args.dist_cp in ["Lp", "LpPot"]:
-                    writer.add_scalar("lp/{}".format(env_key),
-                                      compute_dist.lps[env_id], num_frames)
-                    writer.add_scalar("attention/{}".format(env_key),
-                                      compute_dist.attentions[env_id], num_frames)
+                    header += ["lp/{}".format(env_key)]
+                    data += [compute_dist.lps[env_id]]
+                    header += ["attention/{}".format(env_key)]
+                    data += [compute_dist.attentions[env_id]]
                     if compute_dist.attentions[env_id] != 0:
-                        writer.add_scalar("lp_over_attention/{}".format(env_key),
-                                          abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id], num_frames)
+                        header += ["lp_over_attention/{}".format(env_key)]
+                        data += [abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id]]
                 if args.pot_cp in ["Rwpot", "Lppot"]:
-                    writer.add_scalar("rwpot/{}".format(env_key),
-                                      compute_pot.rwpots[env_id], num_frames)
-                    writer.add_scalar("minrt/{}".format(env_key),
-                                      compute_pot.min_returns[env_id], num_frames)
-                    writer.add_scalar("maxrt/{}".format(env_key),
-                                      compute_pot.max_returns[env_id], num_frames)
+                    header += ["rwpot/{}".format(env_key)]
+                    data += [compute_pot.rwpots[env_id]]
+                    header += ["minrt/{}".format(env_key)]
+                    data += [compute_pot.min_returns[env_id]]
+                    header += ["maxrt/{}".format(env_key)]
+                    data += [compute_pot.max_returns[env_id]]
                 if args.pot_cp in ["Lppot"]:
-                    writer.add_scalar("lppot/{}".format(env_key),
-                                      compute_pot.lppots[env_id], num_frames)
+                    header += ["lppot/{}".format(env_key)]
+                    data += [compute_pot.lppots[env_id]]
+
+        if not(status["num_frames"]):
+            csv_writer.writerow(header)
+        csv_writer.writerow(data)
+
+        for field, value in zip(header, data):
+            tb_writer.add_scalar(field, value, num_frames)
+
+        status = {"num_frames": num_frames, "update": update}
+        utils.save_status(status, run_dir)
 
     # Save obss preprocessor, vocabulary and model
 
-    if args.save_interval > 0 and i % args.save_interval == 0:
+    if args.save_interval > 0 and update % args.save_interval == 0:
         preprocess_obss.vocab.save()
 
         if torch.cuda.is_available():
@@ -279,6 +288,3 @@ while num_frames < args.frames:
         logger.info("Model successfully saved")
         if torch.cuda.is_available():
             acmodel.cuda()
-
-        status = {"num_frames": num_frames, "i": i}
-        utils.save_status(status, run_dir)
