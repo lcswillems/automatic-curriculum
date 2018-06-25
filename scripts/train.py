@@ -7,7 +7,7 @@ import os
 import tensorboardX
 import sys
 
-import menv
+import multienv as menv
 import utils
 from model import ACModel
 
