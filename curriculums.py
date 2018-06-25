@@ -14,32 +14,41 @@ curriculums = {}
 
 G = nx.DiGraph()
 G.add_edges_from([
-    ("SC-D1LaInBn-v0", "SC-D1LaIaBn-v0"),
-    ("SC-D1LaIaBn-v0", "SC-D1LaIaBa-v0")
-])
-curriculums["SC-D1LaIaBa"] = G
-
-G = nx.DiGraph()
-G.add_edges_from([
     ("SC-D1LaInBn-v0", "SC-D1LaInBa-v0"),
     ("SC-D1LaInBa-v0", "SC-D1LuIuBu-v0"),
     ("SC-D1LnInBn-v0", "SC-D1LnInBa-v0"),
     ("SC-D1LnInBa-v0", "SC-D1LuIuBu-v0")
 ])
-curriculums["SC-D1LuIuBu"] = G
+curriculums["SC-Soft"] = G
 
 G = nx.DiGraph()
 G.add_edges_from([
-    ("SC-D1LaInBn-v0", "SC-D1LaIaBn-v0"),
-    ("SC-D1LaIaBn-v0", "SC-D1LaIaBa-v0"),
-    ("SC-D1LaIaBa-v0", "SC-D4LuIuBu-v0"),
-    ("SC-D1LnInBn-v0", "SC-D1LnInBa-v0"),
-    ("SC-D1LnInBa-v0", "SC-D4LuIuBu-v0"),
-    ("SC-D1LnInBn-v0", "SC-D2LnInBn-v0"),
-    ("SC-D2LnInBn-v0", "SC-D4LnInBn-v0"),
-    ("SC-D4LnInBn-v0", "SC-D4LuIuBu-v0")
+    # Depth 1
+    ("SC-Soft-Ld-v0", "SC-Soft-LdH-v0"),
+    ("SC-Soft-Ld-v0", "SC-Ld-v0"),
+    # Depth 2
+    ("SC-Soft-LdH-v0", "SC-Soft-LdHB-v0"),
+    ("SC-Soft-LdH-v0", "SC-LdH-v0"),
+    ("SC-Ld-v0", "SC-LdH-v0"),
+    # Depth 3
+    ("SC-Soft-LdHB-v0", "SC-LdHB-v0"),
+    ("SC-LdH-v0", "SC-LdHB-v0"),
+    # Depth 4
+    ("SC-LdHB-v0", "SC-1Q-v0"),
+    # Depth 5
+    ("SC-1Q-v0", "SC-2Q-v0"),
+    # Depth 6
+    ("SC-2Q-v0", "SC-Full-v0"),
 ])
-curriculums["SC-D4LuIuBu"] = G
+curriculums["SC-Soft"] = G
+
+curriculums["SC-Hard"] = get_sequence_graph([
+    "SC-Ld-v0",
+    "SC-LdH-v0",
+    "SC-LdHB-v0",
+    "SC-1Q-v0",
+    "SC-Full-v0"
+])
 
 curriculums["BabyAI-BlockedUnlockPickup"] = get_sequence_graph([
     "BabyAI-Unlock-v0",
@@ -62,6 +71,13 @@ curriculums["BabyAI-FindObj"] = get_sequence_graph([
     "BabyAI-FindObjS7-v0"
 ])
 
+curriculums["BabyAI-1Room"] = get_sequence_graph([
+    "BabyAI-1RoomS8-v0",
+    "BabyAI-1RoomS12-v0",
+    "BabyAI-1RoomS16-v0",
+    "BabyAI-1RoomS20-v0"
+])
+
 curriculums["BabyAI-FourObjs"] = get_sequence_graph([
     "BabyAI-FourObjsS5-v0",
     "BabyAI-FourObjsS6-v0",
@@ -69,7 +85,6 @@ curriculums["BabyAI-FourObjs"] = get_sequence_graph([
 ])
 
 curriculums["BabyAI-UnlockPickupDist"] = get_sequence_graph([
-    "BabyAI-Unlock-v0",
     "BabyAI-UnlockPickup-v0",
     "BabyAI-UnlockPickupDist-v0"
 ])

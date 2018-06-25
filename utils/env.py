@@ -1,7 +1,7 @@
 import gym
 import babyai
 
-import scenvs
+import envs
 
 def make_env(env_key, seed):
     env = gym.make(env_key)

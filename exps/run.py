@@ -7,15 +7,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--no-cluster", action="store_true", default=False)
 args = parser.parse_args()
 
-seeds = range(1, 4)
-graphs = [
-    # "SC-Edgeless",
-    # "SC-Normal",
-    "BabyAI-BlockedUnlockPickup",
-    "BabyAI-UnlockPickupDist",
+seeds = range(1, 11)
+curriculums = [
+    "SC-Soft",
+    "SC-Hard",
+    "BabyAI-KeyCorridor"
+    # "BabyAI-BlockedUnlockPickup",
+    # "BabyAI-UnlockPickupDist",
     # "BabyAI-FourObjs",
     # "BabyAI-FindObj",
-    "BabyAI-KeyCorridor"
 ]
 rt_hists = [
     # "Normal",
@@ -61,9 +61,8 @@ pot_cfs = [
 ]
 
 times = {
-    "SC-D1LaIaBa": "1:30:0",
-    "SC-D1LuIuBu": "3:0:0",
-    "SC-D4LuIuBu": "6:0:0",
+    "SC-Soft": "6:0:0",
+    "SC-Hard": "8:0:0",
     "BabyAI-BlockedUnlockPickup": "1:30:0",
     "BabyAI-UnlockPickupDist": "4:0:0",
     "BabyAI-FourObjs": "4:0:0",
@@ -71,9 +70,8 @@ times = {
     "BabyAI-KeyCorridor": "4:0:0"
 }
 no_comps = {
-    "SC-D1LaIaBa": "--no-instr",
-    "SC-D1LuIuBu": "--no-instr",
-    "SC-D4LuIuBu": "",
+    "SC-Soft": "--no-instr",
+    "SC-Hard": "--no-instr",
     "BabyAI-BlockedUnlockPickup": "--no-instr",
     "BabyAI-UnlockPickupDist": "",
     "BabyAI-FourObjs": "",
@@ -81,13 +79,13 @@ no_comps = {
     "BabyAI-KeyCorridor": "--no-instr"
 }
 
-for seed, graph, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, graphs, rt_hists, dist_cps, lp_cps, pot_cps, dist_crs, Ks, εs, pot_cfs):
-    cluster_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[graph])
-    model_name = "{}_{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(graph, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
-    no_comp = no_comps[graph]
+for seed, curriculum, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, curriculums, rt_hists, dist_cps, lp_cps, pot_cps, dist_crs, Ks, εs, pot_cfs):
+    cluster_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[curriculum])
+    model_name = "{}_{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
+    no_comp = no_comps[curriculum]
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --graph {} --rt-hist {} --dist-cp {} --lp-cp {} --pot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
+        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --rt-hist {} --dist-cp {} --lp-cp {} --pot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(cluster_cmd if not args.no_cluster else "",
-                seed, graph, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
+                seed, curriculum, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
         shell=True)
     time.sleep(1)
