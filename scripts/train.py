@@ -15,9 +15,9 @@ from model import ACModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", default=None,
-                    help="name of the environment to train on (REQUIRED or --graph REQUIRED)")
-parser.add_argument("--graph", default=None,
-                    help="name of the graph of environments to train on (REQUIRED or --env REQUIRED)")
+                    help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
+parser.add_argument("--curriculum", default=None,
+                    help="name of the curriculum of environments to train on (REQUIRED or --env REQUIRED)")
 parser.add_argument("--rt-hist", default="Gaussian",
                     help="name of the return history (default: Gaussian)")
 parser.add_argument("--rt-sigma", type=int, default=10,
@@ -84,12 +84,12 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 args = parser.parse_args()
 
-assert args.env is not None or args.graph is not None, "--env or --graph must be specified."
+assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
 # Define run dir
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_seed{}_{}".format(args.env or args.graph, args.seed, suffix)
+default_model_name = "{}_seed{}_{}".format(args.env or args.curriculum, args.seed, suffix)
 model_name = args.model or default_model_name
 run_dir = utils.get_run_dir(model_name)
 
@@ -114,10 +114,10 @@ if args.env is not None:
     envs = []
     for i in range(args.procs):
         envs.append(utils.make_env(args.env, args.seed + 10000*i))
-elif args.graph is not None:
-    # Load the graph, IDify it and compute the number of environments
-    G = utils.load_graph(args.graph)
-    G_with_ids = utils.idify_graph(G)
+elif args.curriculum is not None:
+    # Load the curriculum, IDify it and compute the number of environments
+    G = utils.load_curriculum(args.curriculum)
+    G_with_ids = utils.idify_curriculum(G)
     num_envs = len(G.nodes)
 
     # Instantiate the return history for each environment
@@ -167,7 +167,7 @@ elif args.graph is not None:
     envs = []
     for i in range(args.procs):
         seed = args.seed + 10000*i
-        envs.append(menv.MultiEnv(utils.make_envs_from_graph(G, seed), menv_head.remotes[i], seed))
+        envs.append(menv.MultiEnv(utils.make_envs_from_curriculum(G, seed), menv_head.remotes[i], seed))
 
 # Define obss preprocessor
 
@@ -207,7 +207,7 @@ while num_frames < args.frames:
 
     update_start_time = time.time()
     logs = algo.update_parameters()
-    if args.graph is not None:
+    if args.curriculum is not None:
         menv_head.update_dist()
     update_end_time = time.time()
 
@@ -238,7 +238,7 @@ while num_frames < args.frames:
 
         header += ["return_" + key for key in return_per_episode.keys()]
         data += return_per_episode.values()
-        if args.graph is not None:
+        if args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
                 header += ["proba/{}".format(env_key)]
                 data += [menv_head.dist[env_id]]
