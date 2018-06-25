@@ -30,8 +30,8 @@ class TSLpComputer(LpComputer):
     It computes an exponential moving average of the immediate
     learning progress."""
 
-    def __init__(self, num_envs, α):
-        super().__init__(num_envs)
+    def __init__(self, return_hists, α):
+        super().__init__(return_hists)
 
         self.α = α
 
@@ -57,8 +57,8 @@ class WindowLpComputer(TSLpComputer):
     """The window learning progress computer from the Teacher-Student
     paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))."""
 
-    def __init__(self, num_envs, α, K):
-        super().__init__(num_envs, α)
+    def __init__(self, return_hists, α, K):
+        super().__init__(return_hists, α)
 
         self.K = K
 
@@ -74,8 +74,8 @@ class LinregLpComputer(LpComputer):
     is the immediate learning progress instead of an exponential moving
     average of it."""
 
-    def __init__(self, num_envs, K):
-        super().__init__(num_envs)
+    def __init__(self, return_hists, K):
+        super().__init__(return_hists)
 
         self.K = K
 
