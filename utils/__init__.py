@@ -3,9 +3,9 @@ import random
 import numpy
 import torch
 
-from utils.agent import *
-from utils.env import *
-from utils.format import *
-from utils.general import *
-from utils.curriculum import *
-from utils.run import *
+from .agent import *
+from .env import *
+from .format import *
+from .general import *
+from .curriculum import *
+from .run import *
