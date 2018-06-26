@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
-                    help="name of the curriculum of environments to train on (REQUIRED or --env REQUIRED)")
+                    help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
 parser.add_argument("--rt-hist", default="Gaussian",
                     help="name of the return history (default: Gaussian)")
 parser.add_argument("--rt-sigma", type=int, default=10,
