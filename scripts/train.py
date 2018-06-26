@@ -242,19 +242,20 @@ while num_frames < args.frames:
             for env_id, env_key in enumerate(G.nodes):
                 header += ["proba/{}".format(env_key)]
                 data += [menv_head.dist[env_id]]
+                header += ["return/{}".format(env_key), "return_hist/{}".format(env_key)]
+                data += [None, None]
                 if env_id in menv_head.synthesized_returns.keys():
-                    header += ["return/{}".format(env_key)]
-                    data += [menv_head.synthesized_returns[env_id]]
-                    header += ["return_hist/{}".format(env_key)]
-                    data += [compute_dist.return_hists[env_id][-1][1]]
+                    data[-2] = menv_head.synthesized_returns[env_id]
+                    data[-1] = compute_dist.return_hists[env_id][-1][1]
                 if args.dist_cp in ["Lp", "LpPot"]:
                     header += ["lp/{}".format(env_key)]
                     data += [compute_dist.lps[env_id]]
                     header += ["attention/{}".format(env_key)]
                     data += [compute_dist.attentions[env_id]]
+                    header += ["lp_over_attention/{}".format(env_key)]
+                    data += [None]
                     if compute_dist.attentions[env_id] != 0:
-                        header += ["lp_over_attention/{}".format(env_key)]
-                        data += [abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id]]
+                        data[-1] = abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id]
                 if args.pot_cp in ["Rwpot", "Lppot"]:
                     header += ["rwpot/{}".format(env_key)]
                     data += [compute_pot.rwpots[env_id]]
@@ -271,7 +272,8 @@ while num_frames < args.frames:
         csv_writer.writerow(data)
 
         for field, value in zip(header, data):
-            tb_writer.add_scalar(field, value, num_frames)
+            if value is not None:
+                tb_writer.add_scalar(field, value, num_frames)
 
         status = {"num_frames": num_frames, "update": update}
         utils.save_status(status, run_dir)
