@@ -3,9 +3,14 @@ import time
 import itertools
 import argparse
 
+# Parse arguments
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--no-cluster", action="store_true", default=False)
+parser.add_argument("--no-slurm", action="store_true", default=False,
+                    help="don't use slurm")
 args = parser.parse_args()
+
+# Define parameters
 
 seeds = range(1, 11)
 curriculums = [
@@ -81,13 +86,15 @@ no_comps = {
     "BabyAI-KeyCorridor": "--no-instr"
 }
 
+# Execute scripts
+
 for seed, curriculum, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, curriculums, rt_hists, dist_cps, lp_cps, pot_cps, dist_crs, Ks, εs, pot_cfs):
-    cluster_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[curriculum])
+    slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[curriculum])
     model_name = "{}_{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
     no_comp = no_comps[curriculum]
     subprocess.Popen(
         "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --rt-hist {} --dist-cp {} --lp-cp {} --pot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
-        .format(cluster_cmd if not args.no_cluster else "",
+        .format(slurm_cmd if not args.no_slurm else "",
                 seed, curriculum, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
         shell=True)
     time.sleep(1)
