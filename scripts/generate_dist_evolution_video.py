@@ -38,14 +38,14 @@ G = nx.relabel_nodes(G, name_mapping)
 
 # Define the CSV log path
 
-run_dir = utils.get_run_dir(args.model)
-csv_path = utils.get_csv_path(run_dir)
+save_dir = utils.get_save_dir(args.model)
+csv_path = utils.get_csv_path(save_dir)
 
 # Define evolution paths and functions for creating / deleting
 # evolution folder and getting evolution images names
 
-evolution_folder = os.path.join(run_dir, "evolution")
-evolution_video_path = os.path.join(run_dir, "evolution.mp4")
+evolution_folder = os.path.join(save_dir, "evolution")
+evolution_video_path = os.path.join(save_dir, "evolution.mp4")
 
 def create_evolution_folder():
     if not os.path.isdir(evolution_folder):
