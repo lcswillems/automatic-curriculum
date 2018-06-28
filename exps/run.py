@@ -28,16 +28,13 @@ rt_hists = [
 ]
 dist_cps = [
     # "Lp",
-    "LpPot"
+    # "LpPot",
+    "LpPotLr"
 ]
 lp_cps = [
     "Linreg",
     # "Window",
     # "Online",
-]
-pot_cps = [
-    # "Rwpot",
-    "Lppot"
 ]
 dist_crs = [
     "GreedyProp",
@@ -88,13 +85,13 @@ no_comps = {
 
 # Execute scripts
 
-for seed, curriculum, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, curriculums, rt_hists, dist_cps, lp_cps, pot_cps, dist_crs, Ks, εs, pot_cfs):
+for seed, curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, curriculums, rt_hists, dist_cps, lp_cps, dist_crs, Ks, εs, pot_cfs):
     slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[curriculum])
     model_name = "{}_{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
     no_comp = no_comps[curriculum]
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --rt-hist {} --dist-cp {} --lp-cp {} --pot-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
+        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --rt-hist {} --dist-cp {} --lp-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
         .format(slurm_cmd if not args.no_slurm else "",
-                seed, curriculum, rt_hist, dist_cp, lp_cp, pot_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
+                seed, curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
         shell=True)
     time.sleep(1)

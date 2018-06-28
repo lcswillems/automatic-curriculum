@@ -43,30 +43,86 @@ class LpDistComputer(DistComputer):
         return dist
 
 class LpPotDistComputer(DistComputer):
-    """A distribution computer based on learning progress and some
-    potential.
-
-    It associates an attention a_i to each environment i that is a
-    combinaison of the learning progress and potential of this
-    environment, i.e. a_i = lp_i + \alpha pot_i where \alpha is the
-    potential coefficient."""
-
-    def __init__(self, return_hists, compute_lp, compute_pot, create_dist, pot_coef):
+    def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
+                 returns, max_returns, K):
         super().__init__(return_hists)
 
         self.compute_lp = compute_lp
-        self.compute_pot = compute_pot
         self.create_dist = create_dist
         self.pot_coef = pot_coef
+        self.returns = numpy.array(returns)
+        self.max_returns = numpy.array(max_returns)
+        self.K = K
 
-        self.step = 0
+        self.saved_max_returns = self.max_returns[:]
+
+    def update_returns(self):
+        for i in range(len(self.returns)):
+            _, returns = self.return_hists[i][-self.K:]
+            if len(returns) > 0:
+                self.returns[i] = returns[-1]
+                mean_return = numpy.mean(returns)
+                self.max_returns[i] = max(self.saved_max_returns[i], mean_return)
+                if len(returns) >= self.K:
+                    self.saved_max_returns[i] = self.max_returns[i]
 
     def __call__(self, returns):
         super().__call__(returns)
 
+        self.update_returns()
+
         self.lps = self.compute_lp()
-        self.pots = self.compute_pot()
-        self.attentions = numpy.absolute(self.lps) + self.pot_coef * self.pots
+        self.a_lps = numpy.absolute(self.lps)
+        self.pots = self.max_returns - self.returns
+        self.attentions = self.a_lps + self.pot_coef * self.pots
+        dist = self.create_dist(self.attentions)
+
+        return dist
+
+class LpPotLrDistComputer(DistComputer):
+    def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
+                 returns, max_returns, K, G):
+        super().__init__(return_hists)
+
+        self.compute_lp = compute_lp
+        self.create_dist = create_dist
+        self.pot_coef = pot_coef
+        self.returns = numpy.array(returns)
+        self.max_returns = numpy.array(max_returns)
+        self.K = K
+        self.G = G
+
+        self.min_returns = self.returns[:]
+        self.saved_min_returns = self.min_returns[:]
+        self.saved_max_returns = self.max_returns[:]
+
+    def update_returns(self):
+        for i in range(len(self.returns)):
+            _, returns = self.return_hists[i][-self.K:]
+            if len(returns) > 0:
+                self.returns[i] = returns[-1]
+                mean_return = numpy.mean(returns)
+                self.min_returns[i] = min(self.saved_min_returns[i], mean_return)
+                self.max_returns[i] = max(self.saved_max_returns[i], mean_return)
+                if len(returns) >= self.K:
+                    self.saved_min_returns[i] = self.min_returns[i]
+                    self.saved_max_returns[i] = self.max_returns[i]
+
+    def __call__(self, returns):
+        super().__call__(returns)
+
+        self.update_returns()
+
+        self.lps = self.compute_lp()
+        self.a_lps = numpy.absolute(self.lps)
+        self.pots = self.max_returns - self.returns
+        self.lrs = (self.returns - self.min_returns) / (self.max_returns - self.min_returns)
+        self.filters = numpy.ones(len(self.return_hists))
+        for env_id in self.G.nodes:
+            predecessors = list(self.G.predecessors(env_id))
+            if len(predecessors) > 0:
+                self.filters[env_id] = numpy.mean(self.lrs[predecessors])
+        self.attentions = (self.a_lps + self.pot_coef * self.pots) * self.filters
         dist = self.create_dist(self.attentions)
 
         return dist

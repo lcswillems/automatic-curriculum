@@ -22,12 +22,10 @@ parser.add_argument("--rt-hist", default="Gaussian",
                     help="name of the return history (default: Gaussian)")
 parser.add_argument("--rt-sigma", type=int, default=10,
                     help="standard deviation for gaussian return history (default: 10)")
-parser.add_argument("--dist-cp", default="LpPot",
-                    help="name of the distribution computer (default: LpPot)")
+parser.add_argument("--dist-cp", default="LpPotLr",
+                    help="name of the distribution computer (default: LpPotLr)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
-parser.add_argument("--pot-cp", default="Lppot",
-                    help="name of the reward potential computer (default: Lppot)")
 parser.add_argument("--dist-cr", default="GreedyProp",
                     help="name of the distribution creator (default: GreedyProp)")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
@@ -136,15 +134,6 @@ elif args.curriculum is not None:
         "None": None
     }[args.lp_cp]
 
-    # Instantiate the reward potential computer
-    min_returns = [0]*num_envs
-    max_returns = [0.5]*num_envs
-    compute_pot = {
-        "Rwpot": menv.RwpotPotComputer(return_hists, args.dist_K, min_returns, max_returns),
-        "Lppot": menv.LppotPotComputer(return_hists, G_with_ids, args.dist_K, min_returns, max_returns),
-        "None": None
-    }[args.pot_cp]
-
     # Instantiate the distribution creator
     create_dist = {
         "GreedyAmax": menv.GreedyAmaxDistCreator(args.dist_eps),
@@ -154,9 +143,12 @@ elif args.curriculum is not None:
     }[args.dist_cr]
 
     # Instantiate the distribution computer
+    returns = [0]*num_envs
+    max_returns = [0.5]*num_envs
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
-        "LpPot": menv.LpPotDistComputer(return_hists, compute_lp, compute_pot, create_dist, args.pot_coef),
+        "LpPot": menv.LpPotDistComputer(return_hists, compute_lp, create_dist, args.pot_coef, returns, max_returns, args.dist_K),
+        "LpPotLr": menv.LpPotLrDistComputer(return_hists, compute_lp, create_dist, args.pot_coef, returns, max_returns, args.dist_K, G_with_ids),
         "None": None
     }[args.dist_cp]
 
@@ -247,7 +239,7 @@ while num_frames < args.frames:
                 if env_id in menv_head.synthesized_returns.keys():
                     data[-2] = menv_head.synthesized_returns[env_id]
                     data[-1] = compute_dist.return_hists[env_id][-1][1]
-                if args.dist_cp in ["Lp", "LpPot"]:
+                if args.dist_cp in ["Lp", "LpPot", "LpPotLr"]:
                     header += ["lp/{}".format(env_key)]
                     data += [compute_dist.lps[env_id]]
                     header += ["attention/{}".format(env_key)]
@@ -256,16 +248,16 @@ while num_frames < args.frames:
                     data += [None]
                     if compute_dist.attentions[env_id] != 0:
                         data[-1] = abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id]
-                if args.pot_cp in ["Rwpot", "Lppot"]:
-                    header += ["rwpot/{}".format(env_key)]
-                    data += [compute_pot.rwpots[env_id]]
-                    header += ["minrt/{}".format(env_key)]
-                    data += [compute_pot.min_returns[env_id]]
+                if args.dist_cp in ["LpPot", "LpPotLr"]:
+                    header += ["pot/{}".format(env_key)]
+                    data += [compute_dist.pots[env_id]]
                     header += ["maxrt/{}".format(env_key)]
-                    data += [compute_pot.max_returns[env_id]]
-                if args.pot_cp in ["Lppot"]:
-                    header += ["lppot/{}".format(env_key)]
-                    data += [compute_pot.lppots[env_id]]
+                    data += [compute_dist.max_returns[env_id]]
+                if args.dist_cp in ["LpPotLr"]:
+                    header += ["minrt/{}".format(env_key)]
+                    data += [compute_dist.min_returns[env_id]]
+                    header += ["filters/{}".format(env_key)]
+                    data += [compute_dist.filters[env_id]]
 
         if not(status["num_frames"]):
             csv_writer.writerow(header)
