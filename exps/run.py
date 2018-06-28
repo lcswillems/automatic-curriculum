@@ -15,7 +15,7 @@ args = parser.parse_args()
 seeds = range(1, 11)
 curriculums = [
     "SC-Soft",
-    "SC-Hard",
+    # "SC-Hard",
     "BabyAI-KeyCorridor"
     # "BabyAI-BlockedUnlockPickup",
     # "BabyAI-UnlockPickupDist",
