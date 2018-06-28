@@ -50,8 +50,8 @@ class LpPotDistComputer(DistComputer):
         self.compute_lp = compute_lp
         self.create_dist = create_dist
         self.pot_coef = pot_coef
-        self.returns = numpy.array(returns)
-        self.max_returns = numpy.array(max_returns)
+        self.returns = numpy.array(returns, dtype=numpy.float)
+        self.max_returns = numpy.array(max_returns, dtype=numpy.float)
         self.K = K
 
         self.saved_max_returns = self.max_returns[:]
@@ -87,8 +87,8 @@ class LpPotLrDistComputer(DistComputer):
         self.compute_lp = compute_lp
         self.create_dist = create_dist
         self.pot_coef = pot_coef
-        self.returns = numpy.array(returns)
-        self.max_returns = numpy.array(max_returns)
+        self.returns = numpy.array(returns, dtype=numpy.float)
+        self.max_returns = numpy.array(max_returns, dtype=numpy.float)
         self.K = K
         self.G = G
 
