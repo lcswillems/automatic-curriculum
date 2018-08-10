@@ -86,7 +86,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             memory = torch.cat(hidden, dim=1)
         else:
             embedding = x
-        
+
         if self.use_instr:
             embed_instr = self._get_embed_instr(obs.instr)
             embedding = torch.cat((embedding, embed_instr), dim=1)
@@ -100,6 +100,5 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         return dist, value, memory
 
     def _get_embed_instr(self, instr):
-        self.instr_rnn.flatten_parameters()
         _, hidden = self.instr_rnn(self.word_embedding(instr))
         return hidden[-1]
