@@ -29,7 +29,7 @@ rt_hists = [
 dist_cps = [
     # "Lp",
     # "LpPot",
-    "LpPotLr"
+    "LpPotRr"
 ]
 lp_cps = [
     "Linreg",

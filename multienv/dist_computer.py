@@ -80,7 +80,7 @@ class LpPotDistComputer(DistComputer):
 
         return dist
 
-class LpPotLrDistComputer(DistComputer):
+class LpPotRrDistComputer(DistComputer):
     def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
                  returns, max_returns, K, G):
         super().__init__(return_hists)
@@ -118,12 +118,12 @@ class LpPotLrDistComputer(DistComputer):
         self.lps = self.compute_lp()
         self.a_lps = numpy.absolute(self.lps)
         self.pots = self.max_returns - self.returns
-        self.lrs = (self.returns - self.min_returns) / (self.max_returns - self.min_returns)
+        self.rrs = (self.returns - self.min_returns) / (self.max_returns - self.min_returns)
         self.filters = numpy.ones(len(self.return_hists))
         for env_id in self.G.nodes:
             predecessors = list(self.G.predecessors(env_id))
             if len(predecessors) > 0:
-                self.filters[env_id] = numpy.mean(self.lrs[predecessors])
+                self.filters[env_id] = numpy.mean(self.rrs[predecessors])
         self.attentions = (self.a_lps + self.pot_coef * self.pots) * self.filters
         dist = self.create_dist(self.attentions)
 

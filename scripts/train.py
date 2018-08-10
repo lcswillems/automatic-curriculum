@@ -22,8 +22,8 @@ parser.add_argument("--rt-hist", default="Gaussian",
                     help="name of the return history (default: Gaussian)")
 parser.add_argument("--rt-sigma", type=int, default=10,
                     help="standard deviation for gaussian return history (default: 10)")
-parser.add_argument("--dist-cp", default="LpPotLr",
-                    help="name of the distribution computer (default: LpPotLr)")
+parser.add_argument("--dist-cp", default="LpPotRr",
+                    help="name of the distribution computer (default: LpPotRr)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
 parser.add_argument("--dist-cr", default="GreedyProp",
@@ -148,7 +148,7 @@ elif args.curriculum is not None:
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
         "LpPot": menv.LpPotDistComputer(return_hists, compute_lp, create_dist, args.pot_coef, returns, max_returns, args.dist_K),
-        "LpPotLr": menv.LpPotLrDistComputer(return_hists, compute_lp, create_dist, args.pot_coef, returns, max_returns, args.dist_K, G_with_ids),
+        "LpPotRr": menv.LpPotRrDistComputer(return_hists, compute_lp, create_dist, args.pot_coef, returns, max_returns, args.dist_K, G_with_ids),
         "None": None
     }[args.dist_cp]
 
@@ -239,7 +239,7 @@ while num_frames < args.frames:
                 if env_id in menv_head.synthesized_returns.keys():
                     data[-2] = menv_head.synthesized_returns[env_id]
                     data[-1] = compute_dist.return_hists[env_id][-1][1]
-                if args.dist_cp in ["Lp", "LpPot", "LpPotLr"]:
+                if args.dist_cp in ["Lp", "LpPot", "LpPotRr"]:
                     header += ["lp/{}".format(env_key)]
                     data += [compute_dist.lps[env_id]]
                     header += ["attention/{}".format(env_key)]
@@ -248,12 +248,12 @@ while num_frames < args.frames:
                     data += [None]
                     if compute_dist.attentions[env_id] != 0:
                         data[-1] = abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id]
-                if args.dist_cp in ["LpPot", "LpPotLr"]:
+                if args.dist_cp in ["LpPot", "LpPotRr"]:
                     header += ["pot/{}".format(env_key)]
                     data += [compute_dist.pots[env_id]]
                     header += ["maxrt/{}".format(env_key)]
                     data += [compute_dist.max_returns[env_id]]
-                if args.dist_cp in ["LpPotLr"]:
+                if args.dist_cp in ["LpPotRr"]:
                     header += ["minrt/{}".format(env_key)]
                     data += [compute_dist.min_returns[env_id]]
                     header += ["filters/{}".format(env_key)]
