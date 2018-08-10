@@ -247,7 +247,7 @@ while num_frames < args.frames:
                     header += ["lp_over_attention/{}".format(env_key)]
                     data += [None]
                     if compute_dist.attentions[env_id] != 0:
-                        data[-1] = abs(compute_dist.lps[env_id])/compute_dist.attentions[env_id]
+                        data[-1] = compute_dist.a_lps[env_id]/compute_dist.attentions[env_id]
                 if args.dist_cp in ["LpPot", "LpPotRr"]:
                     header += ["pot/{}".format(env_key)]
                     data += [compute_dist.pots[env_id]]

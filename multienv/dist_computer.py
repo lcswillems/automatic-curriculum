@@ -37,7 +37,8 @@ class LpDistComputer(DistComputer):
         super().__call__(returns)
 
         self.lps = self.compute_lp()
-        self.attentions = numpy.absolute(self.lps)
+        self.a_lps = numpy.absolute(self.lps)
+        self.attentions = self.a_lps
         dist = self.create_dist(self.attentions)
 
         return dist
@@ -124,7 +125,8 @@ class LpPotRrDistComputer(DistComputer):
             predecessors = list(self.G.predecessors(env_id))
             if len(predecessors) > 0:
                 self.filters[env_id] = numpy.mean(self.rrs[predecessors])
-        self.attentions = (self.a_lps + self.pot_coef * self.pots) * self.filters
-        dist = self.create_dist(self.attentions)
+        self.attentions = self.a_lps + self.pot_coef * self.pots
+        self.filtered_attentions = self.attentions * self.filters
+        dist = self.create_dist(self.filtered_attentions)
 
         return dist
