@@ -94,7 +94,7 @@ save_dir = utils.get_save_dir(model_name)
 # Define logger, CSV writer and Tensorboard writer
 
 logger = utils.get_logger(save_dir)
-csv_writer = utils.get_csv_writer(save_dir)
+csv_file, csv_writer = utils.get_csv_writer(save_dir)
 tb_writer = tensorboardX.SummaryWriter(save_dir)
 
 # Log command and all script arguments
@@ -262,6 +262,7 @@ while num_frames < args.frames:
         if not(status["num_frames"]):
             csv_writer.writerow(header)
         csv_writer.writerow(data)
+        csv_file.flush()
 
         for field, value in zip(header, data):
             if value is not None:
