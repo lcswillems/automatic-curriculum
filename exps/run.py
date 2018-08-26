@@ -17,7 +17,7 @@ curriculums = [
     "SC-Soft",
     # "SC-Hard",
     "BabyAI-KeyCorridor"
-    # "BabyAI-BlockedUnlockPickup",
+    "BabyAI-BlockedUnlockPickup",
     # "BabyAI-UnlockPickupDist",
     # "BabyAI-FourObjs",
     # "BabyAI-FindObj",
@@ -28,7 +28,7 @@ rt_hists = [
 ]
 dist_cps = [
     # "Lp",
-    # "LpPot",
+    "LpPot",
     "LpPotRr"
 ]
 lp_cps = [
@@ -56,8 +56,8 @@ Ks = [
 pot_cfs = [
     0,
     0.001,
-    0.005,
-    0.01,
+    # 0.005,
+    # 0.01,
     # 0.05,
     # 0.1,
     # 0.5,
