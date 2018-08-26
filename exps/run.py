@@ -16,7 +16,7 @@ seeds = range(1, 11)
 curriculums = [
     "SC-Soft",
     # "SC-Hard",
-    "BabyAI-KeyCorridor"
+    "BabyAI-KeyCorridor",
     "BabyAI-BlockedUnlockPickup",
     # "BabyAI-UnlockPickupDist",
     # "BabyAI-FourObjs",
