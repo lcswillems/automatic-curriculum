@@ -65,13 +65,13 @@ pot_cfs = [
 ]
 
 times = {
-    "SC-Soft": "6:0:0",
-    "SC-Hard": "8:0:0",
-    "BabyAI-BlockedUnlockPickup": "1:30:0",
-    "BabyAI-UnlockPickupDist": "4:0:0",
-    "BabyAI-FourObjs": "4:0:0",
-    "BabyAI-FindObj": "4:0:0",
-    "BabyAI-KeyCorridor": "4:0:0"
+    "SC-Soft": "3:0:0",
+    "SC-Hard": "4:0:0",
+    "BabyAI-BlockedUnlockPickup": "1:0:0",
+    "BabyAI-UnlockPickupDist": "2:0:0",
+    "BabyAI-FourObjs": "2:0:0",
+    "BabyAI-FindObj": "2:0:0",
+    "BabyAI-KeyCorridor": "2:0:0"
 }
 no_comps = {
     "SC-Soft": "--no-instr",
@@ -86,11 +86,11 @@ no_comps = {
 # Execute scripts
 
 for seed, curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf in itertools.product(seeds, curriculums, rt_hists, dist_cps, lp_cps, dist_crs, Ks, εs, pot_cfs):
-    slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(times[curriculum])
+    slurm_cmd = "sbatch --account=def-bengioy --time={} --cpus-per-task=4 --gres=gpu:1 --mem=4G".format(times[curriculum])
     model_name = "{}_{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, seed)
     no_comp = no_comps[curriculum]
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --rt-hist {} --dist-cp {} --lp-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10 --procs 1 --frames-per-proc 2048"
+        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --rt-hist {} --dist-cp {} --lp-cp {} --dist-cr {} --dist-K {} --dist-eps {} --pot-coef {} --model {} {} --save-interval 10"
         .format(slurm_cmd if not args.no_slurm else "",
                 seed, curriculum, rt_hist, dist_cp, lp_cp, dist_cr, K, ε, pot_cf, model_name, no_comp),
         shell=True)
