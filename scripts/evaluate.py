@@ -1,6 +1,5 @@
 import argparse
 import time
-import datetime
 
 import utils
 
