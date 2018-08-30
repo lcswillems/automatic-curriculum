@@ -113,7 +113,7 @@ if args.env is not None:
         envs.append(utils.make_env(args.env, args.seed + 10000*i))
 elif args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
-    G = utils.load_curriculum(args.curriculum)
+    G, returns, max_returns = utils.load_curriculum(args.curriculum)
     G_with_ids = utils.idify_curriculum(G)
     num_envs = len(G.nodes)
 
@@ -142,8 +142,6 @@ elif args.curriculum is not None:
     }[args.dist_cr]
 
     # Instantiate the distribution computer
-    returns = [0]*num_envs
-    max_returns = [0.5]*num_envs
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
         "LpPot": menv.LpPotDistComputer(return_hists, compute_lp, create_dist, args.pot_coef, returns, max_returns, args.dist_K),

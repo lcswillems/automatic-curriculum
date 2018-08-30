@@ -1,0 +1,15 @@
+{
+    "nodes": {
+        "Ld": {"id": "SC-Ld-v0", "return": 0, "max_return": 0.5},
+        "LdH": {"id": "SC-LdH-v0", "return": 0, "max_return": 0.5},
+        "LdHB": {"id": "SC-LdHB-v0", "return": 0, "max_return": 0.5},
+        "1Q": {"id": "SC-1Q-v0", "return": 0, "max_return": 0.5},
+        "Full": {"id": "SC-Full-v0", "return": 0, "max_return": 0.5}
+    },
+    "edges": [
+        ["Ld", "LdH"],
+        ["LdH", "LdHB"],
+        ["LdHB", "1Q"],
+        ["1Q", "Full"]
+    ]
+}
