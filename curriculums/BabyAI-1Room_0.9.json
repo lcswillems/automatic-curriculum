@@ -1,0 +1,13 @@
+{
+    "nodes": {
+        "1RoomS8": {"id": "BabyAI-1RoomS8-v0", "return": 0, "max_return": 0.9},
+        "1RoomS12": {"id": "BabyAI-1RoomS12-v0", "return": 0, "max_return": 0.9},
+        "1RoomS16": {"id": "BabyAI-1RoomS16-v0", "return": 0, "max_return": 0.9},
+        "1RoomS20": {"id": "BabyAI-1RoomS20-v0", "return": 0, "max_return": 0.9}
+    },
+    "edges": [
+        ["1RoomS8", "1RoomS12"],
+        ["1RoomS12", "1RoomS16"],
+        ["1RoomS16", "1RoomS20"]
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "nodes": {
+        "UnlockPickup": {"id": "BabyAI-UnlockPickup-v0", "return": 0, "max_return": 0.9},
+        "UnlockPickupDist": {"id": "BabyAI-UnlockPickupDist-v0", "return": 0, "max_return": 0.9}
+    },
+    "edges": [
+        ["UnlockPickup", "UnlockPickupDist"]
+    ]
+}
