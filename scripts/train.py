@@ -162,15 +162,20 @@ elif args.curriculum is not None:
 
 preprocess_obss = utils.ObssPreprocessor(save_dir, envs[0].observation_space)
 
+# Load training status
+
+try:
+    status = utils.load_status(save_dir)
+except OSError:
+    status = {"num_frames": 0, "update": 0}
+
 # Define actor-critic model
 
-if utils.model_exists(save_dir):
+try:
     acmodel = utils.load_model(save_dir)
-    status = utils.load_status(save_dir)
     logger.info("Model successfully loaded\n")
-else:
+except OSError:
     acmodel = ACModel(preprocess_obss.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
-    status = {"num_frames": 0, "update": 0}
     logger.info("Model successfully created\n")
 logger.info("{}\n".format(acmodel))
 
@@ -258,7 +263,7 @@ while num_frames < args.frames:
                     header += ["filtered_attention/{}".format(env_key)]
                     data += [compute_dist.filtered_attentions[env_id]]
 
-        if not(status["num_frames"]):
+        if status["num_frames"] == 0:
             csv_writer.writerow(header)
         csv_writer.writerow(data)
         csv_file.flush()
