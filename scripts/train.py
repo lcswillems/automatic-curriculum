@@ -253,8 +253,10 @@ while num_frames < args.frames:
                 if args.dist_cp in ["LpPotRr"]:
                     header += ["minrt/{}".format(env_key)]
                     data += [compute_dist.min_returns[env_id]]
-                    header += ["filters/{}".format(env_key)]
+                    header += ["filter/{}".format(env_key)]
                     data += [compute_dist.filters[env_id]]
+                    header += ["filtered_attention/{}".format(env_key)]
+                    data += [compute_dist.filtered_attentions[env_id]]
 
         if not(status["num_frames"]):
             csv_writer.writerow(header)
