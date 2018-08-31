@@ -230,49 +230,76 @@ while num_frames < args.frames:
 
         header = ["update", "frames", "FPS", "duration"]
         data = [update, num_frames, fps, duration]
-        header += ["rreturn_" + key for key in rreturn_per_episode.keys()]
-        data += rreturn_per_episode.values()
-        header += ["num_frames_" + key for key in num_frames_per_episode.keys()]
-        data += num_frames_per_episode.values()
-        header += ["entropy", "value", "policy_loss", "value_loss", "grad_norm"]
-        data += [logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"], logs["grad_norm"]]
+        # header += ["rreturn_" + key for key in rreturn_per_episode.keys()]
+        # data += rreturn_per_episode.values()
+        # header += ["num_frames_" + key for key in num_frames_per_episode.keys()]
+        # data += num_frames_per_episode.values()
+        # header += ["entropy", "value", "policy_loss", "value_loss", "grad_norm"]
+        # data += [logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"], logs["grad_norm"]]
 
+        # logger.info(
+        #     "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {:.3f} | vL {:.3f} | ∇ {:.3f}"
+        #     .format(*data))
         logger.info(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {:.3f} | vL {:.3f} | ∇ {:.3f}"
+            "U {} | F {:06} | FPS {:04.0f} | D {}"
             .format(*data))
 
-        header += ["return_" + key for key in return_per_episode.keys()]
-        data += return_per_episode.values()
+        # header += ["return_" + key for key in return_per_episode.keys()]
+        # data += return_per_episode.values()
         if args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
                 header += ["proba/{}".format(env_key)]
                 data += [menv_head.dist[env_id]]
-                header += ["return/{}".format(env_key), "return_hist/{}".format(env_key)]
-                data += [None, None]
+                # header += ["return/{}".format(env_key), "return_hist/{}".format(env_key)]
+                # data += [None, None]
+                header += ["return/{}".format(env_key)]
+                data += [None]
                 if env_id in menv_head.synthesized_returns.keys():
-                    data[-2] = menv_head.synthesized_returns[env_id]
-                    data[-1] = compute_dist.return_hists[env_id][-1][1]
-                if args.dist_cp in ["Lp", "LpPot", "LpPotRr"]:
-                    header += ["lp/{}".format(env_key)]
-                    data += [compute_dist.lps[env_id]]
-                    header += ["attention/{}".format(env_key)]
-                    data += [compute_dist.attentions[env_id]]
-                    header += ["lp_over_attention/{}".format(env_key)]
-                    data += [None]
-                    if compute_dist.attentions[env_id] != 0:
-                        data[-1] = compute_dist.a_lps[env_id]/compute_dist.attentions[env_id]
-                if args.dist_cp in ["LpPot", "LpPotRr"]:
-                    header += ["pot/{}".format(env_key)]
-                    data += [compute_dist.pots[env_id]]
+                    data[-1] = menv_head.synthesized_returns[env_id]
+                    # data[-2] = menv_head.synthesized_returns[env_id]
+                    # data[-1] = compute_dist.return_hists[env_id][-1][1]
+                # if args.dist_cp in ["Lp", "LpPot", "LpPotRr"]:
+                #     header += ["lp/{}".format(env_key)]
+                #     data += [compute_dist.lps[env_id]]
+                #     header += ["attention/{}".format(env_key)]
+                #     data += [compute_dist.attentions[env_id]]
+                #     header += ["lp_over_attention/{}".format(env_key)]
+                #     data += [None]
+                #     if compute_dist.attentions[env_id] != 0:
+                #         data[-1] = compute_dist.a_lps[env_id]/compute_dist.attentions[env_id]
+                # if args.dist_cp in ["LpPot", "LpPotRr"]:
+                #     header += ["pot/{}".format(env_key)]
+                #     data += [compute_dist.pots[env_id]]
+                #     header += ["maxrt/{}".format(env_key)]
+                #     data += [compute_dist.max_returns[env_id]]
+                # if args.dist_cp in ["LpPotRr"]:
+                #     header += ["minrt/{}".format(env_key)]
+                #     data += [compute_dist.min_returns[env_id]]
+                #     header += ["rr/{}".format(env_key)]
+                #     data += [compute_dist.rrs[env_id]]
+                #     header += ["filtered_attention/{}".format(env_key)]
+                #     data += [compute_dist.filtered_attentions[env_id]]
+                if args.dist_cp in ["NlpPotMancRd"]:
                     header += ["maxrt/{}".format(env_key)]
                     data += [compute_dist.max_returns[env_id]]
-                if args.dist_cp in ["LpPotRr"]:
-                    header += ["minrt/{}".format(env_key)]
-                    data += [compute_dist.min_returns[env_id]]
-                    header += ["filter/{}".format(env_key)]
-                    data += [compute_dist.filters[env_id]]
-                    header += ["filtered_attention/{}".format(env_key)]
-                    data += [compute_dist.filtered_attentions[env_id]]
+                    header += ["lp/{}".format(env_key)]
+                    data += [compute_dist.lps[env_id]]
+                    header += ["na_lp/{}".format(env_key)]
+                    data += [compute_dist.na_lps[env_id]]
+                    header += ["mr/{}".format(env_key)]
+                    data += [compute_dist.mrs[env_id]]
+                    header += ["anc_mr/{}".format(env_key)]
+                    data += [compute_dist.anc_mrs[env_id]]
+                    header += ["learning_state/{}".format(env_key)]
+                    data += [compute_dist.learning_states[env_id]]
+                    header += ["attention/{}".format(env_key)]
+                    data += [compute_dist.attentions[env_id]]
+                    header += ["rd_attention/{}".format(env_key)]
+                    data += [compute_dist.rd_attentions[env_id]]
+                    header += ["na_lp_over_learning_state/{}".format(env_key)]
+                    data += [None]
+                    if compute_dist.attentions[env_id] != 0:
+                        data[-1] = compute_dist.na_lps[env_id]/compute_dist.learning_states[env_id]
 
         if status["num_frames"] == 0:
             csv_writer.writerow(header)
