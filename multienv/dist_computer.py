@@ -29,7 +29,6 @@ class LpDistComputer(DistComputer):
     def __init__(self, return_hists, compute_lp, create_dist):
         super().__init__(return_hists)
 
-        self.return_hists = return_hists
         self.compute_lp = compute_lp
         self.create_dist = create_dist
 
@@ -47,12 +46,12 @@ class LpPotDistComputer(DistComputer):
                  compute_lp, create_dist, pot_coef):
         super().__init__(return_hists)
 
-        self.compute_lp = compute_lp
-        self.create_dist = create_dist
-        self.pot_coef = pot_coef
         self.returns = numpy.array(init_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
+        self.compute_lp = compute_lp
+        self.create_dist = create_dist
+        self.pot_coef = pot_coef
 
         self.saved_max_returns = self.max_returns[:]
 
@@ -84,12 +83,12 @@ class LpPotRrDistComputer(DistComputer):
                  compute_lp, create_dist, pot_coef, G):
         super().__init__(return_hists)
 
-        self.compute_lp = compute_lp
-        self.create_dist = create_dist
-        self.pot_coef = pot_coef
         self.returns = numpy.array(init_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
+        self.compute_lp = compute_lp
+        self.create_dist = create_dist
+        self.pot_coef = pot_coef
         self.G = G
 
         self.min_returns = self.returns[:]
@@ -130,17 +129,18 @@ class LpPotRrDistComputer(DistComputer):
 
 class NlpPotMancRdDistComputer(DistComputer):
     def __init__(self, return_hists, init_returns, init_max_returns, K,
-                 compute_lp, create_dist, pot_coef, G, tr):
+                 compute_lp, create_dist, pot_coef, G, power, tr):
         super().__init__(return_hists)
 
-        self.compute_lp = compute_lp
-        self.create_dist = create_dist
-        self.tr = tr
-        self.pot_coef = pot_coef
-        self.G = G
         self.returns = numpy.array(init_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
+        self.compute_lp = compute_lp
+        self.create_dist = create_dist
+        self.pot_coef = pot_coef
+        self.G = G
+        self.power = power
+        self.tr = tr
 
         self.min_returns = self.returns[:]
         self.saved_min_returns = self.min_returns[:]
@@ -174,8 +174,13 @@ class NlpPotMancRdDistComputer(DistComputer):
             ancestors = list(nx.ancestors(self.G, env_id))
             if len(ancestors) > 0:
                 self.anc_mrs[env_id] = numpy.amin(self.mrs[ancestors])
+        self.succ_mrs = numpy.zeros(len(self.return_hists))
+        for env_id in self.G.nodes:
+            successors = list(self.G.successors(env_id))
+            if len(successors) > 0:
+                self.succ_mrs[env_id] = numpy.amin(self.mrs[successors])
         self.learning_states = self.na_lps + self.pot_coef * self.pots
-        self.attentions = self.anc_mrs * self.learning_states
+        self.attentions = self.anc_mrs**self.power * self.learning_states * (1-self.succ_mrs)
 
         self.rd_attentions = self.attentions[:]
         for env_id in reversed(list(nx.topological_sort(self.G))):
