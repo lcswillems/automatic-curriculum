@@ -136,6 +136,7 @@ elif args.curriculum is not None:
     # Instantiate the distribution creator
     create_dist = {
         "GreedyAmax": menv.GreedyAmaxDistCreator(args.dist_eps),
+        "Prop": menv.PropDistCreator(),
         "GreedyProp": menv.GreedyPropDistCreator(args.dist_eps),
         "Boltzmann": menv.BoltzmannDistCreator(args.dist_tau),
         "None": None
