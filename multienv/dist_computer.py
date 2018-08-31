@@ -80,7 +80,7 @@ class LpPotDistComputer(DistComputer):
 
 class LpPotRrDistComputer(DistComputer):
     def __init__(self, return_hists, init_returns, init_max_returns, K,
-                 compute_lp, create_dist, pot_coef, G):
+                 compute_lp, create_dist, pot_prop, G):
         super().__init__(return_hists)
 
         self.returns = numpy.array(init_returns, dtype=numpy.float)
@@ -88,7 +88,7 @@ class LpPotRrDistComputer(DistComputer):
         self.K = K
         self.compute_lp = compute_lp
         self.create_dist = create_dist
-        self.pot_coef = pot_coef
+        self.pot_prop = pot_prop
         self.G = G
 
         self.min_returns = self.returns[:]
@@ -122,7 +122,7 @@ class LpPotRrDistComputer(DistComputer):
             ancestors = list(nx.ancestors(self.G, env_id))
             if len(ancestors) > 0:
                 self.filters[env_id] = numpy.amin(self.rrs[ancestors])
-        self.attentions = self.a_lps + self.pot_coef * self.pots
+        self.attentions = (1 - self.pot_prop) * self.a_lps + self.pot_prop * self.pots
         self.filtered_attentions = self.attentions * self.filters
 
         return self.create_dist(self.filtered_attentions)

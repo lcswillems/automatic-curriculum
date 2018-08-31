@@ -39,8 +39,8 @@ parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution creator (default: 4e-4)")
 parser.add_argument("--dist-power", type=int, default=4,
                     help="power of the ancestor mastering rate for some distribution computer (default: 4)")
-parser.add_argument("--pot-coef", type=float, default=0.1,
-                    help="potential term coefficient in attention (default: 0.1)")
+parser.add_argument("--pot-prop", type=float, default=0.5,
+                    help="potential term coefficient in attention (default: 0.5)")
 parser.add_argument("--tr", type=float, default=0.3,
                     help="rate of attention transfer from a node to its parents (default: 0.3)")
 parser.add_argument("--model", default=None,
@@ -151,12 +151,12 @@ elif args.curriculum is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
-        "LpPot": menv.LpPotDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
-                                        compute_lp, create_dist, args.pot_coef),
-        "LpPotRr": menv.LpPotRrDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
-                                            compute_lp, create_dist, args.pot_coef, G_with_ids),
+        # "LpPot": menv.LpPotDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
+        #                                 compute_lp, create_dist, args.pot_coef),
+        # "LpPotRr": menv.LpPotRrDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
+        #                                     compute_lp, create_dist, args.pot_coef, G_with_ids),
         "NlpPotMancRd": menv.NlpPotMancRdDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
-                                                      compute_lp, create_dist, args.pot_coef, G_with_ids, args.dist_power, args.tr),
+                                                      compute_lp, create_dist, args.pot_prop, G_with_ids, args.dist_power, args.tr),
         "None": None
     }[args.dist_cp]
 
