@@ -122,9 +122,9 @@ class LpPotRrDistComputer(DistComputer):
         self.rrs = (self.returns - self.min_returns) / (self.max_returns - self.min_returns)
         self.filters = numpy.ones(len(self.return_hists))
         for env_id in self.G.nodes:
-            predecessors = list(self.G.predecessors(env_id))
-            if len(predecessors) > 0:
-                self.filters[env_id] = numpy.mean(self.rrs[predecessors])
+            ancestors = list(nx.ancestors(self.G, env_id))
+            if len(ancestors) > 0:
+                self.filters[env_id] = numpy.amin(self.rrs[ancestors])
         self.attentions = self.a_lps + self.pot_coef * self.pots
         self.filtered_attentions = self.attentions * self.filters
         dist = self.create_dist(self.filtered_attentions)
