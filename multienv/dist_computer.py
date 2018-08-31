@@ -127,3 +127,62 @@ class LpPotRrDistComputer(DistComputer):
         self.filtered_attentions = self.attentions * self.filters
 
         return self.create_dist(self.filtered_attentions)
+
+class NlpPotMancRdDistComputer(DistComputer):
+    def __init__(self, return_hists, init_returns, init_max_returns, K,
+                 compute_lp, create_dist, pot_coef, G, tr):
+        super().__init__(return_hists)
+
+        self.compute_lp = compute_lp
+        self.create_dist = create_dist
+        self.tr = tr
+        self.pot_coef = pot_coef
+        self.G = G
+        self.returns = numpy.array(init_returns, dtype=numpy.float)
+        self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
+        self.K = K
+
+        self.min_returns = self.returns[:]
+        self.saved_min_returns = self.min_returns[:]
+        self.saved_max_returns = self.max_returns[:]
+
+    def update_returns(self):
+        for i in range(len(self.returns)):
+            _, returns = self.return_hists[i][-self.K:]
+            if len(returns) > 0:
+                self.returns[i] = returns[-1]
+                mean_return = numpy.mean(returns)
+                self.min_returns[i] = min(self.saved_min_returns[i], mean_return)
+                self.max_returns[i] = max(self.saved_max_returns[i], mean_return)
+                if len(returns) >= self.K:
+                    self.saved_min_returns[i] = self.min_returns[i]
+                    self.saved_max_returns[i] = self.max_returns[i]
+
+    def __call__(self, returns):
+        super().__call__(returns)
+
+        self.update_returns()
+
+        self.returns = numpy.clip(self.returns, self.min_returns, self.max_returns)
+        self.lps = self.compute_lp()
+        self.a_lps = numpy.absolute(self.lps)
+        self.na_lps = self.a_lps / numpy.amax(self.a_lps) if numpy.amax(self.a_lps) != 0 else self.a_lps
+        self.mrs = (self.returns - self.min_returns) / (self.max_returns - self.min_returns)
+        self.pots = 1 - self.mrs
+        self.anc_mrs = numpy.ones(len(self.return_hists))
+        for env_id in self.G.nodes:
+            ancestors = list(nx.ancestors(self.G, env_id))
+            if len(ancestors) > 0:
+                self.anc_mrs[env_id] = numpy.amin(self.mrs[ancestors])
+        self.learning_states = self.na_lps + self.pot_coef * self.pots
+        self.attentions = self.anc_mrs * self.learning_states
+
+        self.rd_attentions = self.attentions[:]
+        for env_id in reversed(list(nx.topological_sort(self.G))):
+            predecessors = list(self.G.predecessors(env_id))
+            attention_to_transfer = self.rd_attentions[env_id]*self.tr
+            self.rd_attentions[env_id] -= attention_to_transfer
+            if len(predecessors) > 0:
+                self.rd_attentions[predecessors] += attention_to_transfer/len(predecessors)
+
+        return self.create_dist(self.rd_attentions)

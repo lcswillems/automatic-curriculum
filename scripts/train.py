@@ -37,6 +37,8 @@ parser.add_argument("--dist-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution creator (default: 4e-4)")
 parser.add_argument("--pot-coef", type=float, default=0.1,
                     help="potential term coefficient in attention (default: 0.1)")
+parser.add_argument("--tr", type=float, default=0.3,
+                    help="rate of attention transfer from a node to its parents (default: 0.3)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -149,6 +151,8 @@ elif args.curriculum is not None:
                                         compute_lp, create_dist, args.pot_coef),
         "LpPotRr": menv.LpPotRrDistComputer(return_hists, init_returns, init_max_returns, args.dist_K,
                                             compute_lp, create_dist, args.pot_coef, G_with_ids),
+        "NlpPotMancRd": menv.NlpPotMancRdDistComputer(return_hists, init_returns, init_max_returns, args.dist_K,
+                                                      compute_lp, create_dist, args.pot_coef, G_with_ids, args.tr),
         "None": None
     }[args.dist_cp]
 
