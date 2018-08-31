@@ -1,11 +1,11 @@
 {
     "nodes": {
-        "KeyCorridorS3R1": {"id": "BabyAI-KeyCorridorS3R1-v0", "return": 0, "max_return": 0.9},
-        "KeyCorridorS3R2": {"id": "BabyAI-KeyCorridorS3R2-v0", "return": 0, "max_return": 0.9},
-        "KeyCorridorS3R3": {"id": "BabyAI-KeyCorridorS3R3-v0", "return": 0, "max_return": 0.9},
-        "KeyCorridorS4R3": {"id": "BabyAI-KeyCorridorS4R3-v0", "return": 0, "max_return": 0.9},
-        "KeyCorridorS5R3": {"id": "BabyAI-KeyCorridorS5R3-v0", "return": 0, "max_return": 0.9},
-        "KeyCorridorS6R3": {"id": "BabyAI-KeyCorridorS6R3-v0", "return": 0, "max_return": 0.9}
+        "KeyCorridorS3R1": {"id": "BabyAI-KeyCorridorS3R1-v0", "min": 0, "max": 0.9},
+        "KeyCorridorS3R2": {"id": "BabyAI-KeyCorridorS3R2-v0", "min": 0, "max": 0.9},
+        "KeyCorridorS3R3": {"id": "BabyAI-KeyCorridorS3R3-v0", "min": 0, "max": 0.9},
+        "KeyCorridorS4R3": {"id": "BabyAI-KeyCorridorS4R3-v0", "min": 0, "max": 0.9},
+        "KeyCorridorS5R3": {"id": "BabyAI-KeyCorridorS5R3-v0", "min": 0, "max": 0.9},
+        "KeyCorridorS6R3": {"id": "BabyAI-KeyCorridorS6R3-v0", "min": 0, "max": 0.9}
     },
     "edges": [
         ["KeyCorridorS3R1", "KeyCorridorS3R2"],

@@ -1,8 +1,8 @@
 {
     "nodes": {
-        "FindObjS5": {"id": "BabyAI-FindObjS5-v0", "return": 0, "max_return": 0.5},
-        "FindObjS6": {"id": "BabyAI-FindObjS6-v0", "return": 0, "max_return": 0.5},
-        "FindObjS7": {"id": "BabyAI-FindObjS7-v0", "return": 0, "max_return": 0.5}
+        "FindObjS5": {"id": "BabyAI-FindObjS5-v0", "min": 0, "max": 0.5},
+        "FindObjS6": {"id": "BabyAI-FindObjS6-v0", "min": 0, "max": 0.5},
+        "FindObjS7": {"id": "BabyAI-FindObjS7-v0", "min": 0, "max": 0.5}
     },
     "edges": [
         ["FindObjS5", "FindObjS6"],

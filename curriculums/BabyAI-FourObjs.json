@@ -1,8 +1,8 @@
 {
     "nodes": {
-        "FourObjsS5": {"id": "BabyAI-FourObjsS5-v0", "return": 0, "max_return": 0.5},
-        "FourObjsS6": {"id": "BabyAI-FourObjsS6-v0", "return": 0, "max_return": 0.5},
-        "FourObjsS7": {"id": "BabyAI-FourObjsS7-v0", "return": 0, "max_return": 0.5}
+        "FourObjsS5": {"id": "BabyAI-FourObjsS5-v0", "min": 0, "max": 0.5},
+        "FourObjsS6": {"id": "BabyAI-FourObjsS6-v0", "min": 0, "max": 0.5},
+        "FourObjsS7": {"id": "BabyAI-FourObjsS7-v0", "min": 0, "max": 0.5}
     },
     "edges": [
         ["FourObjsS5", "FourObjsS6"],

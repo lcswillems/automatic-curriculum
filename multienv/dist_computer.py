@@ -43,15 +43,15 @@ class LpDistComputer(DistComputer):
         return self.create_dist(self.attentions)
 
 class LpPotDistComputer(DistComputer):
-    def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
-                 returns, max_returns, K):
+    def __init__(self, return_hists, init_returns, init_max_returns, K,
+                 compute_lp, create_dist, pot_coef):
         super().__init__(return_hists)
 
         self.compute_lp = compute_lp
         self.create_dist = create_dist
         self.pot_coef = pot_coef
-        self.returns = numpy.array(returns, dtype=numpy.float)
-        self.max_returns = numpy.array(max_returns, dtype=numpy.float)
+        self.returns = numpy.array(init_returns, dtype=numpy.float)
+        self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
 
         self.saved_max_returns = self.max_returns[:]
@@ -80,15 +80,15 @@ class LpPotDistComputer(DistComputer):
         return self.create_dist(self.attentions)
 
 class LpPotRrDistComputer(DistComputer):
-    def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
-                 returns, max_returns, K, G):
+    def __init__(self, return_hists, init_returns, init_max_returns, K,
+                 compute_lp, create_dist, pot_coef, G):
         super().__init__(return_hists)
 
         self.compute_lp = compute_lp
         self.create_dist = create_dist
         self.pot_coef = pot_coef
-        self.returns = numpy.array(returns, dtype=numpy.float)
-        self.max_returns = numpy.array(max_returns, dtype=numpy.float)
+        self.returns = numpy.array(init_returns, dtype=numpy.float)
+        self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
         self.G = G
 

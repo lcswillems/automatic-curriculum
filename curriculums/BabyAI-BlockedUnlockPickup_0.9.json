@@ -1,8 +1,8 @@
 {
     "nodes": {
-        "Unlock": {"id": "BabyAI-Unlock-v0", "return": 0, "max_return": 0.9},
-        "UnlockPickup": {"id": "BabyAI-UnlockPickup-v0", "return": 0, "max_return": 0.9},
-        "BlockedUnlockPickup": {"id": "BabyAI-BlockedUnlockPickup-v0", "return": 0, "max_return": 0.9}
+        "Unlock": {"id": "BabyAI-Unlock-v0", "min": 0, "max": 0.9},
+        "UnlockPickup": {"id": "BabyAI-UnlockPickup-v0", "min": 0, "max": 0.9},
+        "BlockedUnlockPickup": {"id": "BabyAI-BlockedUnlockPickup-v0", "min": 0, "max": 0.9}
     },
     "edges": [
         ["Unlock", "UnlockPickup"],
