@@ -39,9 +39,8 @@ class LpDistComputer(DistComputer):
         self.lps = self.compute_lp()
         self.a_lps = numpy.absolute(self.lps)
         self.attentions = self.a_lps
-        dist = self.create_dist(self.attentions)
 
-        return dist
+        return self.create_dist(self.attentions)
 
 class LpPotDistComputer(DistComputer):
     def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
@@ -77,9 +76,8 @@ class LpPotDistComputer(DistComputer):
         self.a_lps = numpy.absolute(self.lps)
         self.pots = self.max_returns - self.returns
         self.attentions = self.a_lps + self.pot_coef * self.pots
-        dist = self.create_dist(self.attentions)
 
-        return dist
+        return self.create_dist(self.attentions)
 
 class LpPotRrDistComputer(DistComputer):
     def __init__(self, return_hists, compute_lp, create_dist, pot_coef,
@@ -127,6 +125,5 @@ class LpPotRrDistComputer(DistComputer):
                 self.filters[env_id] = numpy.amin(self.rrs[ancestors])
         self.attentions = self.a_lps + self.pot_coef * self.pots
         self.filtered_attentions = self.attentions * self.filters
-        dist = self.create_dist(self.filtered_attentions)
 
-        return dist
+        return self.create_dist(self.filtered_attentions)
