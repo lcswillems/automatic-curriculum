@@ -29,8 +29,10 @@ parser.add_argument("--dist-cr", default="GreedyProp",
                     help="name of the distribution creator (default: GreedyProp)")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
-parser.add_argument("--dist-K", type=int, default=10,
+parser.add_argument("--dist-lp-K", type=int, default=10,
                     help="window size for some learning progress computers (default: 10)")
+parser.add_argument("--dist-ret-K", type=int, default=2,
+                    help="window size for min and max returns (default: 2)")
 parser.add_argument("--dist-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution creators (default: 0.1)")
 parser.add_argument("--dist-tau", type=float, default=4e-4,
@@ -130,8 +132,8 @@ elif args.curriculum is not None:
     # Instantiate the learning progress computer
     compute_lp = {
         "Online": menv.OnlineLpComputer(return_hists, args.dist_alpha),
-        "Window": menv.WindowLpComputer(return_hists, args.dist_alpha, args.dist_K),
-        "Linreg": menv.LinregLpComputer(return_hists, args.dist_K),
+        "Window": menv.WindowLpComputer(return_hists, args.dist_alpha, args.dist_lp_K),
+        "Linreg": menv.LinregLpComputer(return_hists, args.dist_lp_K),
         "None": None
     }[args.lp_cp]
 
@@ -147,11 +149,11 @@ elif args.curriculum is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
-        "LpPot": menv.LpPotDistComputer(return_hists, init_returns, init_max_returns, args.dist_K,
+        "LpPot": menv.LpPotDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
                                         compute_lp, create_dist, args.pot_coef),
-        "LpPotRr": menv.LpPotRrDistComputer(return_hists, init_returns, init_max_returns, args.dist_K,
+        "LpPotRr": menv.LpPotRrDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
                                             compute_lp, create_dist, args.pot_coef, G_with_ids),
-        "NlpPotMancRd": menv.NlpPotMancRdDistComputer(return_hists, init_returns, init_max_returns, args.dist_K,
+        "NlpPotMancRd": menv.NlpPotMancRdDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
                                                       compute_lp, create_dist, args.pot_coef, G_with_ids, args.tr),
         "None": None
     }[args.dist_cp]
