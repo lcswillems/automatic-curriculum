@@ -53,7 +53,7 @@ class LpPotDistComputer(DistComputer):
         self.create_dist = create_dist
         self.pot_coef = pot_coef
 
-        self.saved_max_returns = self.max_returns[:]
+        self.saved_max_returns = numpy.copy(self.max_returns)
 
     def update_returns(self):
         for i in range(len(self.returns)):
@@ -91,9 +91,9 @@ class LpPotRrDistComputer(DistComputer):
         self.pot_prop = pot_prop
         self.G = G
 
-        self.min_returns = self.returns[:]
-        self.saved_min_returns = self.min_returns[:]
-        self.saved_max_returns = self.max_returns[:]
+        self.min_returns = numpy.copy(self.returns)
+        self.saved_min_returns = numpy.copy(self.min_returns)
+        self.saved_max_returns = numpy.copy(self.max_returns)
 
     def update_returns(self):
         for i in range(len(self.returns)):
@@ -142,9 +142,9 @@ class NlpPotMancRdDistComputer(DistComputer):
         self.power = power
         self.tr = tr
 
-        self.min_returns = self.returns[:]
-        self.saved_min_returns = self.min_returns[:]
-        self.saved_max_returns = self.max_returns[:]
+        self.min_returns = numpy.copy(self.returns)
+        self.saved_min_returns = numpy.copy(self.min_returns)
+        self.saved_max_returns = numpy.copy(self.max_returns)
 
     def update_returns(self):
         for i in range(len(self.returns)):
@@ -182,7 +182,7 @@ class NlpPotMancRdDistComputer(DistComputer):
         self.learning_states = self.na_lps + self.pot_coef * self.pots
         self.attentions = self.anc_mrs**self.power * self.learning_states * (1-self.succ_mrs)
 
-        self.rd_attentions = self.attentions[:]
+        self.rd_attentions = numpy.copy(self.attentions)
         for env_id in reversed(list(nx.topological_sort(self.G))):
             predecessors = list(self.G.predecessors(env_id))
             attention_to_transfer = self.rd_attentions[env_id]*self.tr
