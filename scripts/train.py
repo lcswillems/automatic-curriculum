@@ -298,7 +298,7 @@ while num_frames < args.frames:
                     data += [compute_dist.rd_attentions[env_id]]
                     header += ["na_lp_over_learning_state/{}".format(env_key)]
                     data += [None]
-                    if compute_dist.attentions[env_id] != 0:
+                    if compute_dist.learning_states[env_id] != 0:
                         data[-1] = compute_dist.na_lps[env_id]/compute_dist.learning_states[env_id]
 
         if status["num_frames"] == 0:
