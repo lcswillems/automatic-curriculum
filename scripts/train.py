@@ -17,8 +17,8 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--dist-cp", default="NlpPotMancRd",
-                    help="name of the distribution computer (default: NlpPotMancRd)")
+parser.add_argument("--dist-cp", default="Learnable",
+                    help="name of the distribution computer (default: Learnable)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
 parser.add_argument("--dist-cr", default="GreedyProp",
@@ -142,7 +142,7 @@ elif args.curriculum is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
-        "NlpPotMancRd": menv.NlpPotMancRdDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
+        "Learnable": menv.LearnableDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
                                                       compute_lp, create_dist, args.pot_prop, G_with_ids, args.dist_power, args.tr),
         "None": None
     }[args.dist_cp]
@@ -245,12 +245,12 @@ while num_frames < args.frames:
                     data[-1] = menv_head.synthesized_returns[env_id]
                     # data[-2] = menv_head.synthesized_returns[env_id]
                     # data[-1] = compute_dist.return_hists[env_id][-1][1]
-                if args.dist_cp in ["Lp", "NlpPotMancRd"]:
+                if args.dist_cp in ["Lp", "Learnable"]:
                     header += ["lp/{}".format(env_key)]
                     data += [compute_dist.lps[env_id]]
                     header += ["attention/{}".format(env_key)]
                     data += [compute_dist.attentions[env_id]]
-                if args.dist_cp in ["NlpPotMancRd"]:
+                if args.dist_cp in ["Learnable"]:
                     header += ["maxrt/{}".format(env_key)]
                     data += [compute_dist.max_returns[env_id]]
                     header += ["na_lp/{}".format(env_key)]
@@ -261,8 +261,8 @@ while num_frames < args.frames:
                     data += [compute_dist.anc_mrs[env_id]]
                     header += ["learning_state/{}".format(env_key)]
                     data += [compute_dist.learning_states[env_id]]
-                    header += ["rd_attention/{}".format(env_key)]
-                    data += [compute_dist.rd_attentions[env_id]]
+                    header += ["pre_attention/{}".format(env_key)]
+                    data += [compute_dist.attentions[env_id]]
                     header += ["na_lp_over_learning_state/{}".format(env_key)]
                     data += [None]
                     if compute_dist.learning_states[env_id] != 0:

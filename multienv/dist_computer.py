@@ -41,7 +41,7 @@ class LpDistComputer(DistComputer):
 
         return self.create_dist(self.attentions)
 
-class NlpPotMancRdDistComputer(DistComputer):
+class LearnableDistComputer(DistComputer):
     def __init__(self, return_hists, init_returns, init_max_returns, K,
                  compute_lp, create_dist, pot_coef, G, power, tr):
         super().__init__(return_hists)
@@ -94,14 +94,14 @@ class NlpPotMancRdDistComputer(DistComputer):
             if len(successors) > 0:
                 self.succ_mrs[env_id] = numpy.amin(self.mrs[successors])
         self.learning_states = self.na_lps + self.pot_coef * self.pots
-        self.attentions = self.anc_mrs**self.power * self.learning_states * (1-self.succ_mrs)
+        self.pre_attentions = self.anc_mrs**self.power * self.learning_states * (1-self.succ_mrs)
 
-        self.rd_attentions = numpy.copy(self.attentions)
+        self.attentions = numpy.copy(self.pre_attentions)
         for env_id in reversed(list(nx.topological_sort(self.G))):
             predecessors = list(self.G.predecessors(env_id))
-            attention_to_transfer = self.rd_attentions[env_id]*self.tr
-            self.rd_attentions[env_id] -= attention_to_transfer
+            attention_to_transfer = self.attentions[env_id]*self.tr
+            self.attentions[env_id] -= attention_to_transfer
             if len(predecessors) > 0:
-                self.rd_attentions[predecessors] += attention_to_transfer/len(predecessors)
+                self.attentions[predecessors] += attention_to_transfer/len(predecessors)
 
-        return self.create_dist(self.rd_attentions)
+        return self.create_dist(self.attentions)

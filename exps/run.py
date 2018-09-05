@@ -20,7 +20,7 @@ curriculums = [
 ]
 dist_cps = [
     # "Lp",
-    "NlpPotMancRd"
+    "Learnable"
 ]
 lp_cps = [
     "Linreg",
