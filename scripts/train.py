@@ -17,28 +17,28 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--dist-cp", default="Learnable",
-                    help="name of the distribution computer (default: Learnable)")
+parser.add_argument("--ret-K", type=int, default=2,
+                    help="window size for computing min and max returns (default: 2)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
-parser.add_argument("--dist-cr", default="Prop",
-                    help="name of the distribution converter (default: Prop)")
-parser.add_argument("--dist-alpha", type=float, default=0.1,
-                    help="learning rate for TS learning progress computers (default: 0.2)")
-parser.add_argument("--dist-lp-K", type=int, default=10,
+parser.add_argument("--lp-cp-alpha", type=float, default=0.1,
+                    help="learning rate for TS learning progress computers (default: 0.1)")
+parser.add_argument("--lp-cp-K", type=int, default=10,
                     help="window size for some learning progress computers (default: 10)")
-parser.add_argument("--dist-ret-K", type=int, default=2,
-                    help="window size for min and max returns (default: 2)")
-parser.add_argument("--dist-eps", type=float, default=0.1,
+parser.add_argument("--dist-cv", default="Prop",
+                    help="name of the distribution converter (default: Prop)")
+parser.add_argument("--dist-cv-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution converters (default: 0.1)")
-parser.add_argument("--dist-tau", type=float, default=4e-4,
+parser.add_argument("--dist-cv-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution converter (default: 4e-4)")
-parser.add_argument("--dist-power", type=int, default=4,
-                    help="power of the ancestor mastering rate for some distribution computer (default: 4)")
-parser.add_argument("--pot-prop", type=float, default=0.5,
-                    help="potential term coefficient in attention (default: 0.5)")
-parser.add_argument("--tr", type=float, default=0.3,
-                    help="rate of attention transfer from a node to its parents (default: 0.3)")
+parser.add_argument("--dist-cp", default="Learnable",
+                    help="name of the distribution computer (default: Learnable)")
+parser.add_argument("--dist-cp-power", type=int, default=4,
+                    help="power of the ancestor mastering rate for the Learnable distribution computer (default: 4)")
+parser.add_argument("--dist-cp-prop", type=float, default=0.5,
+                    help="potential proportion for the Learnable distribution computer (default: 0.5)")
+parser.add_argument("--dist-cp-tr", type=float, default=0.3,
+                    help="attention transfer rate for the Learnable distribution computer (default: 0.3)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -124,27 +124,27 @@ elif args.curriculum is not None:
 
     # Instantiate the learning progress computer
     compute_lp = {
-        "Online": menv.OnlineLpComputer(return_hists, args.dist_alpha),
-        "Window": menv.WindowLpComputer(return_hists, args.dist_alpha, args.dist_lp_K),
-        "Linreg": menv.LinregLpComputer(return_hists, args.dist_lp_K),
+        "Online": menv.OnlineLpComputer(return_hists, args.lp_cp_alpha),
+        "Window": menv.WindowLpComputer(return_hists, args.lp_cp_alpha, args.lp_cp_K),
+        "Linreg": menv.LinregLpComputer(return_hists, args.lp_cp_K),
         "None": None
     }[args.lp_cp]
 
     # Instantiate the distribution converter
     convert_into_dist = {
-        "GreedyAmax": menv.GreedyAmaxDistConverter(args.dist_eps),
+        "GreedyAmax": menv.GreedyAmaxDistConverter(args.dist_cv_eps),
         "Prop": menv.PropDistConverter(),
-        "GreedyProp": menv.GreedyPropDistConverter(args.dist_eps),
-        "Boltzmann": menv.BoltzmannDistConverter(args.dist_tau),
+        "GreedyProp": menv.GreedyPropDistConverter(args.dist_cv_eps),
+        "Boltzmann": menv.BoltzmannDistConverter(args.dist_cv_tau),
         "None": None
-    }[args.dist_cr]
+    }[args.dist_cv]
 
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, convert_into_dist),
-        "Learnable": menv.LearnableDistComputer(return_hists, init_min_returns, init_max_returns, args.dist_ret_K,
-                                                compute_lp, convert_into_dist, args.pot_prop, G_with_ids,
-                                                args.dist_power, args.tr),
+        "Learnable": menv.LearnableDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
+                                                compute_lp, convert_into_dist, args.dist_cp_prop, G_with_ids,
+                                                args.dist_cp_power, args.dist_cp_tr),
         "None": None
     }[args.dist_cp]
 

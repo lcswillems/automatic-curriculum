@@ -33,7 +33,7 @@ dist_cvs = [
     # "Boltzmann",
     # "GreedyAmax"
 ]
-pot_props = [
+dist_cp_props = [
     0,
     0.25,
     0.5,
@@ -49,12 +49,12 @@ times = {
 
 # Execute scripts
 
-for seed, curriculum, dist_cp, lp_cp, dist_cv, pot_prop in itertools.product(seeds, curriculums, dist_cps, lp_cps, dist_cvs, pot_props):
+for seed, curriculum, dist_cp, lp_cp, dist_cv, dist_cp_prop in itertools.product(seeds, curriculums, dist_cps, lp_cps, dist_cvs, dist_cp_props):
     slurm_cmd = "sbatch --account=def-bengioy --time={} --cpus-per-task=4 --gres=gpu:1 --mem=4G".format(times[curriculum])
-    model_name = "{}_{}_{}_{}_prop{}/seed{}".format(curriculum, dist_cp, lp_cp, dist_cv, pot_prop, seed)
+    model_name = "{}_{}_{}_{}_prop{}/seed{}".format(curriculum, dist_cp, lp_cp, dist_cv, dist_cp_prop, seed)
     subprocess.Popen(
-        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --dist-cp {} --lp-cp {} --dist-cr {} --pot-prop {} --model {} --save-interval 10"
+        "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --dist-cp {} --lp-cp {} --dist-cr {} --pot-prop {} --model {} --save-interval 10 --no-instr"
         .format(slurm_cmd if not args.no_slurm else "",
-                seed, curriculum, dist_cp, lp_cp, dist_cv, pot_prop, model_name),
+                seed, curriculum, dist_cp, lp_cp, dist_cv, dist_cp_prop, model_name),
         shell=True)
     time.sleep(1)
