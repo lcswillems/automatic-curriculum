@@ -14,13 +14,9 @@ args = parser.parse_args()
 
 seeds = range(1, 11)
 curriculums = [
-    "SC-Soft",
-    # "SC-Hard",
-    "BabyAI-KeyCorridor",
-    "BabyAI-BlockedUnlockPickup",
-    # "BabyAI-UnlockPickupDist",
-    # "BabyAI-FourObjs",
-    # "BabyAI-FindObj",
+    "BlockedUnlockPickup",
+    "KeyCorridor",
+    "ObstructedMaze",
 ]
 rt_hists = [
     "Normal",
@@ -64,22 +60,14 @@ pot_props = [
 ]
 
 times = {
-    "SC-Soft": "3:0:0",
-    # "SC-Hard": "4:0:0",
-    "BabyAI-KeyCorridor": "2:0:0",
-    "BabyAI-BlockedUnlockPickup": "0:30:0",
-    # "BabyAI-UnlockPickupDist": "2:0:0",
-    # "BabyAI-FourObjs": "2:0:0",
-    # "BabyAI-FindObj": "2:0:0"
+    "BlockedUnlockPickup": "0:30:0",
+    "KeyCorridor": "2:0:0",
+    "ObstructedMaze": "3:0:0",
 }
 no_comps = {
-    "SC-Soft": "--no-instr",
-    # "SC-Hard": "--no-instr",
-    "BabyAI-KeyCorridor": "--no-instr",
-    "BabyAI-BlockedUnlockPickup": "--no-instr",
-    # "BabyAI-UnlockPickupDist": "",
-    # "BabyAI-FourObjs": "",
-    # "BabyAI-FindObj": "",
+    "BlockedUnlockPickup": "--no-instr",
+    "KeyCorridor": "--no-instr",
+    "ObstructedMaze": "--no-instr",
 }
 
 # Execute scripts

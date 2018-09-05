@@ -26,9 +26,9 @@ G = utils.load_curriculum(args.curriculum)
 # Define mapping from env names to clean env names
 
 def clean_name(name):
+    name = name.replace("MiniGrid-", "")
     name = name.replace("-v0", "")
-    name = name.replace("BabyAI-", "")
-    return name.replace("SC-", "")
+    return name
 
 name_mapping = {e_name: clean_name(e_name) for e_name in G.nodes}
 

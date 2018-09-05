@@ -1,0 +1,11 @@
+{
+    "nodes": {
+        "Unlock": {"id": "MiniGrid-Unlock-v0", "min": 0, "max": 0.5},
+        "UnlockPickup": {"id": "MiniGrid-UnlockPickup-v0", "min": 0, "max": 0.5},
+        "BlockedUnlockPickup": {"id": "MiniGrid-BlockedUnlockPickup-v0", "min": 0, "max": 0.5}
+    },
+    "edges": [
+        ["Unlock", "UnlockPickup"],
+        ["UnlockPickup", "BlockedUnlockPickup"]
+    ]
+}
