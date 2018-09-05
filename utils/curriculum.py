@@ -12,10 +12,10 @@ def load_curriculum(curriculum_id):
         G = nx.DiGraph()
         G.add_edges_from(json_G["edges"])
 
-    init_returns = []
+    init_min_returns = []
     init_max_returns = []
     for env_key in G.nodes:
-        init_returns.append(json_G["nodes"][env_key]["min"])
+        init_min_returns.append(json_G["nodes"][env_key]["min"])
         init_max_returns.append(json_G["nodes"][env_key]["max"])
 
     mapping = {}
@@ -23,7 +23,7 @@ def load_curriculum(curriculum_id):
         mapping[env_key] = json_G["nodes"][env_key]["id"]
     G = nx.relabel_nodes(G, mapping)
 
-    return G, init_returns, init_max_returns
+    return G, init_min_returns, init_max_returns
 
 def make_envs_from_curriculum(G, seed):
     return [utils.make_env(env_key, seed) for env_key in G.nodes]

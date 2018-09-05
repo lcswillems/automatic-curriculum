@@ -42,11 +42,11 @@ class LpDistComputer(DistComputer):
         return self.create_dist(self.attentions)
 
 class LearnableDistComputer(DistComputer):
-    def __init__(self, return_hists, init_returns, init_max_returns, K,
+    def __init__(self, return_hists, init_min_returns, init_max_returns, K,
                  compute_lp, create_dist, pot_coef, G, power, tr):
         super().__init__(return_hists)
 
-        self.returns = numpy.array(init_returns, dtype=numpy.float)
+        self.returns = numpy.array(init_min_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
         self.compute_lp = compute_lp
