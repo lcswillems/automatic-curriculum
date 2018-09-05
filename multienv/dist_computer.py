@@ -26,11 +26,11 @@ class LpDistComputer(DistComputer):
     It associates an attention a_i to each environment i that is equal
     to the learning progress of this environment, i.e. a_i = lp_i."""
 
-    def __init__(self, return_hists, compute_lp, create_dist):
+    def __init__(self, return_hists, compute_lp, convert_into_dist):
         super().__init__(return_hists)
 
         self.compute_lp = compute_lp
-        self.create_dist = create_dist
+        self.convert_into_dist = convert_into_dist
 
     def __call__(self, returns):
         super().__call__(returns)
@@ -39,18 +39,18 @@ class LpDistComputer(DistComputer):
         self.a_lps = numpy.absolute(self.lps)
         self.attentions = self.a_lps
 
-        return self.create_dist(self.attentions)
+        return self.convert_into_dist(self.attentions)
 
 class LearnableDistComputer(DistComputer):
     def __init__(self, return_hists, init_min_returns, init_max_returns, K,
-                 compute_lp, create_dist, pot_coef, G, power, tr):
+                 compute_lp, convert_into_dist, pot_coef, G, power, tr):
         super().__init__(return_hists)
 
         self.returns = numpy.array(init_min_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
         self.compute_lp = compute_lp
-        self.create_dist = create_dist
+        self.convert_into_dist = convert_into_dist
         self.pot_coef = pot_coef
         self.G = G
         self.power = power
@@ -104,4 +104,4 @@ class LearnableDistComputer(DistComputer):
             if len(predecessors) > 0:
                 self.attentions[predecessors] += attention_to_transfer/len(predecessors)
 
-        return self.create_dist(self.attentions)
+        return self.convert_into_dist(self.attentions)

@@ -1,20 +1,20 @@
 from abc import ABC, abstractmethod
 import numpy
 
-class DistCreator(ABC):
-    """A distribution creator.
+class DistConverter(ABC):
+    """A distribution converter.
 
-    It creates a distribution [p_1, ..., p_N] from values
-    [v_1, ..., v_N]."""
+    It converts values [v_1, ..., v_N] into a distribution
+    [p_1, ..., p_N]."""
 
     @abstractmethod
     def __call__(self, values):
         pass
 
-class GreedyAmaxDistCreator(DistCreator):
-    """A greedy argmax-based distribution creator.
+class GreedyAmaxDistConverter(DistConverter):
+    """A greedy argmax-based distribution converter.
 
-    If values = [v_1, ..., v_N], then it creates the distribution
+    It converts values [v_1, ..., v_N] into a distribution
     [p_1, ..., p_N] where:
     - p_i = 1 - ε/N if v_i is the greatest value,
     - p_i = ε/N otherwise."""
@@ -28,10 +28,10 @@ class GreedyAmaxDistCreator(DistCreator):
         dist[value_id] += 1-self.ε
         return dist
 
-class PropDistCreator(DistCreator):
-    """A proportionality-based distribution creator.
+class PropDistConverter(DistConverter):
+    """A proportionality-based distribution converter.
 
-    If values = [v_1, ..., v_N], then it creates the distribution
+    It converts values [v_1, ..., v_N] into a distribution
     [p_1, ..., p_N] where p_i = v_i / (v_1 + ... + v_N)."""
 
     ρ = 1e-8
@@ -42,12 +42,12 @@ class PropDistCreator(DistCreator):
         values = values + self.ρ
         return values/numpy.sum(values)
 
-class GreedyPropDistCreator(PropDistCreator):
-    """A greedy proportionality-based distribution creator.
+class GreedyPropDistConverter(PropDistConverter):
+    """A greedy proportionality-based distribution converter.
 
-    If values = [v_1, ..., v_N] and q is the distribution created by
-    PropDistCreator from values, then it creates the distribution
-    p = (1-ε)*q + ε*u where u is the uniform distribution."""
+    It q is the distribution converted from values [v_1, ..., v_N] by
+    PropDistConverter, then it converts values into p = (1-ε)*q + ε*u
+    where u is the uniform distribution."""
 
     def __init__(self, ε):
         self.ε = ε
@@ -57,10 +57,10 @@ class GreedyPropDistCreator(PropDistCreator):
         uniform = numpy.ones(len(values))/len(values)
         return (1-self.ε)*dist + self.ε*uniform
 
-class BoltzmannDistCreator(DistCreator):
-    """A Boltzmann-based distribution creator.
+class BoltzmannDistConverter(DistConverter):
+    """A Boltzmann-based distribution converter.
 
-    If values = [v_1, ..., v_N], then it creates the distribution
+    It converts values [v_1, ..., v_N] into a distribution
     [p_1, ..., p_N] where p_i = exp(v_i/τ) / Σ exp(v_j/τ)."""
 
     def __init__(self, τ):
