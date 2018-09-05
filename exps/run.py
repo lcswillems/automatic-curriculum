@@ -20,8 +20,6 @@ curriculums = [
 ]
 dist_cps = [
     # "Lp",
-    # "LpPot",
-    # "LpPotRr",
     "NlpPotMancRd"
 ]
 lp_cps = [
@@ -70,7 +68,7 @@ no_comps = {
 
 for seed, curriculum, dist_cp, lp_cp, dist_cr, K, ε, pot_prop in itertools.product(seeds, curriculums, dist_cps, lp_cps, dist_crs, Ks, εs, pot_props):
     slurm_cmd = "sbatch --account=def-bengioy --time={} --cpus-per-task=4 --gres=gpu:1 --mem=4G".format(times[curriculum])
-    model_name = "{}_{}_{}_{}_K{}_eps{}_pot{}/seed{}".format(curriculum, dist_cp, lp_cp, dist_cr, K, ε, pot_prop, seed)
+    model_name = "{}_{}_{}_{}_K{}_eps{}_prop{}/seed{}".format(curriculum, dist_cp, lp_cp, dist_cr, K, ε, pot_prop, seed)
     no_comp = no_comps[curriculum]
     subprocess.Popen(
         "{} exps/run.sh python -m scripts.train --seed {} --curriculum {} --dist-cp {} --lp-cp {} --dist-cr {} --dist-lp-K {} --dist-eps {} --pot-prop {} --model {} {} --save-interval 10"

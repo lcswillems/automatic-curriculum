@@ -17,8 +17,8 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--dist-cp", default="LpPotRr",
-                    help="name of the distribution computer (default: LpPotRr)")
+parser.add_argument("--dist-cp", default="NlpPotMancRd",
+                    help="name of the distribution computer (default: NlpPotMancRd)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg)")
 parser.add_argument("--dist-cr", default="GreedyProp",
@@ -142,10 +142,6 @@ elif args.curriculum is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, create_dist),
-        # "LpPot": menv.LpPotDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
-        #                                 compute_lp, create_dist, args.pot_coef),
-        # "LpPotRr": menv.LpPotRrDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
-        #                                     compute_lp, create_dist, args.pot_coef, G_with_ids),
         "NlpPotMancRd": menv.NlpPotMancRdDistComputer(return_hists, init_returns, init_max_returns, args.dist_ret_K,
                                                       compute_lp, create_dist, args.pot_prop, G_with_ids, args.dist_power, args.tr),
         "None": None
@@ -249,32 +245,14 @@ while num_frames < args.frames:
                     data[-1] = menv_head.synthesized_returns[env_id]
                     # data[-2] = menv_head.synthesized_returns[env_id]
                     # data[-1] = compute_dist.return_hists[env_id][-1][1]
-                # if args.dist_cp in ["Lp", "LpPot", "LpPotRr"]:
-                #     header += ["lp/{}".format(env_key)]
-                #     data += [compute_dist.lps[env_id]]
-                #     header += ["attention/{}".format(env_key)]
-                #     data += [compute_dist.attentions[env_id]]
-                #     header += ["lp_over_attention/{}".format(env_key)]
-                #     data += [None]
-                #     if compute_dist.attentions[env_id] != 0:
-                #         data[-1] = compute_dist.a_lps[env_id]/compute_dist.attentions[env_id]
-                # if args.dist_cp in ["LpPot", "LpPotRr"]:
-                #     header += ["pot/{}".format(env_key)]
-                #     data += [compute_dist.pots[env_id]]
-                #     header += ["maxrt/{}".format(env_key)]
-                #     data += [compute_dist.max_returns[env_id]]
-                # if args.dist_cp in ["LpPotRr"]:
-                #     header += ["minrt/{}".format(env_key)]
-                #     data += [compute_dist.min_returns[env_id]]
-                #     header += ["rr/{}".format(env_key)]
-                #     data += [compute_dist.rrs[env_id]]
-                #     header += ["filtered_attention/{}".format(env_key)]
-                #     data += [compute_dist.filtered_attentions[env_id]]
+                if args.dist_cp in ["Lp", "NlpPotMancRd"]:
+                    header += ["lp/{}".format(env_key)]
+                    data += [compute_dist.lps[env_id]]
+                    header += ["attention/{}".format(env_key)]
+                    data += [compute_dist.attentions[env_id]]
                 if args.dist_cp in ["NlpPotMancRd"]:
                     header += ["maxrt/{}".format(env_key)]
                     data += [compute_dist.max_returns[env_id]]
-                    header += ["lp/{}".format(env_key)]
-                    data += [compute_dist.lps[env_id]]
                     header += ["na_lp/{}".format(env_key)]
                     data += [compute_dist.na_lps[env_id]]
                     header += ["mr/{}".format(env_key)]
@@ -283,8 +261,6 @@ while num_frames < args.frames:
                     data += [compute_dist.anc_mrs[env_id]]
                     header += ["learning_state/{}".format(env_key)]
                     data += [compute_dist.learning_states[env_id]]
-                    header += ["attention/{}".format(env_key)]
-                    data += [compute_dist.attentions[env_id]]
                     header += ["rd_attention/{}".format(env_key)]
                     data += [compute_dist.rd_attentions[env_id]]
                     header += ["na_lp_over_learning_state/{}".format(env_key)]
