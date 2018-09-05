@@ -6,9 +6,9 @@
         "2Dl": {"id": "MiniGrid-ObstructedMaze-2Dl-v0", "min": 0, "max": 0.5},
         "2Dlh": {"id": "MiniGrid-ObstructedMaze-2Dlh-v0", "min": 0, "max": 0.5},
         "2Dlhb": {"id": "MiniGrid-ObstructedMaze-2Dlhb-v0", "min": 0, "max": 0.5},
-        "1Q": {"id": "Minigrid-ObstructedMaze-1Q-v0", "min": 0, "max": 0.5},
-        "2Q": {"id": "Minigrid-ObstructedMaze-2Q-v0", "min": 0, "max": 0.5},
-        "Full": {"id": "Minigrid-ObstructedMaze-Full-v0", "min": 0, "max": 0.5}
+        "1Q": {"id": "MiniGrid-ObstructedMaze-1Q-v0", "min": 0, "max": 0.5},
+        "2Q": {"id": "MiniGrid-ObstructedMaze-2Q-v0", "min": 0, "max": 0.5},
+        "Full": {"id": "MiniGrid-ObstructedMaze-Full-v0", "min": 0, "max": 0.5}
     },
     "edges": [
         ["1Dl", "1Dlh"],
