@@ -1,8 +1,8 @@
 {
     "nodes": {
-        "Dl": {"id": "MiniGrid-ObstructedMaze-Dl-v0", "min": 0, "max": 0.5},
-        "Dlh": {"id": "MiniGrid-ObstructedMaze-Dlh-v0", "min": 0, "max": 0.5},
-        "Dlhb": {"id": "MiniGrid-ObstructedMaze-Dlhb-v0", "min": 0, "max": 0.5},
+        "1Dl": {"id": "MiniGrid-ObstructedMaze-1Dl-v0", "min": 0, "max": 0.5},
+        "1Dlh": {"id": "MiniGrid-ObstructedMaze-1Dlh-v0", "min": 0, "max": 0.5},
+        "1Dlhb": {"id": "MiniGrid-ObstructedMaze-1Dlhb-v0", "min": 0, "max": 0.5},
         "2Dl": {"id": "MiniGrid-ObstructedMaze-2Dl-v0", "min": 0, "max": 0.5},
         "2Dlh": {"id": "MiniGrid-ObstructedMaze-2Dlh-v0", "min": 0, "max": 0.5},
         "2Dlhb": {"id": "MiniGrid-ObstructedMaze-2Dlhb-v0", "min": 0, "max": 0.5},
@@ -11,12 +11,12 @@
         "Full": {"id": "Minigrid-ObstructedMaze-Full-v0", "min": 0, "max": 0.5}
     },
     "edges": [
-        ["Dl", "Dlh"],
-        ["Dl", "2Dl"],
-        ["Dlh", "Dlhb"],
-        ["Dlh", "2Dlh"],
+        ["1Dl", "1Dlh"],
+        ["1Dl", "2Dl"],
+        ["1Dlh", "1Dlhb"],
+        ["1Dlh", "2Dlh"],
         ["2Dl", "2Dlh"],
-        ["Dlhb", "2Dlhb"],
+        ["1Dlhb", "2Dlhb"],
         ["2Dlh", "2Dlhb"],
         ["2Dlhb", "1Q"],
         ["1Q", "2Q"],
