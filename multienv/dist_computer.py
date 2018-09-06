@@ -23,8 +23,9 @@ class DistComputer(ABC):
 class LpDistComputer(DistComputer):
     """A distribution computer based on learning progress.
 
-    It associates an attention a_i to each environment i that is equal
-    to the learning progress of this environment, i.e. a_i = lp_i."""
+    It associates an attention A(i) to each task i:
+        A(i) = a_lp(i)
+    where a_lp(i) is the absolute learning progress on task i."""
 
     def __init__(self, return_hists, compute_lp, convert_into_dist):
         super().__init__(return_hists)
@@ -42,21 +43,36 @@ class LpDistComputer(DistComputer):
         return self.convert_into_dist(self.attentions)
 
 class LearnableDistComputer(DistComputer):
+    """A distribution computer based on learnable tasks.
+
+    It first associates a pre-attention pre_A(i) to each task i:
+        pre_A(i) = Mast(Anc_i)^p * ((1-γ) na_lp(i) + γ Pot(i)) * (1 - Mast(Succ_i))
+    where:
+    - Mast(Anc_i) is the minimum mastering rate over ancestors of task i in graph G;
+    - p is the power;
+    - na_lp(i) := a_lp(i) / max_i a_lp(i) is the normalized absolute learning progress on i;
+    - Pot(i) := 1 - Mast(i) is the potential of learning task i;
+    - γ is the potential proportion;
+    - Mast(Succ_i) is the mastering rate over successors of task i in graph G.
+
+    Then, it associates an attention A(i) to each task i, that is the attention to
+    task i after i has redistributed δ of its pre-attention."""
+
     def __init__(self, return_hists, init_min_returns, init_max_returns, K,
-                 compute_lp, convert_into_dist, pot_coef, G, power, tr):
+                 compute_lp, convert_into_dist, G, power, pot_prop, tr):
         super().__init__(return_hists)
 
-        self.returns = numpy.array(init_min_returns, dtype=numpy.float)
+        self.min_returns = numpy.array(init_min_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
         self.compute_lp = compute_lp
         self.convert_into_dist = convert_into_dist
-        self.pot_coef = pot_coef
         self.G = G
         self.power = power
+        self.pot_prop = pot_prop
         self.tr = tr
 
-        self.min_returns = numpy.copy(self.returns)
+        self.returns = numpy.copy(self.min_returns)
         self.saved_min_returns = numpy.copy(self.min_returns)
         self.saved_max_returns = numpy.copy(self.max_returns)
 
@@ -93,7 +109,7 @@ class LearnableDistComputer(DistComputer):
             successors = list(self.G.successors(env_id))
             if len(successors) > 0:
                 self.succ_mrs[env_id] = numpy.amin(self.mrs[successors])
-        self.learning_states = self.na_lps + self.pot_coef * self.pots
+        self.learning_states = (1 - self.pot_prop) * self.na_lps + self.pot_prop * self.pots
         self.pre_attentions = self.anc_mrs**self.power * self.learning_states * (1-self.succ_mrs)
 
         self.attentions = numpy.copy(self.pre_attentions)

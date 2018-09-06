@@ -143,8 +143,7 @@ elif args.curriculum is not None:
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, compute_lp, convert_into_dist),
         "Learnable": menv.LearnableDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
-                                                compute_lp, convert_into_dist, args.dist_cp_prop, G_with_ids,
-                                                args.dist_cp_power, args.dist_cp_tr),
+                                                compute_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_tr),
         "None": None
     }[args.dist_cp]
 
