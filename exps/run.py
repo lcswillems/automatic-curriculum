@@ -20,7 +20,7 @@ def run_exp(curriculums, lp_cps=[None], dist_cvs=[None], dist_cps=[None], dist_c
         model_name = "{}_{}_{}_{}_prop{}/seed{}".format(curriculum, lp_cp, dist_cv, dist_cp, dist_cp_prop, seed)
         subprocess.Popen(
             "{} exps/run.sh python -m scripts.train {} {} {} {} {} --model {} --seed {} --save-interval 10 --no-instr"
-            .format("pbatch --time={}".format(times[curriculum]) if not args.no_slurm else "",
+            .format("sbatch --account=def-bengioy --cpus-per-task=4 --gres=gpu:1 --mem=4G --time={}".format(times[curriculum]) if not args.no_slurm else "",
                     "--curriculum {}".format(curriculum),
                     "--lp-cp {}".format(lp_cp) if lp_cp is not None else "",
                     "--dist-cv {}".format(dist_cv) if dist_cv is not None else "",
@@ -28,7 +28,8 @@ def run_exp(curriculums, lp_cps=[None], dist_cvs=[None], dist_cps=[None], dist_c
                     "--dist-cp-prop {}".format(dist_cp_prop) if dist_cp_prop is not None else "",
                     model_name,
                     seed),
-            shell=True)
+            shell=True
+        )
         time.sleep(1)
 
 # Run experiments
