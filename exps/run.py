@@ -56,10 +56,10 @@ if args.exp is None or args.exp == "exp1":
             "Learnable"
         ],
         dist_cp_props=[
-            0,
-            0.25,
-            0.5,
-            0.75,
+            0.2,
+            0.4,
+            0.6,
+            0.8,
             1
         ],
         seeds=range(1, 11),
