@@ -42,8 +42,8 @@ class LpDistComputer(DistComputer):
 
         return self.convert_into_dist(self.attentions)
 
-class LearnableDistComputer(DistComputer):
-    """A distribution computer based on learnable tasks.
+class MrDistComputer(DistComputer):
+    """A distribution computer based on mastering rate.
 
     It first associates a pre-attention pre_A(i) to each task i:
         pre_A(i) = Mast(Anc_i)^p * ((1-γ) na_lp(i) + γ Pot(i)) * (1 - Mast(Succ_i))

@@ -54,7 +54,7 @@ if args.exp is None or args.exp == "exp1":
         ],
         dist_cps=[
             # "Lp",
-            "Learnable"
+            "Mr"
         ],
         dist_cp_props=[
             0.2,
