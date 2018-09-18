@@ -22,7 +22,7 @@ def run_exp(curriculums, lp_ests=[None], dist_cvs=[None], dist_cps=[None], dist_
             "{} exps/run.sh python -m scripts.train {} {} {} {} {} --model {} --seed {} --save-interval 10 --no-instr"
             .format("sbatch --account=def-bengioy --cpus-per-task=4 --gres=gpu:1 --mem=4G --time={}".format(times[curriculum]) if not args.no_slurm else "",
                     "--curriculum {}".format(curriculum),
-                    "--lp-cp {}".format(lp_est) if lp_est is not None else "",
+                    "--lp-est {}".format(lp_est) if lp_est is not None else "",
                     "--dist-cv {}".format(dist_cv) if dist_cv is not None else "",
                     "--dist-cp {}".format(dist_cp) if dist_cp is not None else "",
                     "--dist-cp-prop {}".format(dist_cp_prop) if dist_cp_prop is not None else "",
@@ -34,7 +34,70 @@ def run_exp(curriculums, lp_ests=[None], dist_cvs=[None], dist_cps=[None], dist_
 
 # Run experiments
 
-if args.exp is None or args.exp == "exp1":
+if args.exp is None or args.exp == "ProofMvgAvg":
+    run_exp(
+        curriculums=[
+            "BlockedUnlockPickup",
+            "KeyCorridor"
+        ],
+        lp_ests=[
+            "Window",
+            "Linreg"
+        ],
+        dist_cvs=[
+            "GreedyAmax"
+        ],
+        dist_cps=[
+            "Lp"
+        ],
+        seeds=range(1, 11),
+        times={
+            "BlockedUnlockPickup": "0:30:0",
+            "KeyCorridor": "2:0:0"
+        }
+    )
+if args.exp is None or args.exp == "ProofGreedyProp":
+    run_exp(
+        curriculums=[
+            "BlockedUnlockPickup",
+            "KeyCorridor",
+        ],
+        lp_ests=[
+            "Linreg"
+        ],
+        dist_cvs=[
+            "GreedyProp",
+            "GreedyAmax"
+        ],
+        dist_cps=[
+            "Lp",
+        ],
+        seeds=range(1, 11),
+        times={
+            "BlockedUnlockPickup": "0:30:0",
+            "KeyCorridor": "2:0:0",
+        }
+    )
+if args.exp is None or args.exp == "Lp":
+    run_exp(
+        curriculums=[
+            "ObstructedMaze"
+        ],
+        lp_ests=[
+            "Linreg",
+        ],
+        dist_cvs=[
+            "GreedyProp",
+        ],
+        dist_cps=[
+            "Lp"
+        ],
+        seeds=range(1, 11),
+        times={
+            "ObstructedMaze": "3:0:0"
+        }
+    )
+if args.exp is None or args.exp == "Mr":
     run_exp(
         curriculums=[
             "BlockedUnlockPickup",
@@ -43,17 +106,11 @@ if args.exp is None or args.exp == "exp1":
         ],
         lp_ests=[
             "Linreg",
-            # "Window",
-            # "Online"
         ],
         dist_cvs=[
             "Prop",
-            # "GreedyProp",
-            # "Boltzmann",
-            # "GreedyAmax"
         ],
         dist_cps=[
-            # "Lp",
             "Mr"
         ],
         dist_cp_props=[
