@@ -49,9 +49,9 @@ class OnlineLpEstimator(TSLpEstimator):
     paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))."""
 
     def _estimate_immediate_lp(self, env_id):
-        steps, returns = self.return_hists[env_id][-2:]
+        _, returns = self.return_hists[env_id][-2:]
         if len(returns) >= 2:
-            return numpy.polyfit(steps, returns, 1)[0]
+            return returns[-1] - returns[-2]
 
 class WindowLpEstimator(TSLpEstimator):
     """The window learning progress estimator from the Teacher-Student
