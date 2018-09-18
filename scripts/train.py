@@ -211,18 +211,11 @@ while num_frames < args.frames:
     if update % args.log_interval == 0:
         fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = int(time.time() - total_start_time)
-        return_per_episode = utils.synthesize(logs["return_per_episode"])
-        rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
-        num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-        header = ["update", "frames", "FPS", "duration"]
-        data = [update, num_frames, fps, duration]
-        header += ["rreturn_" + key for key in rreturn_per_episode.keys()]
-        data += rreturn_per_episode.values()
+        logger.info("U {}".format(update))
 
-        logger.info(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f}"
-            .format(*data))
+        header = []
+        data = []
 
         if args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
@@ -250,10 +243,6 @@ while num_frames < args.frames:
                     data += [compute_dist.learning_states[env_id]]
                     header += ["pre_attention/{}".format(env_key)]
                     data += [compute_dist.attentions[env_id]]
-                    header += ["na_lp_over_learning_state/{}".format(env_key)]
-                    data += [None]
-                    if compute_dist.learning_states[env_id] != 0:
-                        data[-1] = compute_dist.na_lps[env_id]/compute_dist.learning_states[env_id]
 
         if status["num_frames"] == 0:
             csv_writer.writerow(header)
