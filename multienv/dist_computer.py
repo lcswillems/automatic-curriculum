@@ -58,42 +58,40 @@ class MrDistComputer(DistComputer):
     Then, it associates an attention A(i) to each task i, that is the attention to
     task i after i has redistributed δ of its pre-attention."""
 
-    def __init__(self, return_hists, init_min_returns, init_max_returns, K,
-                 estimate_lp, convert_into_dist, G, power, pot_prop, tr):
+    def __init__(self, return_hists, init_min_returns, init_max_returns, ret_K, ext_ret_K,
+                 estimate_lp, convert_into_dist, G, power, pot_prop, pred_tr):
         super().__init__(return_hists)
+
+        assert ret_K >= ext_ret_K
 
         self.min_returns = numpy.array(init_min_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
-        self.K = K
+        self.ret_K = ret_K
+        self.ext_ret_K = ext_ret_K
         self.estimate_lp = estimate_lp
         self.convert_into_dist = convert_into_dist
         self.G = G
         self.power = power
         self.pot_prop = pot_prop
-        self.tr = tr
+        self.pred_tr = pred_tr
 
         self.returns = numpy.copy(self.min_returns)
-        self.saved_min_returns = numpy.copy(self.min_returns)
-        self.saved_max_returns = numpy.copy(self.max_returns)
 
     def update_returns(self):
         for i in range(len(self.returns)):
-            _, returns = self.return_hists[i][-self.K:]
+            _, returns = self.return_hists[i][-max(self.ret_K, self.ext_ret_K):]
             if len(returns) > 0:
-                self.returns[i] = returns[-1]
-                mean_return = numpy.mean(returns)
-                self.min_returns[i] = min(self.saved_min_returns[i], mean_return)
-                self.max_returns[i] = max(self.saved_max_returns[i], mean_return)
-                if len(returns) >= self.K:
-                    self.saved_min_returns[i] = self.min_returns[i]
-                    self.saved_max_returns[i] = self.max_returns[i]
+                self.returns[i] = numpy.mean(returns[-self.ret_K:])
+                if len(returns) >= self.ext_ret_K:
+                    mean_return = numpy.mean(returns[-self.ext_ret_K:])
+                    self.min_returns[i] = min(self.min_returns[i], mean_return)
+                    self.max_returns[i] = max(self.max_returns[i], mean_return)
 
     def __call__(self, returns):
         super().__call__(returns)
 
         self.update_returns()
 
-        self.returns = numpy.clip(self.returns, self.min_returns, self.max_returns)
         self.lps = self.estimate_lp()
         self.a_lps = numpy.absolute(self.lps)
         self.na_lps = self.a_lps / numpy.amax(self.a_lps) if numpy.amax(self.a_lps) != 0 else self.a_lps
@@ -110,14 +108,14 @@ class MrDistComputer(DistComputer):
             if len(successors) > 0:
                 self.succ_mrs[env_id] = numpy.amin(self.mrs[successors])
         self.learning_states = (1 - self.pot_prop) * self.na_lps + self.pot_prop * self.pots
-        self.pre_attentions = self.anc_mrs**self.power * self.learning_states * (1-self.succ_mrs)
+        self.pre_attentions = self.anc_mrs**self.power * self.learning_states * (1 - self.succ_mrs)
 
         self.attentions = numpy.copy(self.pre_attentions)
         for env_id in reversed(list(nx.topological_sort(self.G))):
             predecessors = list(self.G.predecessors(env_id))
-            attention_to_transfer = self.attentions[env_id]*self.tr
-            self.attentions[env_id] -= attention_to_transfer
+            attention_to_predecessors = self.attentions[env_id]*self.pred_tr
+            self.attentions[env_id] -= attention_to_predecessors
             if len(predecessors) > 0:
-                self.attentions[predecessors] += attention_to_transfer/len(predecessors)
+                self.attentions[predecessors] += attention_to_predecessors/len(predecessors)
 
         return self.convert_into_dist(self.attentions)

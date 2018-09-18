@@ -17,8 +17,10 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--ret-K", type=int, default=2,
-                    help="window size for computing min and max returns (default: 2)")
+parser.add_argument("--ret-K", type=int, default=10,
+                    help="window size for averaging returns (default: 10)")
+parser.add_argument("--ext-ret-K", type=int, default=2,
+                    help="window size for averaging min and max returns (default: 2)")
 parser.add_argument("--lp-est", default="Linreg",
                     help="name of the learning progress estimator (default: Linreg)")
 parser.add_argument("--lp-est-alpha", type=float, default=0.1,
@@ -33,12 +35,12 @@ parser.add_argument("--dist-cv-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution converter (default: 4e-4)")
 parser.add_argument("--dist-cp", default="Mr",
                     help="name of the distribution computer (default: Mr)")
-parser.add_argument("--dist-cp-power", type=int, default=4,
-                    help="power of the ancestor mastering rate for the Mr distribution computer (default: 4)")
+parser.add_argument("--dist-cp-power", type=int, default=6,
+                    help="power of the ancestor mastering rate for the Mr distribution computer (default: 6)")
 parser.add_argument("--dist-cp-prop", type=float, default=0.5,
                     help="potential proportion for the Mr distribution computer (default: 0.5)")
-parser.add_argument("--dist-cp-tr", type=float, default=0.3,
-                    help="attention transfer rate for the Mr distribution computer (default: 0.3)")
+parser.add_argument("--dist-cp-pred-tr", type=float, default=0.2,
+                    help="attention transfer rate to predecessors for the Mr distribution computer (default: 0.2)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -142,8 +144,8 @@ elif args.curriculum is not None:
     # Instantiate the distribution computer
     compute_dist = {
         "Lp": menv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
-        "Mr": menv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
-                                  estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_tr),
+        "Mr": menv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K, args.ext_ret_K,
+                                  estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_pred_tr),
         "None": None
     }[args.dist_cp]
 
@@ -242,7 +244,7 @@ while num_frames < args.frames:
                     header += ["learning_state/{}".format(env_key)]
                     data += [compute_dist.learning_states[env_id]]
                     header += ["pre_attention/{}".format(env_key)]
-                    data += [compute_dist.attentions[env_id]]
+                    data += [compute_dist.pre_attentions[env_id]]
 
         if status["num_frames"] == 0:
             csv_writer.writerow(header)
