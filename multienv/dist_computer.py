@@ -27,16 +27,16 @@ class LpDistComputer(DistComputer):
         A(i) = a_lp(i)
     where a_lp(i) is the absolute learning progress on task i."""
 
-    def __init__(self, return_hists, compute_lp, convert_into_dist):
+    def __init__(self, return_hists, estimate_lp, convert_into_dist):
         super().__init__(return_hists)
 
-        self.compute_lp = compute_lp
+        self.estimate_lp = estimate_lp
         self.convert_into_dist = convert_into_dist
 
     def __call__(self, returns):
         super().__call__(returns)
 
-        self.lps = self.compute_lp()
+        self.lps = self.estimate_lp()
         self.a_lps = numpy.absolute(self.lps)
         self.attentions = self.a_lps
 
@@ -59,13 +59,13 @@ class MrDistComputer(DistComputer):
     task i after i has redistributed δ of its pre-attention."""
 
     def __init__(self, return_hists, init_min_returns, init_max_returns, K,
-                 compute_lp, convert_into_dist, G, power, pot_prop, tr):
+                 estimate_lp, convert_into_dist, G, power, pot_prop, tr):
         super().__init__(return_hists)
 
         self.min_returns = numpy.array(init_min_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.K = K
-        self.compute_lp = compute_lp
+        self.estimate_lp = estimate_lp
         self.convert_into_dist = convert_into_dist
         self.G = G
         self.power = power
@@ -94,7 +94,7 @@ class MrDistComputer(DistComputer):
         self.update_returns()
 
         self.returns = numpy.clip(self.returns, self.min_returns, self.max_returns)
-        self.lps = self.compute_lp()
+        self.lps = self.estimate_lp()
         self.a_lps = numpy.absolute(self.lps)
         self.na_lps = self.a_lps / numpy.amax(self.a_lps) if numpy.amax(self.a_lps) != 0 else self.a_lps
         self.mrs = (self.returns - self.min_returns) / (self.max_returns - self.min_returns)

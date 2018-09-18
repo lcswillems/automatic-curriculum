@@ -19,12 +19,12 @@ parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
 parser.add_argument("--ret-K", type=int, default=2,
                     help="window size for computing min and max returns (default: 2)")
-parser.add_argument("--lp-cp", default="Linreg",
-                    help="name of the learning progress computer (default: Linreg)")
-parser.add_argument("--lp-cp-alpha", type=float, default=0.1,
-                    help="learning rate for TS learning progress computers (default: 0.1)")
-parser.add_argument("--lp-cp-K", type=int, default=10,
-                    help="window size for some learning progress computers (default: 10)")
+parser.add_argument("--lp-est", default="Linreg",
+                    help="name of the learning progress estimator (default: Linreg)")
+parser.add_argument("--lp-est-alpha", type=float, default=0.1,
+                    help="learning rate for TS learning progress estimators (default: 0.1)")
+parser.add_argument("--lp-est-K", type=int, default=10,
+                    help="window size for some learning progress estimators (default: 10)")
 parser.add_argument("--dist-cv", default="Prop",
                     help="name of the distribution converter (default: Prop)")
 parser.add_argument("--dist-cv-eps", type=float, default=0.1,
@@ -122,13 +122,13 @@ elif args.curriculum is not None:
     # Instantiate the return history for each environment
     return_hists = [menv.ReturnHistory() for _ in range(num_envs)]
 
-    # Instantiate the learning progress computer
-    compute_lp = {
-        "Online": menv.OnlineLpComputer(return_hists, args.lp_cp_alpha),
-        "Window": menv.WindowLpComputer(return_hists, args.lp_cp_alpha, args.lp_cp_K),
-        "Linreg": menv.LinregLpComputer(return_hists, args.lp_cp_K),
+    # Instantiate the learning progress estimator
+    estimate_lp = {
+        "Online": menv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
+        "Window": menv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
+        "Linreg": menv.LinregLpEstimator(return_hists, args.lp_est_K),
         "None": None
-    }[args.lp_cp]
+    }[args.lp_est]
 
     # Instantiate the distribution converter
     convert_into_dist = {
@@ -141,9 +141,9 @@ elif args.curriculum is not None:
 
     # Instantiate the distribution computer
     compute_dist = {
-        "Lp": menv.LpDistComputer(return_hists, compute_lp, convert_into_dist),
+        "Lp": menv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
         "Mr": menv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
-                                  compute_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_tr),
+                                  estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_tr),
         "None": None
     }[args.dist_cp]
 

@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 import numpy
 
-class LpComputer(ABC):
-    """A learning progress computer.
+class LpEstimator(ABC):
+    """A learning progress estimator.
 
-    It computes the learning progress on each environment
+    It estimates the learning progress on each environment
     from the return history."""
 
     def __init__(self, return_hists):
@@ -15,19 +15,19 @@ class LpComputer(ABC):
 
     def __call__(self):
         for env_id in range(self.num_envs):
-            self._compute_lp(env_id)
+            self._estimate_lp(env_id)
         return self.lps
 
     @abstractmethod
-    def _compute_lp(self, env_id):
+    def _estimate_lp(self, env_id):
         pass
 
-class TSLpComputer(LpComputer):
-    """A learning progress computer for Teacher-Student
+class TSLpEstimator(LpEstimator):
+    """A learning progress estimator for Teacher-Student
     ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))
-    learning progress computers.
+    learning progress estimators.
 
-    It computes an exponential moving average of the immediate
+    It estimates an exponential moving average of the immediate
     learning progress."""
 
     def __init__(self, return_hists, α):
@@ -36,25 +36,25 @@ class TSLpComputer(LpComputer):
         self.α = α
 
     @abstractmethod
-    def _compute_immediate_lp(self, env_id):
+    def _estimate_immediate_lp(self, env_id):
         pass
 
-    def _compute_lp(self, env_id):
-        lp = self._compute_immediate_lp(env_id)
+    def _estimate_lp(self, env_id):
+        lp = self._estimate_immediate_lp(env_id)
         if lp is not None:
             self.lps[env_id] = self.α * lp + (1 - self.α) * self.lps[env_id]
 
-class OnlineLpComputer(TSLpComputer):
-    """The online learning progress computer from the Teacher-Student
+class OnlineLpEstimator(TSLpEstimator):
+    """The online learning progress estimator from the Teacher-Student
     paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))."""
 
-    def _compute_immediate_lp(self, env_id):
+    def _estimate_immediate_lp(self, env_id):
         steps, returns = self.return_hists[env_id][-2:]
         if len(returns) >= 2:
             return numpy.polyfit(steps, returns, 1)[0]
 
-class WindowLpComputer(TSLpComputer):
-    """The window learning progress computer from the Teacher-Student
+class WindowLpEstimator(TSLpEstimator):
+    """The window learning progress estimator from the Teacher-Student
     paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))."""
 
     def __init__(self, return_hists, α, K):
@@ -62,15 +62,15 @@ class WindowLpComputer(TSLpComputer):
 
         self.K = K
 
-    def _compute_immediate_lp(self, env_id):
+    def _estimate_immediate_lp(self, env_id):
         steps, returns = self.return_hists[env_id][-self.K:]
         if len(steps) >= 2:
             return numpy.polyfit(steps, returns, 1)[0]
 
-class LinregLpComputer(LpComputer):
-    """A learning progress computer using the immediate learning progress.
+class LinregLpEstimator(LpEstimator):
+    """A learning progress estimator using the immediate learning progress.
 
-    It is similar to WindowLpComputer except that the learning progress
+    It is similar to WindowLpEstimator except that the learning progress
     is the immediate learning progress instead of an exponential moving
     average of it."""
 
@@ -79,7 +79,7 @@ class LinregLpComputer(LpComputer):
 
         self.K = K
 
-    def _compute_lp(self, env_id):
+    def _estimate_lp(self, env_id):
         steps, returns = self.return_hists[env_id][-self.K:]
         if len(steps) >= 2:
             self.lps[env_id] = numpy.polyfit(steps, returns, 1)[0]
