@@ -79,13 +79,13 @@ class MrDistComputer(DistComputer):
 
     def update_returns(self):
         for i in range(len(self.returns)):
-            _, returns = self.return_hists[i][-max(self.ret_K, self.ext_ret_K):]
+            _, returns = self.return_hists[i][-self.ret_K:]
             if len(returns) > 0:
-                self.returns[i] = numpy.mean(returns[-self.ret_K:])
                 if len(returns) >= self.ext_ret_K:
                     mean_return = numpy.mean(returns[-self.ext_ret_K:])
                     self.min_returns[i] = min(self.min_returns[i], mean_return)
                     self.max_returns[i] = max(self.max_returns[i], mean_return)
+                self.returns[i] = numpy.clip(numpy.mean(returns[-self.ret_K:]), self.min_returns[i], self.max_returns[i])
 
     def __call__(self, returns):
         super().__call__(returns)
