@@ -216,8 +216,8 @@ while num_frames < args.frames:
 
         logger.info("U {}".format(update))
 
-        header = []
-        data = []
+        header = ["frames"]
+        data = [num_frames]
 
         if args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
