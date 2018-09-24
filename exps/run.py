@@ -7,7 +7,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--exp", default=None,
-                    help="select experiment")
+                    help="select an experiment")
 parser.add_argument("--no-slurm", action="store_true", default=False,
                     help="don't use slurm")
 args = parser.parse_args()
@@ -35,6 +35,8 @@ def run_exp(curriculums, lp_ests=[None], dist_cvs=[None], dist_cps=[None], dist_
 # Run experiments
 
 if args.exp is None or args.exp == "ProofMvgAvg":
+    # This shows that the moving average in the Teacher-Student
+    # Window program algorithm is useless.
     run_exp(
         curriculums=[
             "BlockedUnlockPickup",
@@ -57,6 +59,8 @@ if args.exp is None or args.exp == "ProofMvgAvg":
         }
     )
 if args.exp is None or args.exp == "ProofGreedyProp":
+    # This shows that the GreedyProp attention converter leads to more
+    # stability than the GreedyAmax one.
     run_exp(
         curriculums=[
             "BlockedUnlockPickup",
@@ -78,7 +82,9 @@ if args.exp is None or args.exp == "ProofGreedyProp":
             "KeyCorridor": "2:0:0",
         }
     )
-if args.exp is None or args.exp == "Lp":
+if args.exp is None or args.exp == "PerfLp":
+    # This gives the performance of the learning rate based program
+    # algorithms.
     run_exp(
         curriculums=[
             "ObstructedMaze"
@@ -97,7 +103,9 @@ if args.exp is None or args.exp == "Lp":
             "ObstructedMaze": "3:0:0"
         }
     )
-if args.exp is None or args.exp == "Mr":
+if args.exp is None or args.exp == "PerfMr":
+    # This gives the performance of the mastering rate based program
+    # algorithms.
     run_exp(
         curriculums=[
             "BlockedUnlockPickup",
