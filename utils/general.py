@@ -10,7 +10,10 @@ def get_storage_dir():
     return "storage"
 
 def get_model_dir(model_name):
-    return os.path.join(get_storage_dir(), 'models', model_name)
+    return os.path.join(get_storage_dir(), "models", model_name, "")
+
+def get_stats_dir():
+    return os.path.join(get_storage_dir(), "stats", "")
 
 def create_folders_if_necessary(path):
     dirname = os.path.dirname(path)
