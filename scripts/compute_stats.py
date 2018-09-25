@@ -3,203 +3,447 @@ import glob
 import os
 import numpy
 import pandas as pd
-import matplotlib.pyplot as plt
+from subprocess import check_output
 import json
-from collections import deque
+import matplotlib.pyplot as plt
+import re
 
 import utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--folder", required=True,
-                    help="folder in storage containing CSV logs (REQUIRED)")
-parser.add_argument("--curriculum", required=True,
-                    help="name of the curriculum from which CSV logs are from (REQUIRED)")
-parser.add_argument("--window", default=100,
-                    help="number of steps to average on")
-parser.add_argument("--all", action="store_true", default=False,
-                    help="compute all stats")
-parser.add_argument("--mean-std", action="store_true", default=False,
-                    help="print and save mean standard deviation of return")
-parser.add_argument("--return-line", action="store_true", default=False,
-                    help="plot and save average return line")
-parser.add_argument("--frame-reaching", action="store_true", default=False,
-                    help="print and save the frame when some return is reached")
-parser.add_argument("--frame-reaching-return", type=float, default=0.8,
-                    help="return to reach in --frame-reaching")
-parser.add_argument("--final-return", action="store_true", default=False,
-                    help="print and save the final return")
-parser.add_argument("--transfer-time-reaching", action="store_true", default=False,
-                    help="print and save the time between reaching return X on task A and return X on task B when A -> B")
-parser.add_argument("--transfer-time-reaching-return", type=float, default=0.3,
-                    help="return to reach in --transfer-time-reaching-return")
+parser.add_argument("--stat", default=None,
+                    help="select a statistic to compute")
+parser.add_argument("--window", type=int, default=100,
+                    help="number of time-steps to average on")
+parser.add_argument("--return-to-reach", type=float, default=0.8,
+                    help="return to reach, used in some statistics")
 args = parser.parse_args()
 
-args.mean_std |= args.all
-args.return_line |= args.all
-args.frame_reaching |= args.all
-args.final_return |= args.all
-args.transfer_time_reaching |= args.all
+# Helper functions
 
-# Load CSV logs
+def load_and_clean_logs(folder, max_frame=None):
+    """
+    1. Load CSV logs as data frames.
+    2. Clean returns, i.e. replace all NaN returns by the
+       previous non NaN returns. Cache these cleaned logs.
+    3. Slice data frames, i.e. keep all the rows with
+       a frame number lower than `max_frame` and such that all
+       data frames have the same number of rows
+    """
 
-save_dir = utils.get_save_dir(args.folder)
-pathname = os.path.join(save_dir, "**", "log.csv")
-dfs = [pd.read_csv(fname) for fname in glob.glob(pathname, recursive=True)]
+    def clean_row(row):
+        cleaned_row = numpy.zeros((len(row)))
+        prev_val = 0
+        for i in range(len(row)):
+            if not numpy.isnan(row[i]):
+                prev_val = row[i]
+            cleaned_row[i] = prev_val
+        return cleaned_row
 
-# Load the curriculum
+    def clean_df(df):
+        for col_name in df:
+            if col_name.startswith("return/"):
+                df[col_name] = pd.Series(clean_row(df[col_name].values), index=df.index)
+        return df
 
-G = utils.load_curriculum(args.curriculum)
+    dfs = []
+    model_dir = utils.get_model_dir(folder)
+    pathname = os.path.join(model_dir, "**", "log.csv")
+    for fname in glob.glob(pathname, recursive=True):
+        clean_fname = fname + "-clean"
+        if not os.path.exists(clean_fname):
+            df = pd.read_csv(fname)
+            df = clean_df(df)
+            df.to_csv(clean_fname)
+        else:
+            df = pd.read_csv(clean_fname)
+        dfs.append(df)
+        print("{} loaded and cleaned.".format(fname))
 
-# Get frames and environments smooth returns and stds for each CSV log
-# Frames, smooth returns and stds are truncated such that they all have
-# the same length.
+    length = float("+inf")
+    for df in dfs:
+        length = min(length, df.shape[0])
+        if max_frame is not None:
+            length = min(length, numpy.where(df["frames"].values > max_frame)[0][0])
+    for df in dfs:
+        df.drop(df.index[length:], inplace=True)
 
-def get_smooth_returns_and_stds(returns):
-    sreturns = numpy.zeros(returns.shape)
-    stds = numpy.zeros(returns.shape)
-    last_returns = deque([], maxlen=args.window)
-    for i in range(len(returns)):
-        returnn = returns[i]
-        if not numpy.isnan(returnn):
-            last_returns.append(returnn)
-        sreturns[i] = 0 if len(last_returns) == 0 else numpy.mean(last_returns)
-        stds[i] = 0 if len(last_returns) == 0 else numpy.std(last_returns)
-    return sreturns, stds
+    return dfs
 
-minlen = float("+inf")
-for df in dfs:
-    minlen = min(minlen, len(df["frames"]))
+def extract_and_smooth_df_col(dfs, col_bn):
+    """
+    1. Extract all the columns whose name starts with `col_bn` and group
+       them by environment.
+    2. Smooth all the columns with a window size given by --window.
+    """
 
-frames = dfs[0]["frames"].values[:minlen]
-sreturnsss = []
-stdsss = []
-for df in dfs:
-    sreturnss = {}
-    stdss = {}
-    for env_name in G.nodes:
-        sreturns, stds = get_smooth_returns_and_stds(df["return/"+env_name].values)
-        sreturnss[env_name] = sreturns[:minlen]
-        stdss[env_name] = stds[:minlen]
-    sreturnsss.append(sreturnss)
-    stdsss.append(stdss)
+    def get_suffix_when_prefixed(s, prefix):
+        if s.startswith(prefix):
+            return s[len(prefix):]
+        return None
 
-# Compute --mean-std
+    frames = dfs[0]["frames"].values
+    col_data = {}
+    for df in dfs:
+        for col_name in df:
+            env_name = get_suffix_when_prefixed(col_name, col_bn)
+            if env_name is not None:
+                if env_name not in col_data.keys():
+                    col_data[env_name] = []
+                smoothed_col = df[col_name].rolling(args.window, min_periods=1).mean().values
+                col_data[env_name].append(smoothed_col)
 
-if args.mean_std:
-    print("> Mean std:")
+    return {"frames": frames, col_bn: col_data}
 
-    mean_stds = {}
-    for env_name in G.nodes:
-        stds_to_avg = []
-        for stdss in stdsss:
-            stds_to_avg.append(numpy.mean(stdss[env_name]))
-        mean_stds[env_name] = {
-            "mean": numpy.mean(stds_to_avg),
-            "std": numpy.std(stds_to_avg)
+def percentile_aggregate_data(data, percentiles):
+    """
+    Aggregate data by computing the percentiles for each environment.
+    """
+
+    adata = {}
+    for key, matrix in data.items():
+        adata[key] = {
+            percentile: numpy.percentile(matrix, percentile, axis=0)
+            for percentile in percentiles
         }
+    return adata
 
-    txt = str(json.dumps(mean_stds, sort_keys=True, indent=4))
-    print(txt)
-    with open(os.path.join(save_dir, "stats_mean-std.json"), "w") as file:
-        file.write(txt)
+def median_aggregate_data(data):
+    """
+    Aggregate data by averaging it for each environment.
+    """
 
-# Compute --return-line
+    adata = {}
+    for key, matrix in data.items():
+        adata[key] = numpy.median(matrix, axis=0)
+    return adata
 
-if args.return_line:
-    print("> Return line:")
+def shorten_env_name(env_name):
+    """
+    Remove useless parts of `env_name`.
+    """
 
-    for env_num, env_name in enumerate(G.nodes):
-        returnss_to_aggregate = []
-        for sreturnss in sreturnsss:
-            returnss_to_aggregate.append(sreturnss[env_name])
+    prefix = "MiniGrid-"
+    if env_name.startswith(prefix):
+        env_name = env_name[len(prefix):]
 
-        plt.figure(env_num)
-        plt.title(env_name)
-        plt.plot(frames, numpy.mean(returnss_to_aggregate, axis=0))
-        plt.fill_between(
-            frames,
-            numpy.amin(returnss_to_aggregate, axis=0),
-            numpy.amax(returnss_to_aggregate, axis=0),
-            alpha=0.5
-        )
-        plt.savefig(os.path.join(save_dir, "stats_return-line_{}.png".format(env_name)))
-    plt.show()
+    suffix = "-v0"
+    if env_name.endswith(suffix):
+        env_name = env_name[:-len(suffix)]
 
-# Compute --frame-reaching
+    return env_name
 
-if args.frame_reaching:
-    print("> Frame reaching:")
+# Stats
 
-    frames_reaching = {}
-    for env_name in G.nodes:
-        frames_to_avg = []
-        for j, sreturnss in enumerate(sreturnsss):
-            sreturns = sreturnss[env_name]
-            i = numpy.argmax(sreturns >= args.frame_reaching_return)
-            if sreturns[i] >= args.frame_reaching_return:
-                frames_to_avg.append(frames[i])
-        frames_reaching[env_name] = {
-            "num": len(frames_to_avg),
-            "mean": numpy.mean(frames_to_avg),
-            "std": numpy.std(frames_to_avg)
-        }
+stats_dir = utils.get_stats_dir()
+utils.create_folders_if_necessary(stats_dir)
 
-    txt = str(json.dumps(frames_reaching, sort_keys=True, indent=4))
-    print(txt)
-    with open(os.path.join(save_dir, "stats_frame-reaching.json"), "w") as file:
-        file.write(txt)
+stat_name = "BUP-Return-GAmaxWindow-GAmaxLinreg-GPropLinreg"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
 
-# Compute --final-return
+    algs = {}
 
-if args.final_return:
-    print("> Final return")
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Window_GreedyAmax_Lp_propNone", 3300000)
+    algs["GAmax Window"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GAmax Window"]["areturn/"] = percentile_aggregate_data(algs["GAmax Window"]["return/"], [25, 50, 75])
 
-    final_returns = {}
-    for env_name in G.nodes:
-        returns_to_avg = []
-        for sreturnss in sreturnsss:
-            returns_to_avg.append(sreturnss[env_name][-1])
-        final_returns[env_name] = {
-            "mean": numpy.mean(returns_to_avg),
-            "std": numpy.std(returns_to_avg)
-        }
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyAmax_Lp_propNone", 3300000)
+    algs["GAmax Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GAmax Linreg"]["areturn/"] = percentile_aggregate_data(algs["GAmax Linreg"]["return/"], [25, 50, 75])
 
-    txt = str(json.dumps(final_returns, sort_keys=True, indent=4))
-    print(txt)
-    with open(os.path.join(save_dir, "stats_mean-std.json"), "w") as file:
-        file.write(txt)
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 3300000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-# Compute --transfer-time-reaching
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 1, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
 
-if args.transfer_time_reaching:
-    print("> Transfer time reaching")
+stat_name = "KC-Return-GAmaxWindow-GAmaxLinreg-GPropLinreg"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
 
-    frames_reaching = {}
-    for env_name in G.nodes:
-        frames_to_avg = numpy.zeros(len(sreturnsss))
-        for j, sreturnss in enumerate(sreturnsss):
-            sreturns = sreturnss[env_name]
-            i = numpy.argmax(sreturns >= args.transfer_time_reaching_return)
-            if sreturns[i] >= args.transfer_time_reaching_return:
-                frames_to_avg[j] = frames[i]
-            else:
-                frames_to_avg[j] = numpy.nan
-        frames_reaching[env_name] = frames_to_avg
+    algs = {}
 
-    transfer_times_reaching = {}
-    for edge in G.edges:
-        edge_str = " -> ".join(edge)
-        transfer_time = frames_reaching[edge[1]] - frames_reaching[edge[0]]
-        transfer_time = transfer_time[~numpy.isnan(transfer_time)]
-        transfer_times_reaching[edge_str] = {
-            "num": len(transfer_time),
-            "mean": numpy.mean(transfer_time),
-            "std": numpy.std(transfer_time)
-        }
+    dfs = load_and_clean_logs("180923/KeyCorridor_Window_GreedyAmax_Lp_propNone", 9900000)
+    algs["GAmax Window"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GAmax Window"]["areturn/"] = percentile_aggregate_data(algs["GAmax Window"]["return/"], [25, 50, 75])
 
-    txt = str(json.dumps(transfer_times_reaching, sort_keys=True, indent=4))
-    print(txt)
-    with open(os.path.join(save_dir, "stats_transfer-time-reaching.json"), "w") as file:
-        file.write(txt)
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyAmax_Lp_propNone", 9900000)
+    algs["GAmax Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GAmax Linreg"]["areturn/"] = percentile_aggregate_data(algs["GAmax Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_Lp_propNone", 9900000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 2, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4 if env_num < 3 else 2, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "BUP-ReturnProba-GPropLinreg"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 3300000)[6:7]
+    data = extract_and_smooth_df_col(dfs, "return/")
+    data["areturn/"] = median_aggregate_data(data["return/"])
+    data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
+    data["aproba/"] = median_aggregate_data(data["proba/"])
+
+    frames = data["frames"]
+    areturns = data["areturn/"]
+    for env_num, env_name in enumerate(data["areturn/"].keys()):
+        plt.subplot(3, 1, env_num+1)
+        axes = plt.gca()
+        axes.set_ylim([0, 1])
+        plt.title(shorten_env_name(env_name))
+        plt.plot(frames, data["areturn/"][env_name], label="Return")
+        plt.plot(frames, data["aproba/"][env_name], label="Proba")
+        plt.legend(loc="best", prop={'size': 6})
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "OM-ReturnProba-GPropLinreg"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone", 3300000)
+    data = extract_and_smooth_df_col(dfs, "return/")
+    data["areturn/"] = median_aggregate_data(data["return/"])
+    data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
+    data["aproba/"] = median_aggregate_data(data["proba/"])
+
+    frames = data["frames"]
+    areturns = data["areturn/"]
+    for env_num, env_name in enumerate(data["areturn/"].keys()):
+        plt.subplot(3, 3, env_num+1)
+        axes = plt.gca()
+        axes.set_ylim([0, 1])
+        plt.title(shorten_env_name(env_name))
+        plt.plot(frames, data["areturn/"][env_name], label="Return")
+        plt.plot(frames, data["aproba/"][env_name], label="Proba")
+        plt.legend(loc="best", prop={'size': 6})
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "BUP-Return-Mr-coef"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    algs = {}
+
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 1500000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_Mr_prop0.8", 1500000)
+    algs["Mr 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["Mr 0.8"]["areturn/"] = percentile_aggregate_data(algs["Mr 0.8"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_Mr_prop1", 1500000)
+    algs["Mr 1"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["Mr 1"]["areturn/"] = percentile_aggregate_data(algs["Mr 1"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 1, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "KC-Return-Mr-coef"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    algs = {}
+
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_Lp_propNone", 9900000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_Mr_prop0.8", 9900000)
+    algs["Mr 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["Mr 0.8"]["areturn/"] = percentile_aggregate_data(algs["Mr 0.8"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_Mr_prop1", 9900000)
+    algs["Mr 1"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["Mr 1"]["areturn/"] = percentile_aggregate_data(algs["Mr 1"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 2, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4 if env_num < 3 else 2, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "OM-Return-Mr-coef"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    algs = {}
+
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone", 9900000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8", 9900000)
+    algs["Mr 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["Mr 0.8"]["areturn/"] = percentile_aggregate_data(algs["Mr 0.8"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop1", 9900000)
+    algs["Mr 1"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["Mr 1"]["areturn/"] = percentile_aggregate_data(algs["Mr 1"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 3, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4 if env_num < 5 else 1, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "OM-ReturnProba-Mr-0.8"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8", 9900000)
+    data = extract_and_smooth_df_col(dfs, "return/")
+    data["areturn/"] = median_aggregate_data(data["return/"])
+    data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
+    data["aproba/"] = median_aggregate_data(data["proba/"])
+
+    frames = data["frames"]
+    areturns = data["areturn/"]
+    for env_num, env_name in enumerate(data["areturn/"].keys()):
+        plt.subplot(3, 3, env_num+1)
+        axes = plt.gca()
+        axes.set_ylim([0, 1])
+        plt.title(shorten_env_name(env_name))
+        plt.plot(frames, data["areturn/"][env_name], label="Return")
+        plt.plot(frames, data["aproba/"][env_name], label="Proba")
+        plt.legend(loc="best", prop={'size': 6})
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+
+stat_name = "OMFull-Return-GPropLinreg-Mr0.8"
+if args.stat is None or args.stat == stat_name:
+    print(">", stat_name)
+
+    def model_mean_return(model_name):
+        output = check_output(
+            "python -m scripts.evaluate --env MiniGrid-ObstructedMaze-Full-v0 --episodes 10 --model {}"
+            .format(model_name),
+            shell=True
+        ).decode("utf-8").replace("\n", "")
+        mean_return = float(re.match(".*R:x̄σmM ([0-9.]+).*", output).group(1))
+        return mean_return
+
+    def folder_mean_return(folder):
+        mean_returns = []
+
+        model_dir = utils.get_model_dir(folder)
+        pathname = os.path.join(model_dir, "**", "model.pt")
+        for fname in glob.glob(pathname, recursive=True):
+            model_name = os.path.join(*(fname.split(os.path.sep)[2:-1]))
+            mean_returns.append(model_mean_return(model_name))
+
+        return numpy.mean(mean_returns)
+
+    alg_folders = {
+        "Gprop Linreg": "180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone",
+        "Mr 0.8": "180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8"
+    }
+    alg_returns = {}
+    for alg, folder in alg_folders.items():
+        alg_returns[alg] = folder_mean_return(folder)
+
+    txt = str(json.dumps(alg_returns, sort_keys=True, indent=4))
+    with open(os.path.join(stats_dir, stat_name+".json"), "w") as f:
+        f.write(txt)
+    if args.stat is not None:
+        print(txt)
