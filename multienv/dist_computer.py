@@ -58,22 +58,20 @@ class MrDistComputer(DistComputer):
     Then, it associates an attention A(i) to each task i, that is the attention to
     task i after i has redistributed δ of its pre-attention."""
 
-    def __init__(self, return_hists, init_min_returns, init_max_returns, ret_K, ext_ret_K,
-                 estimate_lp, convert_into_dist, G, power, pot_prop, pred_tr):
+    def __init__(self, return_hists, init_min_returns, init_max_returns, ret_K,
+                 estimate_lp, convert_into_dist, G, power, pot_prop, pred_tr, succ_tr):
         super().__init__(return_hists)
-
-        assert ret_K >= ext_ret_K
 
         self.min_returns = numpy.array(init_min_returns, dtype=numpy.float)
         self.max_returns = numpy.array(init_max_returns, dtype=numpy.float)
         self.ret_K = ret_K
-        self.ext_ret_K = ext_ret_K
         self.estimate_lp = estimate_lp
         self.convert_into_dist = convert_into_dist
         self.G = G
         self.power = power
         self.pot_prop = pot_prop
         self.pred_tr = pred_tr
+        self.succ_tr = succ_tr
 
         self.returns = numpy.copy(self.min_returns)
 
@@ -81,11 +79,11 @@ class MrDistComputer(DistComputer):
         for i in range(len(self.returns)):
             _, returns = self.return_hists[i][-self.ret_K:]
             if len(returns) > 0:
-                if len(returns) >= self.ext_ret_K:
-                    mean_return = numpy.mean(returns[-self.ext_ret_K:])
+                mean_return = numpy.mean(returns[-self.ret_K:])
+                if len(returns) >= self.ret_K:
                     self.min_returns[i] = min(self.min_returns[i], mean_return)
                     self.max_returns[i] = max(self.max_returns[i], mean_return)
-                self.returns[i] = numpy.clip(numpy.mean(returns[-self.ret_K:]), self.min_returns[i], self.max_returns[i])
+                self.returns[i] = numpy.clip(mean_return, self.min_returns[i], self.max_returns[i])
 
     def __call__(self, returns):
         super().__call__(returns)
@@ -117,5 +115,10 @@ class MrDistComputer(DistComputer):
             self.attentions[env_id] -= attention_to_predecessors
             if len(predecessors) > 0:
                 self.attentions[predecessors] += attention_to_predecessors/len(predecessors)
+            successors = list(self.G.successors(env_id))
+            attention_to_successors = self.attentions[env_id]*self.succ_tr
+            self.attentions[env_id] -= attention_to_successors
+            if len(successors) > 0:
+                self.attentions[successors] += attention_to_successors/len(successors)
 
         return self.convert_into_dist(self.attentions)
