@@ -142,6 +142,9 @@ utils.create_folders_if_necessary(stats_dir)
 
 stat_name = "BUP-Return-GAmaxWindow-GAmaxLinreg-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
+    # Compare the return got by Greedy Amax Window, Greedy Amax Linreg
+    # and Greedy Prop Linreg on BlockedUnlockPickup curriculum.
+
     print(">", stat_name)
 
     algs = {}
@@ -181,6 +184,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "KC-Return-GAmaxWindow-GAmaxLinreg-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
+    # Compare the return got by Greedy Amax Window, Greedy Amax Linreg
+    # and Greedy Prop Linreg on KeyCorridor curriculum.
+
     print(">", stat_name)
 
     algs = {}
@@ -220,6 +226,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "BUP-ReturnProba-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
+    # Display the return and the proba of Greedy Prop Linreg on
+    # BlockedUnlockPickup curriculum.
+
     print(">", stat_name)
 
     dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 3300000)[6:7]
@@ -245,6 +254,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "OM-ReturnProba-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
+    # Display the return and the proba of Greedy Prop Linreg on
+    # ObstructedMaze curriculum.
+
     print(">", stat_name)
 
     dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone", 3300000)
@@ -270,6 +282,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "BUP-Return-Mr-coef"
 if args.stat is None or args.stat == stat_name:
+    # Compare the return got by Mr algorithm with various potential coeffs
+    # on BlockedUnlockPickup curriculum.
+
     print(">", stat_name)
 
     algs = {}
@@ -309,6 +324,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "KC-Return-Mr-coef"
 if args.stat is None or args.stat == stat_name:
+    # Compare the return got by Mr algorithm with various potential coeffs
+    # on KeyCorridor curriculum.
+
     print(">", stat_name)
 
     algs = {}
@@ -348,6 +366,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "OM-Return-Mr-coef"
 if args.stat is None or args.stat == stat_name:
+    # Compare the return got by Mr algorithm with various potential coeffs
+    # on ObstructedMaze curriculum.
+
     print(">", stat_name)
 
     algs = {}
@@ -387,6 +408,9 @@ if args.stat is None or args.stat == stat_name:
 
 stat_name = "OM-ReturnProba-Mr-0.8"
 if args.stat is None or args.stat == stat_name:
+    # Display the return and the proba of Mr with pot coeff 0.8 on
+    # ObstructedMaze curriculum.
+
     print(">", stat_name)
 
     dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8", 9900000)
