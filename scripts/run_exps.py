@@ -19,7 +19,7 @@ def run_exp(curriculums, lp_ests=[None], dist_cvs=[None], dist_cps=[None], dist_
     for curriculum, lp_est, dist_cv, dist_cp, dist_cp_prop, seed in itertools.product(curriculums, lp_ests, dist_cvs, dist_cps, dist_cp_props, seeds):
         model_name = "{}_{}_{}_{}_prop{}/seed{}".format(curriculum, lp_est, dist_cv, dist_cp, dist_cp_prop, seed)
         subprocess.Popen(
-            "{} exps/run.sh python -m scripts.train {} {} {} {} {} --model {} --seed {} --save-interval 10 --no-instr"
+            "{} scripts/run_exps.sh python -m scripts.train {} {} {} {} {} --model {} --seed {} --save-interval 10 --no-instr"
             .format("sbatch --account=def-bengioy --cpus-per-task=4 --gres=gpu:1 --mem=4G --time={}".format(times[curriculum]) if not args.no_slurm else "",
                     "--curriculum {}".format(curriculum),
                     "--lp-est {}".format(lp_est) if lp_est is not None else "",
