@@ -410,40 +410,40 @@ if args.stat is None or args.stat == stat_name:
     if args.stat is not None:
         plt.show()
 
-stat_name = "OMFull-Return-GPropLinreg-Mr0.8"
-if args.stat is None or args.stat == stat_name:
-    print(">", stat_name)
+# stat_name = "OMFull-Return-GPropLinreg-Mr0.8"
+# if args.stat is None or args.stat == stat_name:
+#     print(">", stat_name)
 
-    def model_mean_return(model_name):
-        output = check_output(
-            "python -m scripts.evaluate --env MiniGrid-ObstructedMaze-Full-v0 --episodes 10 --model {}"
-            .format(model_name),
-            shell=True
-        ).decode("utf-8").replace("\n", "")
-        mean_return = float(re.match(".*R:x̄σmM ([0-9.]+).*", output).group(1))
-        return mean_return
+#     def model_mean_return(model_name):
+#         output = check_output(
+#             "python -m scripts.evaluate --env MiniGrid-ObstructedMaze-Full-v0 --episodes 10 --model {}"
+#             .format(model_name),
+#             shell=True
+#         ).decode("utf-8").replace("\n", "")
+#         mean_return = float(re.match(".*R:x̄σmM ([0-9.]+).*", output).group(1))
+#         return mean_return
 
-    def folder_mean_return(folder):
-        mean_returns = []
+#     def folder_mean_return(folder):
+#         mean_returns = []
 
-        model_dir = utils.get_model_dir(folder)
-        pathname = os.path.join(model_dir, "**", "model.pt")
-        for fname in glob.glob(pathname, recursive=True):
-            model_name = os.path.join(*(fname.split(os.path.sep)[2:-1]))
-            mean_returns.append(model_mean_return(model_name))
+#         model_dir = utils.get_model_dir(folder)
+#         pathname = os.path.join(model_dir, "**", "model.pt")
+#         for fname in glob.glob(pathname, recursive=True):
+#             model_name = os.path.join(*(fname.split(os.path.sep)[2:-1]))
+#             mean_returns.append(model_mean_return(model_name))
 
-        return numpy.mean(mean_returns)
+#         return numpy.mean(mean_returns)
 
-    alg_folders = {
-        "Gprop Linreg": "180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone",
-        "Mr 0.8": "180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8"
-    }
-    alg_returns = {}
-    for alg, folder in alg_folders.items():
-        alg_returns[alg] = folder_mean_return(folder)
+#     alg_folders = {
+#         "Gprop Linreg": "180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone",
+#         "Mr 0.8": "180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8"
+#     }
+#     alg_returns = {}
+#     for alg, folder in alg_folders.items():
+#         alg_returns[alg] = folder_mean_return(folder)
 
-    txt = str(json.dumps(alg_returns, sort_keys=True, indent=4))
-    with open(os.path.join(stats_dir, stat_name+".json"), "w") as f:
-        f.write(txt)
-    if args.stat is not None:
-        print(txt)
+#     txt = str(json.dumps(alg_returns, sort_keys=True, indent=4))
+#     with open(os.path.join(stats_dir, stat_name+".json"), "w") as f:
+#         f.write(txt)
+#     if args.stat is not None:
+#         print(txt)
