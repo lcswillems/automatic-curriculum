@@ -31,16 +31,16 @@ parser.add_argument("--dist-cv-eps", type=float, default=0.1,
                     help="exploration coefficient for some distribution converters (default: 0.1)")
 parser.add_argument("--dist-cv-tau", type=float, default=4e-4,
                     help="temperature for Boltzmann distribution converter (default: 4e-4)")
-parser.add_argument("--dist-cp", default="Mr",
-                    help="name of the distribution computer (default: Mr)")
+parser.add_argument("--dist-cp", default="MR",
+                    help="name of the distribution computer (default: MR)")
 parser.add_argument("--dist-cp-power", type=int, default=6,
-                    help="power of the ancestor mastering rate for the Mr distribution computer (default: 6)")
+                    help="power of the ancestor mastering rate for the MR distribution computer (default: 6)")
 parser.add_argument("--dist-cp-prop", type=float, default=0.5,
-                    help="potential proportion for the Mr distribution computer (default: 0.5)")
+                    help="potential proportion for the MR distribution computer (default: 0.5)")
 parser.add_argument("--dist-cp-pred-tr", type=float, default=0.2,
-                    help="attention transfer rate to predecessors for the Mr distribution computer (default: 0.2)")
+                    help="attention transfer rate to predecessors for the MR distribution computer (default: 0.2)")
 parser.add_argument("--dist-cp-succ-tr", type=float, default=0.05,
-                    help="attention transfer rate to predecessors for the Mr distribution computer (default: 0.05)")
+                    help="attention transfer rate to predecessors for the MR distribution computer (default: 0.05)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{ALGO}_{TIME})")
 parser.add_argument("--seed", type=int, default=1,
@@ -143,8 +143,8 @@ elif args.curriculum is not None:
 
     # Instantiate the distribution computer
     compute_dist = {
-        "Lp": menv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
-        "Mr": menv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
+        "LP": menv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
+        "MR": menv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
                                   estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_pred_tr, args.dist_cp_succ_tr),
         "None": None
     }[args.dist_cp]
@@ -227,12 +227,12 @@ while num_frames < args.frames:
                 data += [None]
                 if env_id in menv_head.synthesized_returns.keys():
                     data[-1] = menv_head.synthesized_returns[env_id]
-                if args.dist_cp in ["Lp", "Mr"]:
+                if args.dist_cp in ["LP", "MR"]:
                     header += ["lp/{}".format(env_key)]
                     data += [compute_dist.lps[env_id]]
                     header += ["attention/{}".format(env_key)]
                     data += [compute_dist.attentions[env_id]]
-                if args.dist_cp in ["Mr"]:
+                if args.dist_cp in ["MR"]:
                     header += ["maxrt/{}".format(env_key)]
                     data += [compute_dist.max_returns[env_id]]
                     header += ["na_lp/{}".format(env_key)]

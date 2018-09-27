@@ -149,15 +149,15 @@ if args.stat is None or args.stat == stat_name:
 
     algs = {}
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Window_GreedyAmax_Lp_propNone", 3300000)
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Window_GreedyAmax_LP_propNone", 3300000)
     algs["GAmax Window"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GAmax Window"]["areturn/"] = percentile_aggregate_data(algs["GAmax Window"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyAmax_Lp_propNone", 3300000)
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyAmax_LP_propNone", 3300000)
     algs["GAmax Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GAmax Linreg"]["areturn/"] = percentile_aggregate_data(algs["GAmax Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 3300000)
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_LP_propNone", 3300000)
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
@@ -191,15 +191,15 @@ if args.stat is None or args.stat == stat_name:
 
     algs = {}
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Window_GreedyAmax_Lp_propNone", 9900000)
+    dfs = load_and_clean_logs("180923/KeyCorridor_Window_GreedyAmax_LP_propNone", 9900000)
     algs["GAmax Window"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GAmax Window"]["areturn/"] = percentile_aggregate_data(algs["GAmax Window"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyAmax_Lp_propNone", 9900000)
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyAmax_LP_propNone", 9900000)
     algs["GAmax Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GAmax Linreg"]["areturn/"] = percentile_aggregate_data(algs["GAmax Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_Lp_propNone", 9900000)
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_LP_propNone", 9900000)
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
@@ -231,7 +231,7 @@ if args.stat is None or args.stat == stat_name:
 
     print(">", stat_name)
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 3300000)[6:7]
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_LP_propNone", 3300000)[6:7]
     data = extract_and_smooth_df_col(dfs, "return/")
     data["areturn/"] = median_aggregate_data(data["return/"])
     data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
@@ -259,7 +259,7 @@ if args.stat is None or args.stat == stat_name:
 
     print(">", stat_name)
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone", 3300000)
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_LP_propNone", 3300000)
     data = extract_and_smooth_df_col(dfs, "return/")
     data["areturn/"] = median_aggregate_data(data["return/"])
     data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
@@ -280,26 +280,26 @@ if args.stat is None or args.stat == stat_name:
     if args.stat is not None:
         plt.show()
 
-stat_name = "BUP-Return-Mr-coef"
+stat_name = "BUP-Return-MR-coef"
 if args.stat is None or args.stat == stat_name:
-    # Compare the return got by Mr algorithm with various potential coeffs
+    # Compare the return got by MR algorithm with various potential coeffs
     # on BlockedUnlockPickup curriculum.
 
     print(">", stat_name)
 
     algs = {}
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_Lp_propNone", 1500000)
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_LP_propNone", 1500000)
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_Mr_prop0.8", 1500000)
-    algs["Mr 0.8"] = extract_and_smooth_df_col(dfs, "return/")
-    algs["Mr 0.8"]["areturn/"] = percentile_aggregate_data(algs["Mr 0.8"]["return/"], [25, 50, 75])
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_MR_prop0.8", 1500000)
+    algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_Mr_prop1", 1500000)
-    algs["Mr 1"] = extract_and_smooth_df_col(dfs, "return/")
-    algs["Mr 1"]["areturn/"] = percentile_aggregate_data(algs["Mr 1"]["return/"], [25, 50, 75])
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_MR_prop1", 1500000)
+    algs["MR 1"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 1"]["areturn/"] = percentile_aggregate_data(algs["MR 1"]["return/"], [25, 50, 75])
 
     for alg, data in algs.items():
         frames = data["frames"]
@@ -322,26 +322,26 @@ if args.stat is None or args.stat == stat_name:
     if args.stat is not None:
         plt.show()
 
-stat_name = "KC-Return-Mr-coef"
+stat_name = "KC-Return-MR-coef"
 if args.stat is None or args.stat == stat_name:
-    # Compare the return got by Mr algorithm with various potential coeffs
+    # Compare the return got by MR algorithm with various potential coeffs
     # on KeyCorridor curriculum.
 
     print(">", stat_name)
 
     algs = {}
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_Lp_propNone", 9900000)
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_LP_propNone", 9900000)
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_Mr_prop0.8", 9900000)
-    algs["Mr 0.8"] = extract_and_smooth_df_col(dfs, "return/")
-    algs["Mr 0.8"]["areturn/"] = percentile_aggregate_data(algs["Mr 0.8"]["return/"], [25, 50, 75])
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_MR_prop0.8", 9900000)
+    algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_Mr_prop1", 9900000)
-    algs["Mr 1"] = extract_and_smooth_df_col(dfs, "return/")
-    algs["Mr 1"]["areturn/"] = percentile_aggregate_data(algs["Mr 1"]["return/"], [25, 50, 75])
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_MR_prop1", 9900000)
+    algs["MR 1"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 1"]["areturn/"] = percentile_aggregate_data(algs["MR 1"]["return/"], [25, 50, 75])
 
     for alg, data in algs.items():
         frames = data["frames"]
@@ -364,26 +364,26 @@ if args.stat is None or args.stat == stat_name:
     if args.stat is not None:
         plt.show()
 
-stat_name = "OM-Return-Mr-coef"
+stat_name = "OM-Return-MR-coef"
 if args.stat is None or args.stat == stat_name:
-    # Compare the return got by Mr algorithm with various potential coeffs
+    # Compare the return got by MR algorithm with various potential coeffs
     # on ObstructedMaze curriculum.
 
     print(">", stat_name)
 
     algs = {}
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone", 9900000)
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_LP_propNone", 9900000)
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8", 9900000)
-    algs["Mr 0.8"] = extract_and_smooth_df_col(dfs, "return/")
-    algs["Mr 0.8"]["areturn/"] = percentile_aggregate_data(algs["Mr 0.8"]["return/"], [25, 50, 75])
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
+    algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop1", 9900000)
-    algs["Mr 1"] = extract_and_smooth_df_col(dfs, "return/")
-    algs["Mr 1"]["areturn/"] = percentile_aggregate_data(algs["Mr 1"]["return/"], [25, 50, 75])
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_MR_prop1", 9900000)
+    algs["MR 1"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 1"]["areturn/"] = percentile_aggregate_data(algs["MR 1"]["return/"], [25, 50, 75])
 
     for alg, data in algs.items():
         frames = data["frames"]
@@ -406,14 +406,14 @@ if args.stat is None or args.stat == stat_name:
     if args.stat is not None:
         plt.show()
 
-stat_name = "OM-ReturnProba-Mr-0.8"
+stat_name = "OM-ReturnProba-MR-0.8"
 if args.stat is None or args.stat == stat_name:
-    # Display the return and the proba of Mr with pot coeff 0.8 on
+    # Display the return and the proba of MR with pot coeff 0.8 on
     # ObstructedMaze curriculum.
 
     print(">", stat_name)
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8", 9900000)
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
     data = extract_and_smooth_df_col(dfs, "return/")
     data["areturn/"] = median_aggregate_data(data["return/"])
     data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
@@ -434,7 +434,7 @@ if args.stat is None or args.stat == stat_name:
     if args.stat is not None:
         plt.show()
 
-# stat_name = "OMFull-Return-GPropLinreg-Mr0.8"
+# stat_name = "OMFull-Return-GPropLinreg-MR0.8"
 # if args.stat is None or args.stat == stat_name:
 #     print(">", stat_name)
 
@@ -459,8 +459,8 @@ if args.stat is None or args.stat == stat_name:
 #         return numpy.mean(mean_returns)
 
 #     alg_folders = {
-#         "Gprop Linreg": "180923/ObstructedMaze_Linreg_GreedyProp_Lp_propNone",
-#         "Mr 0.8": "180923/ObstructedMaze_Linreg_Prop_Mr_prop0.8"
+#         "Gprop Linreg": "180923/ObstructedMaze_Linreg_GreedyProp_LP_propNone",
+#         "MR 0.8": "180923/ObstructedMaze_Linreg_Prop_MR_prop0.8"
 #     }
 #     alg_returns = {}
 #     for alg, folder in alg_folders.items():

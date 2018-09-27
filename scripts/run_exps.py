@@ -50,7 +50,7 @@ if args.exp is None or args.exp == "ProofMvgAvg":
             "GreedyAmax"
         ],
         dist_cps=[
-            "Lp"
+            "LP"
         ],
         seeds=range(1, 11),
         times={
@@ -74,7 +74,7 @@ if args.exp is None or args.exp == "ProofGreedyProp":
             "GreedyAmax"
         ],
         dist_cps=[
-            "Lp",
+            "LP",
         ],
         seeds=range(1, 11),
         times={
@@ -82,7 +82,7 @@ if args.exp is None or args.exp == "ProofGreedyProp":
             "KeyCorridor": "2:0:0",
         }
     )
-if args.exp is None or args.exp == "PerfLp":
+if args.exp is None or args.exp == "PerfLP":
     # This gives the performance of the learning rate based program
     # algorithms.
     run_exp(
@@ -96,14 +96,14 @@ if args.exp is None or args.exp == "PerfLp":
             "GreedyProp",
         ],
         dist_cps=[
-            "Lp"
+            "LP"
         ],
         seeds=range(1, 11),
         times={
             "ObstructedMaze": "3:0:0"
         }
     )
-if args.exp is None or args.exp == "PerfMr":
+if args.exp is None or args.exp == "PerfMR":
     # This gives the performance of the mastering rate based program
     # algorithms.
     run_exp(
@@ -119,7 +119,7 @@ if args.exp is None or args.exp == "PerfMr":
             "Prop",
         ],
         dist_cps=[
-            "Mr"
+            "MR"
         ],
         dist_cp_props=[
             0.2,
