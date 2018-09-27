@@ -6,8 +6,8 @@ class DistComputer(ABC):
     """A distribution computer.
 
     It receives returns for some environments, updates the return history
-    given by each environment and computes a distribution over
-    environments given these histories of return."""
+    of these environments, and computes a distribution over environments
+    given these return histories."""
 
     def __init__(self, return_hists):
         self.return_hists = return_hists
@@ -21,11 +21,11 @@ class DistComputer(ABC):
             self.return_hists[env_id].append(self.step, returnn)
 
 class LpDistComputer(DistComputer):
-    """A distribution computer based on learning progress.
+    """A distribution computer, based on learning progress.
 
-    It associates an attention A(i) to each task i:
-        A(i) = a_lp(i)
-    where a_lp(i) is the absolute learning progress on task i."""
+    It associates an attention a(i) to each task i:
+        a(i) = a_lp(i)
+    where a_lp(i) is an estimate of the absolute learning progress on task i."""
 
     def __init__(self, return_hists, estimate_lp, convert_into_dist):
         super().__init__(return_hists)
@@ -43,20 +43,20 @@ class LpDistComputer(DistComputer):
         return self.convert_into_dist(self.attentions)
 
 class MrDistComputer(DistComputer):
-    """A distribution computer based on mastering rate.
+    """A distribution computer, based on mastering rate.
 
-    It first associates a pre-attention pre_A(i) to each task i:
-        pre_A(i) = Mast(Anc_i)^p * ((1-γ) na_lp(i) + γ Pot(i)) * (1 - Mast(Succ_i))
+    It first associates a pre-attention pre_a(i) to each task i:
+        pre_a(i) = Mast(Anc_i)^p * ((1-γ) na_lp(i) + γ (1 - Mast(i))) * (1 - Mast(Succ_i))
     where:
-    - Mast(Anc_i) is the minimum mastering rate over ancestors of task i in graph G;
-    - p is the power;
-    - na_lp(i) := a_lp(i) / max_i a_lp(i) is the normalized absolute learning progress on i;
-    - Pot(i) := 1 - Mast(i) is the potential of learning task i;
-    - γ is the potential proportion;
-    - Mast(Succ_i) is the mastering rate over successors of task i in graph G.
+        - Mast(Anc_i) is the minimum mastering rate of ancestors of task i in graph G;
+        - p is a power;
+        - na_lp(i) := a_lp(i) / max_i a_lp(i) is the normalized absolute learning progress on i;
+        - Mast(i) is the mastering rate of task i;
+        - γ is the potential proportion;
+        - Mast(Succ_i) is the mastering rate of successors of task i in graph G.
 
-    Then, it associates an attention A(i) to each task i, that is the attention to
-    task i after i has redistributed δ of its pre-attention."""
+    Then, each task i gives δ_pre of its pre-attention to its predecessors and δ_succ
+    to its successors. This leads to a new attention a."""
 
     def __init__(self, return_hists, init_min_returns, init_max_returns, ret_K,
                  estimate_lp, convert_into_dist, G, power, pot_prop, pred_tr, succ_tr):
