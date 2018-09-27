@@ -181,6 +181,7 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
 
 stat_name = "KC-Return-GAmaxWindow-GAmaxLinreg-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
@@ -223,6 +224,7 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
 
 stat_name = "BUP-ReturnProba-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
@@ -251,6 +253,7 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
 
 stat_name = "OM-ReturnProba-GPropLinreg"
 if args.stat is None or args.stat == stat_name:
@@ -279,6 +282,7 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
 
 stat_name = "BUP-Return-MR-coef"
 if args.stat is None or args.stat == stat_name:
@@ -293,11 +297,11 @@ if args.stat is None or args.stat == stat_name:
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_MR_prop0.8", 1500000)
+    dfs = load_and_clean_logs("180926/BlockedUnlockPickup_Linreg_Prop_MR_prop0.8", 1500000)
     algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
     algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_Prop_MR_prop1", 1500000)
+    dfs = load_and_clean_logs("180926/BlockedUnlockPickup_Linreg_Prop_MR_prop1", 1500000)
     algs["MR 1"] = extract_and_smooth_df_col(dfs, "return/")
     algs["MR 1"]["areturn/"] = percentile_aggregate_data(algs["MR 1"]["return/"], [25, 50, 75])
 
@@ -321,6 +325,46 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
+
+stat_name = "BUP-Return-MR-base"
+if args.stat is None or args.stat == stat_name:
+    # Compare the return got by the best MR algorithm and the baseline
+    # on BlockedUnlockPickup curriculum.
+
+    print(">", stat_name)
+
+    algs = {}
+
+    dfs = load_and_clean_logs("180923/BlockedUnlockPickup_Linreg_GreedyProp_LP_propNone", 1500000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180926/BlockedUnlockPickup_Linreg_Prop_MR_prop0.8", 1500000)
+    algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 1, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+    plt.clf()
 
 stat_name = "KC-Return-MR-coef"
 if args.stat is None or args.stat == stat_name:
@@ -335,11 +379,11 @@ if args.stat is None or args.stat == stat_name:
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_MR_prop0.8", 9900000)
+    dfs = load_and_clean_logs("180926/KeyCorridor_Linreg_Prop_MR_prop0.8", 9900000)
     algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
     algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_Prop_MR_prop1", 9900000)
+    dfs = load_and_clean_logs("180926/KeyCorridor_Linreg_Prop_MR_prop1", 9900000)
     algs["MR 1"] = extract_and_smooth_df_col(dfs, "return/")
     algs["MR 1"]["areturn/"] = percentile_aggregate_data(algs["MR 1"]["return/"], [25, 50, 75])
 
@@ -363,6 +407,46 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
+
+stat_name = "KC-Return-MR-base"
+if args.stat is None or args.stat == stat_name:
+    # Compare the return got by the best MR algorithm and the baseline
+    # on KeyCorridor curriculum.
+
+    print(">", stat_name)
+
+    algs = {}
+
+    dfs = load_and_clean_logs("180923/KeyCorridor_Linreg_GreedyProp_LP_propNone", 9900000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180926/KeyCorridor_Linreg_Prop_MR_prop0.8", 9900000)
+    algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 2, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4 if env_num < 3 else 2, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+    plt.clf()
 
 stat_name = "OM-Return-MR-coef"
 if args.stat is None or args.stat == stat_name:
@@ -377,11 +461,11 @@ if args.stat is None or args.stat == stat_name:
     algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
     algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
+    dfs = load_and_clean_logs("180926/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
     algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
     algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_MR_prop1", 9900000)
+    dfs = load_and_clean_logs("180926/ObstructedMaze_Linreg_Prop_MR_prop1", 9900000)
     algs["MR 1"] = extract_and_smooth_df_col(dfs, "return/")
     algs["MR 1"]["areturn/"] = percentile_aggregate_data(algs["MR 1"]["return/"], [25, 50, 75])
 
@@ -405,6 +489,46 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
+
+stat_name = "OM-Return-MR-base"
+if args.stat is None or args.stat == stat_name:
+    # Compare the return got by the best MR algorithm and the baseline
+    # on ObstructedMaze curriculum.
+
+    print(">", stat_name)
+
+    algs = {}
+
+    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_GreedyProp_LP_propNone", 9900000)
+    algs["GProp Linreg"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["GProp Linreg"]["areturn/"] = percentile_aggregate_data(algs["GProp Linreg"]["return/"], [25, 50, 75])
+
+    dfs = load_and_clean_logs("180926/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
+    algs["MR 0.8"] = extract_and_smooth_df_col(dfs, "return/")
+    algs["MR 0.8"]["areturn/"] = percentile_aggregate_data(algs["MR 0.8"]["return/"], [25, 50, 75])
+
+    for alg, data in algs.items():
+        frames = data["frames"]
+        areturns = data["areturn/"]
+        for env_num, env_name in enumerate(areturns.keys()):
+            plt.subplot(3, 3, env_num+1)
+            axes = plt.gca()
+            axes.set_ylim([0, 1])
+            plt.title(shorten_env_name(env_name))
+            plt.plot(frames, areturns[env_name][50], label=alg)
+            plt.legend(loc=4 if env_num < 5 else 1, prop={'size': 6})
+            plt.fill_between(
+                frames,
+                areturns[env_name][25],
+                areturns[env_name][75],
+                alpha=0.5
+            )
+    plt.tight_layout()
+    plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
+    if args.stat is not None:
+        plt.show()
+    plt.clf()
 
 stat_name = "OM-ReturnProba-MR-0.8"
 if args.stat is None or args.stat == stat_name:
@@ -413,7 +537,7 @@ if args.stat is None or args.stat == stat_name:
 
     print(">", stat_name)
 
-    dfs = load_and_clean_logs("180923/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
+    dfs = load_and_clean_logs("180926/ObstructedMaze_Linreg_Prop_MR_prop0.8", 9900000)
     data = extract_and_smooth_df_col(dfs, "return/")
     data["areturn/"] = median_aggregate_data(data["return/"])
     data = {**data, **extract_and_smooth_df_col(dfs, "proba/")}
@@ -433,6 +557,7 @@ if args.stat is None or args.stat == stat_name:
     plt.savefig(os.path.join(stats_dir, stat_name + ".png"))
     if args.stat is not None:
         plt.show()
+    plt.clf()
 
 # stat_name = "OMFull-Return-GPropLinreg-MR0.8"
 # if args.stat is None or args.stat == stat_name:
@@ -460,7 +585,7 @@ if args.stat is None or args.stat == stat_name:
 
 #     alg_folders = {
 #         "Gprop Linreg": "180923/ObstructedMaze_Linreg_GreedyProp_LP_propNone",
-#         "MR 0.8": "180923/ObstructedMaze_Linreg_Prop_MR_prop0.8"
+#         "MR 0.8": "180923/Obst6uctedMaze_Linreg_Prop_MR_prop0.8"
 #     }
 #     alg_returns = {}
 #     for alg, folder in alg_folders.items():
