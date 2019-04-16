@@ -2,7 +2,7 @@ import argparse
 import time
 import datetime
 import torch
-import torch_rl
+import torch_ac
 import tensorboardX
 import sys
 
@@ -12,7 +12,7 @@ from model import ACModel
 
 # Parse arguments
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
@@ -79,10 +79,6 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size (default: 256)")
-parser.add_argument("--no-instr", action="store_true", default=False,
-                    help="don't use instructions in the model")
-parser.add_argument("--no-mem", action="store_true", default=False,
-                    help="don't use memory in the model")
 args = parser.parse_args()
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
@@ -160,7 +156,7 @@ elif args.curriculum is not None:
 
 # Define obss preprocessor
 
-preprocess_obss = utils.ObssPreprocessor(model_dir, envs[0].observation_space)
+obs_space, preprocess_obss = utils.get_obss_preprocessor(args.env, envs[0].observation_space, model_dir)
 
 # Load training status
 
@@ -175,7 +171,7 @@ try:
     acmodel = utils.load_model(model_dir)
     logger.info("Model successfully loaded\n")
 except OSError:
-    acmodel = ACModel(preprocess_obss.obs_space, envs[0].action_space, not args.no_instr, not args.no_mem)
+    acmodel = ACModel(obs_space, envs[0].action_space)
     logger.info("Model successfully created\n")
 logger.info("{}\n".format(acmodel))
 
@@ -185,7 +181,7 @@ logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Define actor-critic algo
 
-algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+algo = torch_ac.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                         args.optim_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)
@@ -200,7 +196,9 @@ while num_frames < args.frames:
     # Update model parameters
 
     update_start_time = time.time()
-    logs = algo.update_parameters()
+    exps, logs1 = algo.collect_experiences()
+    logs2 = algo.update_parameters(exps)
+    logs = {**logs1, **logs2}
     if args.curriculum is not None:
         menv_head.update_dist()
     update_end_time = time.time()
@@ -258,11 +256,9 @@ while num_frames < args.frames:
         status = {"num_frames": num_frames, "update": update}
         utils.save_status(status, model_dir)
 
-    # Save vocabulary and model
+    # Save model
 
     if args.save_interval > 0 and update % args.save_interval == 0:
-        preprocess_obss.vocab.save()
-
         if torch.cuda.is_available():
             acmodel.cpu()
         utils.save_model(acmodel, model_dir)

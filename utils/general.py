@@ -5,8 +5,8 @@ import torch
 import collections
 
 def get_storage_dir():
-    if "TORCH_RL_STORAGE" in os.environ:
-        return os.environ["TORCH_RL_STORAGE"]
+    if "SOPH_CURRI_STORAGE" in os.environ:
+        return os.environ["SOPH_CURRI_STORAGE"]
     return "storage"
 
 def get_model_dir(model_name):
@@ -17,7 +17,7 @@ def get_stats_dir():
 
 def create_folders_if_necessary(path):
     dirname = os.path.dirname(path)
-    if not(os.path.isdir(dirname)):
+    if not os.path.isdir(dirname):
         os.makedirs(dirname)
 
 def seed(seed):

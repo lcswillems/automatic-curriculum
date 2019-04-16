@@ -1,6 +1,6 @@
-git+https://github.com/lcswillems/pytorch-a2c-ppo.git@master#egg=torch_rl
-git+https://github.com/maximecb/gym-minigrid.git@master#egg=gym_minigrid
-tensorboardX==1.2
-torch==0.4.0
+torch-ac>=1.0.1
+gym-minigrid
+tensorboardX>=1.6
+torch>=1
 networkx>=2.1
 numpy>=1.3

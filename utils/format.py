@@ -3,87 +3,25 @@ import json
 import numpy
 import re
 import torch
-import torch_rl
+import torch_ac
+import gym
 
 import utils
 
-class Vocabulary:
-    """A mapping from tokens to ids with a capacity of `max_size` words.
-    It can be saved in a `vocab.json` file."""
+def get_obss_preprocessor(env_id, obs_space, model_dir):
+    obs_space = {"image": obs_space.spaces['image'].shape}
 
-    def __init__(self, model_dir):
-        self.path = utils.get_vocab_path(model_dir)
-        self.max_size = 100
-        self.vocab = {}
-        if os.path.exists(self.path):
-            self.vocab = json.load(open(self.path))
+    def preprocess_obss(obss, device=None):
+        return torch_ac.DictList({
+            "image": preprocess_images([obs["image"] for obs in obss], device=device)
+        })
 
-    def __getitem__(self, token):
-        if not(token in self.vocab.keys()):
-            if len(self.vocab) >= self.max_size:
-                raise ValueError("Maximum vocabulary capacity reached")
-            self.vocab[token] = len(self.vocab) + 1
-        return self.vocab[token]
+    return obs_space, preprocess_obss
 
-    def save(self):
-        utils.create_folders_if_necessary(self.path)
-        json.dump(self.vocab, open(self.path, "w"))
-
-class ObssPreprocessor:
-    """A preprocessor of observations returned by the environment.
-    It gives an observation space and converts MiniGrid observations
-    into the format that the model can handle."""
-
-    def __init__(self, model_dir, obs_space):
-        self.vocab = Vocabulary(model_dir)
-        self.obs_space = {
-            "image": 147,
-            "instr": self.vocab.max_size
-        }
-
-    def __call__(self, obss, device=None):
-        """Converts a list of MiniGrid observations, i.e. a list of
-        (image, instruction) tuples into two PyTorch tensors.
-
-        The images are concatenated. The instructions are tokenified, then
-        tokens are converted into lists of ids using a Vocabulary object, and
-        finally, the lists of ids are concatenated.
-
-        Returns
-        -------
-        preprocessed_obss : DictList
-            Contains preprocessed images and preprocessed instructions.
-
-        """
-
-        preprocessed_obss = torch_rl.DictList()
-
-        if "image" in self.obs_space.keys():
-            images = numpy.array([obs["image"] for obs in obss])
-            images = torch.tensor(images, device=device, dtype=torch.float)
-
-            preprocessed_obss.image = images
-
-        if "instr" in self.obs_space.keys():
-            raw_instrs = []
-            max_instr_len = 0
-
-            for obs in obss:
-                tokens = re.findall("([a-z]+)", obs["mission"].lower())
-                instr = numpy.array([self.vocab[token] for token in tokens])
-                raw_instrs.append(instr)
-                max_instr_len = max(len(instr), max_instr_len)
-
-            instrs = numpy.zeros((len(obss), max_instr_len))
-
-            for i, instr in enumerate(raw_instrs):
-                instrs[i, :len(instr)] = instr
-
-            instrs = torch.tensor(instrs, device=device, dtype=torch.long)
-
-            preprocessed_obss.instr = instrs
-
-        return preprocessed_obss
+def preprocess_images(images, device=None):
+    # Bug of Pytorch: very slow if not first converted to numpy array
+    images = numpy.array(images)
+    return torch.tensor(images, device=device, dtype=torch.float)
 
 def reshape_reward(obs, action, reward, done):
     return 20*reward

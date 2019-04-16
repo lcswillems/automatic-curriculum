@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+
 import argparse
 import time
 import torch
-from torch_rl.utils.penv import ParallelEnv
+from torch_ac.utils.penv import ParallelEnv
 
 import utils
 
@@ -12,14 +14,16 @@ parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
 parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED)")
-parser.add_argument("--episodes", type=int, default=1000,
-                    help="number of episodes of evaluation (default: 1000)")
+parser.add_argument("--episodes", type=int, default=100,
+                    help="number of episodes of evaluation (default: 100)")
 parser.add_argument("--seed", type=int, default=0,
                     help="random seed (default: 0)")
 parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
+parser.add_argument("--worst-episodes-to-show", type=int, default=10,
+                    help="how many worst episodes to show")
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -37,7 +41,7 @@ env = ParallelEnv(envs)
 # Define agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(model_dir, env.observation_space, args.argmax, args.procs)
+agent = utils.Agent(args.env, env.observation_space, model_dir, args.argmax, args.procs)
 print("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Initialize logs
@@ -82,7 +86,17 @@ duration = int(end_time - start_time)
 return_per_episode = utils.synthesize(logs["return_per_episode"])
 num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {}"
+print("F {} | FPS {:.0f} | D {} | R:μσmM {:.2f} {:.2f} {:.2f} {:.2f} | F:μσmM {:.1f} {:.1f} {} {}"
       .format(num_frames, fps, duration,
               *return_per_episode.values(),
               *num_frames_per_episode.values()))
+
+# Print worst episodes
+
+n = args.worst_episodes_to_show
+if n > 0:
+    print("\n{} worst episodes:".format(n))
+
+    indexes = sorted(range(len(logs["return_per_episode"])), key=lambda k: logs["return_per_episode"][k])
+    for i in indexes[:n]:
+        print("- episode {}: R={}, F={}".format(i, logs["return_per_episode"][i], logs["num_frames_per_episode"][i]))
