@@ -67,7 +67,7 @@ class MultiEnvHead:
 class MultiEnv:
     """A multi-environment.
 
-    It simulates several environments: it first receives a distribution
+    It simulates several environments: it receives a distribution
     from its head, samples an environment from it, simulates it and
     then sends a (env_id, return) tuple to its head."""
 

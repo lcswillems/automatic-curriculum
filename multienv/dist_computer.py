@@ -5,9 +5,9 @@ import networkx as nx
 class DistComputer(ABC):
     """A distribution computer.
 
-    It receives returns for some environments, updates the return history
-    of these environments, and computes a distribution over environments
-    given these return histories."""
+    It receives returns for some environments, updates their return
+    histories, and computes a distribution over environments given
+    these return histories."""
 
     def __init__(self, return_hists):
         self.return_hists = return_hists
@@ -23,9 +23,9 @@ class DistComputer(ABC):
 class LpDistComputer(DistComputer):
     """A distribution computer, based on learning progress.
 
-    It associates an attention a(i) to each task i:
-        a(i) = a_lp(i)
-    where a_lp(i) is an estimate of the absolute learning progress on task i."""
+    It associates an attention a(c) to each task c:
+        a(c) = a_lp(c)
+    where a_lp(c) is an estimate of the absolute learning progress on task c."""
 
     def __init__(self, return_hists, estimate_lp, convert_into_dist):
         super().__init__(return_hists)
@@ -45,17 +45,17 @@ class LpDistComputer(DistComputer):
 class MrDistComputer(DistComputer):
     """A distribution computer, based on mastering rate.
 
-    It first associates a pre-attention pre_a(i) to each task i:
-        pre_a(i) = Mast(Anc_i)^p * ((1-γ) na_lp(i) + γ (1 - Mast(i))) * (1 - Mast(Succ_i))
+    It first associates a pre-attention pre_a(c) to each task i:
+        pre_a(c) = Mast(Anc_c)^p * ((1-γ) na_lp(c) + γ (1 - Mast(c))) * (1 - Mast(Succ_c))
     where:
-        - Mast(Anc_i) is the minimum mastering rate of ancestors of task i in graph G;
+        - Mast(Anc_c) is the minimum mastering rate of ancestors of task c in graph G;
         - p is a power;
-        - na_lp(i) := a_lp(i) / max_i a_lp(i) is the normalized absolute learning progress on i;
-        - Mast(i) is the mastering rate of task i;
+        - na_lp(c) := a_lp(c) / max_c a_lp(c) is the normalized absolute learning progress on c;
+        - Mast(c) is the mastering rate of task c;
         - γ is the potential proportion;
-        - Mast(Succ_i) is the mastering rate of successors of task i in graph G.
+        - Mast(Succ_c) is the mastering rate of successors of task c in graph G.
 
-    Then, each task i gives δ_pre of its pre-attention to its predecessors and δ_succ
+    Then, each task c gives δ_pre of its pre-attention to its predecessors and δ_succ
     to its successors. This leads to a new attention a."""
 
     def __init__(self, return_hists, init_min_returns, init_max_returns, ret_K,
