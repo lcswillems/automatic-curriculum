@@ -1,9 +1,9 @@
 import networkx as nx
+import os
+import json
 
 import curriculums
 import utils
-import os
-import json
 
 def load_curriculum(curriculum_id):
     curriculum_fname = os.path.join("curriculums", curriculum_id + ".json")
