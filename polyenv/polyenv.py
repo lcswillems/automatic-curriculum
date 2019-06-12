@@ -12,19 +12,18 @@ def recv_conns(conns):
         wconns = mp.connection.wait(conns, timeout=.0)
     return data
 
-class MultiEnvHead:
-    """The head of several multi-environments.
+class PolyEnvHead:
+    """The head of polymorph environments.
 
-    It communicates with these multi-environments through pipes: it first
+    It communicates with polymorph environments through pipes: it first
     receives (env_id, return) tuples from them, updates the distribution
     over their environments (with a DistComputer object) after some time
     and sends them this distribution.
 
-    This class enables to execute several multi-environments in different
-    processes."""
+    This class centralizes the distribution of the polymorph environments."""
 
-    def __init__(self, num_menvs, num_envs, compute_dist=None):
-        self.num_menvs = num_menvs
+    def __init__(self, num_penvs, num_envs, compute_dist=None):
+        self.num_penvs = num_penvs
         self.num_envs = num_envs
         self.compute_dist = compute_dist
 
@@ -34,7 +33,7 @@ class MultiEnvHead:
         self.update_dist()
 
     def _init_connections(self):
-        self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_menvs)])
+        self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_penvs)])
 
     def _reset_returns(self):
         self.returns = {env_id: [] for env_id in range(self.num_envs)}
@@ -64,10 +63,10 @@ class MultiEnvHead:
 
         self._send_dist()
 
-class MultiEnv:
-    """A multi-environment.
+class PolyEnv:
+    """A polymorph environment.
 
-    It simulates several environments: it receives a distribution
+    It simulates different environments: it receives a distribution
     from its head, samples an environment from it, simulates it and
     then sends a (env_id, return) tuple to its head."""
 

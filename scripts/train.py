@@ -6,7 +6,7 @@ import torch_ac
 import tensorboardX
 import sys
 
-import multienv as menv
+import polyenv as penv
 import utils
 from model import ACModel
 
@@ -118,41 +118,41 @@ elif args.curriculum is not None:
     num_envs = len(G.nodes)
 
     # Instantiate the return history for each environment
-    return_hists = [menv.ReturnHistory() for _ in range(num_envs)]
+    return_hists = [penv.ReturnHistory() for _ in range(num_envs)]
 
     # Instantiate the learning progress estimator
     estimate_lp = {
-        "Online": menv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
-        "Window": menv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
-        "Linreg": menv.LinregLpEstimator(return_hists, args.lp_est_K),
+        "Online": penv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
+        "Window": penv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
+        "Linreg": penv.LinregLpEstimator(return_hists, args.lp_est_K),
         "None": None
     }[args.lp_est]
 
     # Instantiate the distribution converter
     convert_into_dist = {
-        "GreedyAmax": menv.GreedyAmaxDistConverter(args.dist_cv_eps),
-        "Prop": menv.PropDistConverter(),
-        "GreedyProp": menv.GreedyPropDistConverter(args.dist_cv_eps),
-        "Boltzmann": menv.BoltzmannDistConverter(args.dist_cv_tau),
+        "GreedyAmax": penv.GreedyAmaxDistConverter(args.dist_cv_eps),
+        "Prop": penv.PropDistConverter(),
+        "GreedyProp": penv.GreedyPropDistConverter(args.dist_cv_eps),
+        "Boltzmann": penv.BoltzmannDistConverter(args.dist_cv_tau),
         "None": None
     }[args.dist_cv]
 
     # Instantiate the distribution computer
     compute_dist = {
-        "LP": menv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
-        "MR": menv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
+        "LP": penv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
+        "MR": penv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
                                   estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_pred_tr, args.dist_cp_succ_tr),
         "None": None
     }[args.dist_cp]
 
-    # Instantiate the head of the multi-environments
-    menv_head = menv.MultiEnvHead(args.procs, num_envs, compute_dist)
+    # Instantiate the head of the polymorph environments
+    penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
 
-    # Instantiate all the multi-environments
+    # Instantiate all the polymorph environments
     envs = []
     for i in range(args.procs):
         seed = args.seed + 10000*i
-        envs.append(menv.MultiEnv(utils.make_envs_from_curriculum(G, seed), menv_head.remotes[i], seed))
+        envs.append(penv.PolyEnv(utils.make_envs_from_curriculum(G, seed), penv_head.remotes[i], seed))
 
 # Define obss preprocessor
 
@@ -200,7 +200,7 @@ while num_frames < args.frames:
     logs2 = algo.update_parameters(exps)
     logs = {**logs1, **logs2}
     if args.curriculum is not None:
-        menv_head.update_dist()
+        penv_head.update_dist()
     update_end_time = time.time()
 
     num_frames += logs["num_frames"]
@@ -220,11 +220,11 @@ while num_frames < args.frames:
         if args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
                 header += ["proba/{}".format(env_key)]
-                data += [menv_head.dist[env_id]]
+                data += [penv_head.dist[env_id]]
                 header += ["return/{}".format(env_key)]
                 data += [None]
-                if env_id in menv_head.synthesized_returns.keys():
-                    data[-1] = menv_head.synthesized_returns[env_id]
+                if env_id in penv_head.synthesized_returns.keys():
+                    data[-1] = penv_head.synthesized_returns[env_id]
                 if args.dist_cp in ["LP", "MR"]:
                     header += ["lp/{}".format(env_key)]
                     data += [compute_dist.lps[env_id]]
