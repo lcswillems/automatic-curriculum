@@ -23,7 +23,6 @@ def get_optimizers_path(model_dir):
 def load_model(model_dir):
     path = get_model_path(model_dir)
     model = torch.load(path)
-    model.eval()
     return model
 
 
