@@ -9,3 +9,4 @@ from .format import *
 from .general import *
 from .curriculum import *
 from .save import *
+from .train_addition import *
