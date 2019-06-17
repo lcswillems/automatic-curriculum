@@ -1,5 +1,3 @@
-from random import seed
-from random import randint
 import torch
 import numpy as np
 
@@ -32,8 +30,8 @@ def generate(batch_size=4096, number_of_digits=None, seq_len=None, return_one_ho
     """
 
     if seed_n is None:
-        seed_n = randint(0, 1e15)
-    seed(seed_n)
+        seed_n = np.random.randint(0, 1e15)
+    rng = np.random.RandomState(seed_n)
 
     X, y = list(), list()
 
@@ -46,10 +44,11 @@ def generate(batch_size=4096, number_of_digits=None, seq_len=None, return_one_ho
         if fixed_length:
             length = number_of_digits
         else:
-            length = randint(*number_of_digits)  # number_of_digits is a tuple specifying the min and max of sampling
+            length = rng.randint(number_of_digits[0], 1 + number_of_digits[1])
+            # number_of_digits is a tuple specifying the min and max of sampling
         assert seq_len >= length
 
-        in_pattern = [randint(10 ** (length - 1), 10 ** length - 1) for _ in range(2)]
+        in_pattern = [rng.randint(10 ** (length - 1), 10 ** length) for _ in range(2)]
         out_pattern = sum(in_pattern)
 
         in_pattern = '+'.join([str(element).zfill(seq_len) for element in in_pattern])
