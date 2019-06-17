@@ -2,6 +2,7 @@ import random
 import os
 import numpy
 import torch
+import collections
 
 
 def get_storage_dir():
@@ -34,6 +35,7 @@ def seed(seed):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
 
 def synthesize(array):
     d = collections.OrderedDict()
