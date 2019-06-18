@@ -63,6 +63,7 @@ class PolyEnvHead:
 
         self._send_dist()
 
+
 class PolyEnv:
     """A polymorph environment.
 
@@ -109,3 +110,52 @@ class PolyEnv:
 
     def render(self, mode="human"):
         return self.env.render(mode)
+
+
+class PolySupervisedEnv:
+    """A polymorph environment for supervised learning.
+
+    It simulates different environments: it receives a distribution
+    from its head, samples an environment from it, simulates it and
+    then sends a (env_id, return) tuple to its head."""
+
+    def __init__(self, envs, head_conn, seed=None):
+        self.envs = envs
+        self.head_conn = head_conn
+        self.rng = numpy.random.RandomState(seed)
+
+        self.num_envs = len(envs)
+        self.returnn = None
+        self.reset()
+
+    def __getattr__(self, key):
+        return getattr(self.env, key)
+
+    def _recv_dist(self):
+        data = recv_conns([self.head_conn])
+        if len(data) > 0:
+            self.dist = data[-1]
+
+    def _select_env(self):
+        self._recv_dist()
+        self.env_id = self.rng.choice(range(self.num_envs), p=self.dist)
+        self.env = self.envs[self.env_id]
+
+    def _send_return(self):
+        if self.returnn is not None:
+            self.head_conn.send((self.env_id, self.returnn))
+
+    def train_epoch(self, model, encoder_optimizer, decoder_optimizer, criterion, epoch_length=10, batch_size=4096,
+                    eval_everything=None, validate_using=None):
+        results = self.env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, epoch_length,
+                                       batch_size, eval_everything, validate_using)
+        _, _, _, _, per_number_ac_test, _ = results
+        self.returnn = per_number_ac_test
+        self.reset()
+        return results
+
+    def reset(self):
+        self._send_return()
+        self.returnn = 0
+        self._select_env()
+        return self.env.reset()
