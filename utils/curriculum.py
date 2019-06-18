@@ -5,6 +5,7 @@ import json
 import curriculums
 import utils
 
+
 def load_curriculum(curriculum_id):
     curriculum_fname = os.path.join("curriculums", curriculum_id + ".json")
     with open(curriculum_fname) as file:
@@ -25,8 +26,14 @@ def load_curriculum(curriculum_id):
 
     return G, init_min_returns, init_max_returns
 
+
 def make_envs_from_curriculum(G, seed):
     return [utils.make_env(env_key, seed) for env_key in G.nodes]
+
+
+def make_addition_envs_from_curriculum(G, seed):
+    return [utils.make_addition_env(env_key, seed) for env_key in G.nodes]
+
 
 def idify_curriculum(G):
     mapping = {env_key: env_id for env_id, env_key in enumerate(G.nodes)}
