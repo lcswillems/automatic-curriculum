@@ -11,9 +11,9 @@ from torch import optim
 
 import utils
 from model import AdditionModel
-from addition_env import AdditionEnvironment
 
-from collections import OrderedDict
+import polyenv as penv
+from utils import ParallelEnv
 
 # Parse arguments
 
@@ -130,10 +130,51 @@ utils.seed(args.seed)
 if args.num_digits is not None:
     envs = []
     for i in range(args.procs):
-        envs.append(AdditionEnvironment(args.batch_size, args.seq_len, args.num_digits, args.seed + 10000*i))
+        envs.append(utils.make_addition_env(args.seq_len, args.num_digits, args.seed + 10000 * i))
 elif args.curriculum is not None:
-    # TODO
-    pass
+    # Load the curriculum, IDify it and compute the number of environments
+    G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)
+    G_with_ids = utils.idify_curriculum(G)
+    num_envs = len(G.nodes)
+
+    # Instantiate the return history for each environment
+    return_hists = [penv.ReturnHistory() for _ in range(num_envs)]
+
+    # Instantiate the learning progress estimator
+    estimate_lp = {
+        "Online": penv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
+        "Window": penv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
+        "Linreg": penv.LinregLpEstimator(return_hists, args.lp_est_K),
+        "None": None
+    }[args.lp_est]
+
+    # Instantiate the distribution converter
+    convert_into_dist = {
+        "GreedyAmax": penv.GreedyAmaxDistConverter(args.dist_cv_eps),
+        "Prop": penv.PropDistConverter(),
+        "GreedyProp": penv.GreedyPropDistConverter(args.dist_cv_eps),
+        "Boltzmann": penv.BoltzmannDistConverter(args.dist_cv_tau),
+        "None": None
+    }[args.dist_cv]
+
+    # Instantiate the distribution computer
+    compute_dist = {
+        "LP": penv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
+        "MR": penv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
+                                  estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop,
+                                  args.dist_cp_pred_tr, args.dist_cp_succ_tr),
+        "None": None
+    }[args.dist_cp]
+
+    # Instantiate the head of the polymorph environments
+    penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
+
+    # Instantiate all the polymorph environments
+    envs = []
+    for i in range(args.procs):
+        seed = args.seed + 10000 * i
+        env = penv.PolySupervisedEnv(utils.make_addition_envs_from_curriculum(G, seed), penv_head.remotes[i], seed)
+        envs.append(env)
 
 # Load training status
 
@@ -185,6 +226,10 @@ total_start_time = time.time()
 update = status["epoch_update"]
 patience = status["patience"]
 
+# Create parallel environment
+parallel_env = ParallelEnv(envs)
+assert False
+
 while num_examples < args.examples and patience < args.max_patience:
 
     update_start_time = time.time()
@@ -193,9 +238,10 @@ while num_examples < args.examples and patience < args.max_patience:
     # TODO: this only considers one env case, and not polyenv
     if args.curriculum is None:
         results = envs[0].train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
-                                      validate_using=args.valid_examples)
+                                      args.batch_size, validate_using=args.valid_examples)
     else:
         results = envs[0].train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
+                                      args.batch_size,
                                       (args.min_digits_valid, args.max_digits_valis, args.valid_examples))
 
     update_end_time = time.time()
@@ -203,7 +249,7 @@ while num_examples < args.examples and patience < args.max_patience:
     num_examples += args.batch_size * args.epoch_length
     update += 1
 
-    loss, (per_digit_ac, per_number_ac), (per_digit_ac_test, per_number_ac_test), test_results = results
+    loss, per_digit_ac, per_number_ac, per_digit_ac_test, per_number_ac_test, test_results = results
 
     # Update patience
     patience = (patience + 1) if (per_number_ac_test == 1. or len(test_results) > 0 and
