@@ -1,15 +1,15 @@
 {
     "nodes": {
-        "AdditionS5L1": {"id": "MiniGrid-AdditionS3R1-v0", "min": 0, "max": 0.5},
-        "AdditionS5L2": {"id": "MiniGrid-AdditionS3R2-v0", "min": 0, "max": 0.5},
-        "AdditionS5L3": {"id": "MiniGrid-AdditionS3R3-v0", "min": 0, "max": 0.5},
-        "AdditionS5L4": {"id": "MiniGrid-AdditionS4R3-v0", "min": 0, "max": 0.5},
-        "AdditionS5L5": {"id": "MiniGrid-AdditionS5R3-v0", "min": 0, "max": 0.5}
+        "AdditionL1": {"id": 1, "min": 0, "max": 0.5},
+        "AdditionL2": {"id": 2, "min": 0, "max": 0.5},
+        "AdditionL3": {"id": 3, "min": 0, "max": 0.5},
+        "AdditionL4": {"id": 4, "min": 0, "max": 0.5},
+        "AdditionL5": {"id": 5, "min": 0, "max": 0.5}
     },
     "edges": [
-        ["AdditionS5L1", "AdditionS5L2"],
-        ["AdditionS5L2", "AdditionS5L3"],
-        ["AdditionS5L3", "AdditionS5L4"],
-        ["AdditionS5L4", "AdditionS5L5"]
+        ["AdditionL1", "AdditionL2"],
+        ["AdditionL2", "AdditionL3"],
+        ["AdditionL3", "AdditionL4"],
+        ["AdditionL4", "AdditionL5"]
     ]
 }

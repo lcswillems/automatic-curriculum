@@ -9,11 +9,10 @@ import torch.nn as nn
 
 from torch import optim
 
-import utils
 from model import AdditionModel
 
+import utils
 import polyenv as penv
-from utils import ParallelEnv
 
 # Parse arguments
 
@@ -31,7 +30,7 @@ parser.add_argument("--valid-examples", type=int, default=None,
 
 parser.add_argument("--min-digits-valid", type=int, default=1,
                     help="if curriculum learning: evaluate on numbers of length >= this")
-parser.add_argument("--max-digits-valid", type=int, default=9,
+parser.add_argument("--max-digits-valid", type=int, default=None,
                     help="if curriculum learning: evaluate on numbers of length <= this")
 
 parser.add_argument("--model", default=None,
@@ -40,6 +39,7 @@ parser.add_argument("--model", default=None,
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 
+# TODO: this is currently not used !
 parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
 parser.add_argument("--frames-per-proc", type=int, default=128,
@@ -105,7 +105,7 @@ config_hash = utils.save_config(args)
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 default_model_name = "{}_Addition{}_seed{}_{}_{}".format(args.num_digits or args.curriculum,
-                                                      args.seq_len, args.seed, config_hash, suffix)
+                                                         args.seq_len, args.seed, config_hash, suffix)
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
 
@@ -125,12 +125,14 @@ logger.info("{}\n".format(config_hash))
 
 utils.seed(args.seed)
 
-# Generate environments
+# Generate environment
 
 if args.num_digits is not None:
-    envs = []
-    for i in range(args.procs):
-        envs.append(utils.make_addition_env(args.seq_len, args.num_digits, args.seed + 10000 * i))
+    env = utils.make_addition_env(args.seq_len, args.num_digits, args.seed)
+
+    # TODO: fix the following commented lines for multiprocessing
+    # for i in range(args.procs):
+    #    envs.append(utils.make_addition_env(args.seq_len, args.num_digits, args.seed + 10000 * i))
 elif args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
     G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)
@@ -166,22 +168,28 @@ elif args.curriculum is not None:
         "None": None
     }[args.dist_cp]
 
-    # Instantiate the head of the polymorph environments
-    penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
+    envs = utils.make_addition_envs_from_curriculum(G, args.seq_len, args.seed)
+    env = penv.PolySupervisedEnv(envs, args.seed, compute_dist)
 
+    # TODO: fix the following commented lines for multiprocessing
+    # Instantiate the head of the polymorph environments
+    # penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
     # Instantiate all the polymorph environments
-    envs = []
-    for i in range(args.procs):
-        seed = args.seed + 10000 * i
-        env = penv.PolySupervisedEnv(utils.make_addition_envs_from_curriculum(G, seed), penv_head.remotes[i], seed)
-        envs.append(env)
+    # for i in range(args.procs):
+    #     seed = args.seed + 10000 * i
+    #     env = penv.PolySupervisedEnvParallel(utils.make_addition_envs_from_curriculum(G, seq_len_map,
+    #                                                                                    num_digits_map, seed),
+    #                                          penv_head.remotes[i], seed)
+    #     envs.append(env)
+else:
+    raise NotImplementedError
 
 # Load training status
 
 try:
     status = utils.load_status(model_dir)
 except OSError:
-    status = {"num_examples": 0, "epoch_update": 0, "patience":0}
+    status = {"num_examples": 0, "epoch_update": 0, "patience": 0}
 
 
 # Define model
@@ -226,34 +234,36 @@ total_start_time = time.time()
 update = status["epoch_update"]
 patience = status["patience"]
 
-# Create parallel environment
-parallel_env = ParallelEnv(envs)
-assert False
 
 while num_examples < args.examples and patience < args.max_patience:
 
     update_start_time = time.time()
 
     # TODO: multi-processing ?
-    # TODO: this only considers one env case, and not polyenv
-    if args.curriculum is None:
-        results = envs[0].train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
-                                      args.batch_size, validate_using=args.valid_examples)
+    # TODO: fuck multiprocessing. Use polyenv without
+    if args.num_digits is not None:
+        results = env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
+                                  args.batch_size, validate_using=args.valid_examples)
+    elif args.curriculum is not None:
+        results = env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
+                                  args.batch_size,
+                                  (args.min_digits_valid, args.max_digits_valid or args.seq_len, args.valid_examples))
+        env.update_dist()
     else:
-        results = envs[0].train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
-                                      args.batch_size,
-                                      (args.min_digits_valid, args.max_digits_valis, args.valid_examples))
+        raise NotImplementedError
 
     update_end_time = time.time()
 
-    num_examples += args.batch_size * args.epoch_length
+    num_examples += args.batch_size * args.epoch_length  # * args.procs
     update += 1
 
+    # TODO: uncomment the next line to for multiprocessing
+    # results = utils.synthesize_supervised_results(results)
     loss, per_digit_ac, per_number_ac, per_digit_ac_test, per_number_ac_test, test_results = results
 
     # Update patience
-    patience = (patience + 1) if (per_number_ac_test == 1. or len(test_results) > 0 and
-                                  min(test_results.values()) == 1.) else 0
+    measure_of_success = per_number_ac_test if args.curriculum is None else min(test_results.values())
+    patience = (patience + 1) if measure_of_success == 1. else 0
 
     # Print logs
 
@@ -261,21 +271,24 @@ while num_examples < args.examples and patience < args.max_patience:
         fps = (args.batch_size * args.epoch_length) / (update_end_time - update_start_time)
         duration = int(time.time() - total_start_time)
 
-        log_string = "U {}, L {:.5f}, TA: {:.3f} %, {:.3f} %, ".format(update, loss, 100 * per_digit_ac,
-                                                                     100 * per_number_ac)
+        data = [update, duration, fps, num_examples, env.number_of_digits,
+                loss, 100 * per_digit_ac, 100 * per_number_ac]
+        log_string = "E {}, D{}, FPS {:.1f}, Ex {}, # {}, L {:.5f}, TA: {:.3f} %, {:.3f} %, ".format(*data)
 
-        header = ["examples", "number_of_digits", "training_loss",
+        header = ["update", "duration", "fps", "examples", "number_of_digits", "training_loss",
                   "training_accuracy_per_digit", "training_accuracy_per_operation"]
 
-        data = [num_examples, envs[0].number_of_digits, loss, per_digit_ac, per_number_ac]
+        data = [update, num_examples, env.number_of_digits, loss, per_digit_ac, per_number_ac]
 
         if args.curriculum is None:
             header += ["val_accuracy_per_digit", "val_accuracy_per_operation"]
             data += [per_digit_ac_test, per_number_ac_test]
             log_string += "VA: {:.3f} %, {:.3f} %".format(100 * per_digit_ac_test, 100 * per_number_ac_test)
         else:
-            header += ["val_accuracy_length_{}".format(i) for i in range(args.min_digits_valid, args.max_digits_valis)]
-            new_data = [test_results[i][1] for i in range(args.min_digits_valid, args.max_digits_valid)]
+            header += ["val_accuracy_length_{}".format(i) for i in
+                       range(args.min_digits_valid, 1 + (args.max_digits_valid or args.seq_len))]
+            new_data = [test_results[i][1] for i in range(args.min_digits_valid,
+                                                          1 + (args.max_digits_valid or args.seq_len))]
             data += new_data
             log_string += "results: " + ', '.join(["{:.3f} %".format(100 * value) for value in new_data])
 

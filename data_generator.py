@@ -30,8 +30,12 @@ def generate(batch_size=4096, number_of_digits=None, seq_len=None, return_one_ho
     """
 
     if seed_n is None:
-        seed_n = np.random.randint(0, 1e15)
-    rng = np.random.RandomState(seed_n)
+        seed_n = np.random.randint(0, 2 ** 32)
+    try:
+        rng = np.random.RandomState(seed_n)
+    except ValueError:
+        print(seed_n)
+        return 0
 
     X, y = list(), list()
 
@@ -46,7 +50,7 @@ def generate(batch_size=4096, number_of_digits=None, seq_len=None, return_one_ho
         else:
             length = rng.randint(number_of_digits[0], 1 + number_of_digits[1])
             # number_of_digits is a tuple specifying the min and max of sampling
-        assert seq_len >= length
+        assert seq_len >= length, "seq_len={}, length={}".format(seq_len, length)
 
         in_pattern = [rng.randint(10 ** (length - 1), 10 ** length) for _ in range(2)]
         out_pattern = sum(in_pattern)

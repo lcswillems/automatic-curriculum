@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import numpy
 
+
 def recv_conns(conns):
     """Receives the data coming from all the connections."""
 
@@ -11,6 +12,7 @@ def recv_conns(conns):
             data.append(r.recv())
         wconns = mp.connection.wait(conns, timeout=.0)
     return data
+
 
 class PolyEnvHead:
     """The head of polymorph environments.
@@ -29,7 +31,7 @@ class PolyEnvHead:
 
         self._init_connections()
         self._reset_returns()
-        self.dist = numpy.ones((self.num_envs))/self.num_envs
+        self.dist = numpy.ones(self.num_envs)/self.num_envs
         self.update_dist()
 
     def _init_connections(self):
@@ -112,9 +114,10 @@ class PolyEnv:
         return self.env.render(mode)
 
 
-class PolySupervisedEnv:
+class PolySupervisedEnvParallel:
     """A polymorph environment for supervised learning.
 
+    Works with PolyEnvHead
     It simulates different environments: it receives a distribution
     from its head, samples an environment from it, simulates it and
     then sends a (env_id, return) tuple to its head."""
@@ -158,4 +161,46 @@ class PolySupervisedEnv:
         self._send_return()
         self.returnn = 0
         self._select_env()
-        return self.env.reset()
+
+
+class PolySupervisedEnv:
+    """Standalone implementation of polymorph environment without any multiprocessing whatsoever"""
+    def __init__(self, envs, seed=None, compute_dist=None):
+        self.envs = envs
+        self.rng = numpy.random.RandomState(seed)
+        self.compute_dist = compute_dist
+
+        self.num_envs = len(envs)
+        self.returnn = 0
+
+        # self.returns = {}
+        self.dist = numpy.ones(self.num_envs) / self.num_envs
+
+        self._select_env()
+
+    def __getattr__(self, key):
+        return getattr(self.env, key)
+
+    def update_dist(self):
+        if self.compute_dist is not None:
+            self.dist = self.compute_dist(self.synthesized_returns)
+
+    def _select_env(self):
+        self.env_id = self.rng.choice(range(self.num_envs), p=self.dist)
+        self.env = self.envs[self.env_id]
+        self.number_of_digits = self.env.number_of_digits
+
+    def train_epoch(self, model, encoder_optimizer, decoder_optimizer, criterion, epoch_length=10, batch_size=4096,
+                    eval_everything=None, validate_using=None):
+        results = self.env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, epoch_length,
+                                       batch_size, eval_everything, validate_using)
+        _, _, _, _, per_number_ac_test, _ = results
+        self.returnn = per_number_ac_test
+        self.reset()
+        return results
+
+    def reset(self):
+        self.synthesized_returns = {self.env_id: self.returnn}
+        self.returnn = 0
+        self._select_env()
+

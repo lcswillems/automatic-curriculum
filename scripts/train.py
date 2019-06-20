@@ -6,8 +6,8 @@ import torch_ac
 import tensorboardX
 import sys
 
-import polyenv as penv
 import utils
+import polyenv as penv
 from model import ACModel
 
 # Parse arguments
@@ -110,7 +110,7 @@ utils.seed(args.seed)
 if args.env is not None:
     envs = []
     for i in range(args.procs):
-        envs.append(utils.make_env(args.env, args.seed + 10000*i))
+        envs.append(utils.make_env(args.env, args.seed + 10000 * i))
 elif args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
     G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)

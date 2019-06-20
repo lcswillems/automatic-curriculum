@@ -2,6 +2,7 @@ import torch
 
 import utils
 
+
 class Agent:
     """An abstraction of the behavior of an agent. The agent is able:
     - to choose an action given an observation,

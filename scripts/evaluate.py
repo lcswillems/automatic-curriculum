@@ -34,7 +34,7 @@ utils.seed(args.seed)
 
 envs = []
 for i in range(args.procs):
-    env = utils.make_env(args.env, args.seed + 10000*i)
+    env = utils.make_env(args.env, args.seed + 10000 * i)
     envs.append(env)
 env = ParallelEnv(envs)
 

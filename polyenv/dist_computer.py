@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy
 import networkx as nx
 
+
 class DistComputer(ABC):
     """A distribution computer.
 
@@ -19,6 +20,7 @@ class DistComputer(ABC):
         self.step += 1
         for env_id, returnn in returns.items():
             self.return_hists[env_id].append(self.step, returnn)
+
 
 class LpDistComputer(DistComputer):
     """A distribution computer, based on learning progress.
@@ -41,6 +43,7 @@ class LpDistComputer(DistComputer):
         self.attentions = self.a_lps
 
         return self.convert_into_dist(self.attentions)
+
 
 class MrDistComputer(DistComputer):
     """A distribution computer, based on mastering rate.

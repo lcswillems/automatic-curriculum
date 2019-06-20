@@ -38,8 +38,8 @@ class ParallelEnv:
         args = [model, encoder_optimizer, decoder_optimizer, criterion, epoch_length, batch_size, eval_everything,
                 validate_using]
         for local in self.locals:
-            local.send("train_epoch", args)
+            local.send(("train_epoch", args))
         results_0 = self.envs[0].train_epoch(*args)
-        results = zip(*[results_0] + [local.recv() for local in self.locals])
+        results = list(zip(*[results_0] + [local.recv() for local in self.locals]))
         # results is a list of 6 tuples, corresponding to the 6 outputs of AdditionEnv.train_epoch
         return results

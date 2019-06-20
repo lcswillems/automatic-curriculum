@@ -2,7 +2,6 @@ import networkx as nx
 import os
 import json
 
-import curriculums
 import utils
 
 
@@ -31,8 +30,8 @@ def make_envs_from_curriculum(G, seed):
     return [utils.make_env(env_key, seed) for env_key in G.nodes]
 
 
-def make_addition_envs_from_curriculum(G, seed):
-    return [utils.make_addition_env(env_key, seed) for env_key in G.nodes]
+def make_addition_envs_from_curriculum(G, seq_len, seed):
+    return [utils.make_addition_env(seq_len, env_key, seed) for env_key in G.nodes]
 
 
 def idify_curriculum(G):

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy
 
+
 class ReturnHistory:
     """The return history.
 
