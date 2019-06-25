@@ -36,14 +36,11 @@ parser.add_argument("--max-digits-valid", type=int, default=None,
 parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{ALGO}_{TIME})")
 
+parser.add_argument("--batchmix", action="store_true", default=False,
+                    help="mix examples in the batch according to the current prob. distribution")
+
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
-
-# TODO: this is currently not used !
-parser.add_argument("--procs", type=int, default=16,
-                    help="number of processes (default: 16)")
-parser.add_argument("--frames-per-proc", type=int, default=128,
-                    help="number of frames per process before update (default: 128)")
 
 parser.add_argument("--examples", type=int, default=10**9,
                     help="number of training examples (default: 10e9) -- auto-stop though if success everywhere")
@@ -99,6 +96,7 @@ args = parser.parse_args()
 assert args.num_digits is not None or args.curriculum is not None, "--num-digits or --curriculum must be specified."
 
 # Define the configuration of the arguments
+
 config_hash = utils.save_config(args)
 
 # Define run dir
@@ -129,10 +127,6 @@ utils.seed(args.seed)
 
 if args.num_digits is not None:
     env = utils.make_addition_env(args.seq_len, args.num_digits, args.seed)
-
-    # TODO: fix the following commented lines for multiprocessing
-    # for i in range(args.procs):
-    #    envs.append(utils.make_addition_env(args.seq_len, args.num_digits, args.seed + 10000 * i))
 elif args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
     G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)
@@ -168,19 +162,12 @@ elif args.curriculum is not None:
         "None": None
     }[args.dist_cp]
 
-    envs = utils.make_addition_envs_from_curriculum(G, args.seq_len, args.seed)
+    if args.batchmix:
+        envs = utils.make_mixed_addition_env_from_curriculum(G, args.seq_len, args.seed)
+    else:
+        envs = utils.make_addition_envs_from_curriculum(G, args.seq_len, args.seed)
     env = penv.PolySupervisedEnv(envs, args.seed, compute_dist)
 
-    # TODO: fix the following commented lines for multiprocessing
-    # Instantiate the head of the polymorph environments
-    # penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
-    # Instantiate all the polymorph environments
-    # for i in range(args.procs):
-    #     seed = args.seed + 10000 * i
-    #     env = penv.PolySupervisedEnvParallel(utils.make_addition_envs_from_curriculum(G, seq_len_map,
-    #                                                                                    num_digits_map, seed),
-    #                                          penv_head.remotes[i], seed)
-    #     envs.append(env)
 else:
     raise NotImplementedError
 
@@ -239,30 +226,26 @@ while num_examples < args.examples and patience < args.max_patience:
 
     update_start_time = time.time()
 
-    # TODO: multi-processing ?
-    # TODO: fuck multiprocessing. Use polyenv without
     if args.num_digits is not None:
         results = env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
                                   args.batch_size, validate_using=args.valid_examples)
     elif args.curriculum is not None:
+        dist = env.dist
         results = env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
                                   args.batch_size,
                                   (args.min_digits_valid, args.max_digits_valid or args.seq_len, args.valid_examples))
-        env.update_dist()
     else:
         raise NotImplementedError
 
     update_end_time = time.time()
 
-    num_examples += args.batch_size * args.epoch_length  # * args.procs
+    num_examples += args.batch_size * args.epoch_length
     update += 1
 
-    # TODO: uncomment the next line to for multiprocessing
-    # results = utils.synthesize_supervised_results(results)
     loss, per_digit_ac, per_number_ac, per_digit_ac_test, per_number_ac_test, test_results = results
 
     # Update patience
-    measure_of_success = per_number_ac_test if args.curriculum is None else min(test_results.values())
+    measure_of_success = per_number_ac_test if args.curriculum is None else min(list(zip(* test_results.values()))[1])
     patience = (patience + 1) if measure_of_success == 1. else 0
 
     # Print logs
@@ -278,8 +261,6 @@ while num_examples < args.examples and patience < args.max_patience:
         header = ["update", "duration", "fps", "examples", "number_of_digits", "training_loss",
                   "training_accuracy_per_digit", "training_accuracy_per_operation"]
 
-        data = [update, num_examples, env.number_of_digits, loss, per_digit_ac, per_number_ac]
-
         if args.curriculum is None:
             header += ["val_accuracy_per_digit", "val_accuracy_per_operation"]
             data += [per_digit_ac_test, per_number_ac_test]
@@ -287,10 +268,13 @@ while num_examples < args.examples and patience < args.max_patience:
         else:
             header += ["val_accuracy_length_{}".format(i) for i in
                        range(args.min_digits_valid, 1 + (args.max_digits_valid or args.seq_len))]
+            header += ["dist_before_epoch_env_{}".format(i) for i in range(env.num_envs)]
             new_data = [test_results[i][1] for i in range(args.min_digits_valid,
                                                           1 + (args.max_digits_valid or args.seq_len))]
             data += new_data
+            data += list(dist)
             log_string += "results: " + ', '.join(["{:.3f} %".format(100 * value) for value in new_data])
+            log_string += ", dist: " + ', '.join(["{:.1f} %".format(100 * value) for value in dist])
 
         header += ['patience']
         data += [patience]

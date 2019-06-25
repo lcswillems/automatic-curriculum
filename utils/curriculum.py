@@ -34,6 +34,13 @@ def make_addition_envs_from_curriculum(G, seq_len, seed):
     return [utils.make_addition_env(seq_len, env_key, seed) for env_key in G.nodes]
 
 
+def make_mixed_addition_env_from_curriculum(G, seq_len, seed):
+    min_len = min(G.nodes)
+    max_len = max(G.nodes)
+    assert sorted(G.nodes) == list(range(min_len, max_len + 1)), "graph should be contiguous"
+    return utils.make_addition_env(seq_len, (min_len, max_len), seed)
+
+
 def idify_curriculum(G):
     mapping = {env_key: env_id for env_id, env_key in enumerate(G.nodes)}
     return nx.relabel_nodes(G, mapping)

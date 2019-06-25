@@ -35,10 +35,11 @@ def get_accuracy(predicted, labels):
 
 
 class AdditionEnvironment:
-    def __init__(self, seq_len=9, number_of_digits=(1, 9), seed=1):
+    def __init__(self, seq_len=9, number_of_digits=(1, 9), seed=1, probs=None):
         """
         number_of_digits specifies the difficulty of the task within the curriculum (it's # of non-zero digits)
         each curriculum should have a fixed seq_len. Higher seq_len's define harder curriculums (larger networks mainly)
+        probs define the ratio of training examples of each type
         """
         assert ((type(number_of_digits) == tuple and number_of_digits[0] <= number_of_digits[1] <= seq_len) or
                 (type(number_of_digits == int) and 0 < number_of_digits <= seq_len)), "Wrong environment parameters"
@@ -46,6 +47,8 @@ class AdditionEnvironment:
         self.seq_len = seq_len
         self.number_of_digits = number_of_digits
         self.seed = seed
+
+        self.probs = probs
 
         self.epoch = 0
 
@@ -72,7 +75,7 @@ class AdditionEnvironment:
         per_number_acs = 0
         for step in range(epoch_length):
             seed_n = 10 ** 5 * self.seed + 10 ** 4 * self.epoch + step
-            inputs, labels = generate(batch_size, self.number_of_digits, self.seq_len, seed_n=seed_n)
+            inputs, labels = generate(batch_size, self.number_of_digits, self.seq_len, seed_n=seed_n, probs=self.probs)
             loss, (per_digit_ac, per_number_ac) = train(model, encoder_optimizer,
                                                         decoder_optimizer, criterion, inputs, labels)
 
