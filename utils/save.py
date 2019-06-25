@@ -4,12 +4,11 @@ import torch
 import json
 import logging
 import sys
-
-import utils
-from collections import OrderedDict
-
 import hashlib
 import pickle
+from collections import OrderedDict
+
+import utils
 
 
 def get_model_path(model_dir):
