@@ -2,16 +2,19 @@ import torch
 import numpy as np
 
 
-def transform_input_sequence(X, dic=None):
+def transform_input_sequence(X, dic=None, device=None):
     """
     Function that transforms strings of type "0123+0456" to the corresponding one-hot tensor, using the dictionary dic.
     """
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     X = np.array([list(word) for word in X]).T
     if dic is None:
         dic = {str(i): i for i in range(10)}
         dic['+'] = 10
 
-    one_hot = torch.zeros(*X.shape, len(dic))
+    one_hot = torch.zeros(*X.shape, len(dic), device=device)
     for i in range(X.shape[0]):
         for j in range(X.shape[1]):
             one_hot[i, j, dic[X[i, j]]] = 1
@@ -19,7 +22,7 @@ def transform_input_sequence(X, dic=None):
     return one_hot
 
 
-def generate(batch_size=4096, number_of_digits=None, seq_len=None, dic=None, seed_n=None, probs=None):
+def generate(batch_size=4096, number_of_digits=None, seq_len=None, dic=None, seed_n=None, probs=None, device=None):
     """
     Function that generates pairs (x, y) where x represents a string of type "0123+0456" and y a string of type "0579".
     the x string is one-hot-encoded (11 possibilities).
@@ -34,6 +37,8 @@ def generate(batch_size=4096, number_of_digits=None, seq_len=None, dic=None, see
     :return: (X, y) where X is a tensor of shape (2 * seq_len + 1) x batch_size x  11,
     y is a tensor of shape (seq_len + 1) x batch_size. 11 comes from the fact that we encode characters 0, 1, .., 9, '+'
     """
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     rng = np.random.RandomState(seed_n)
 
@@ -64,7 +69,7 @@ def generate(batch_size=4096, number_of_digits=None, seq_len=None, dic=None, see
         y.append(out_pattern)
 
     X = transform_input_sequence(X, dic)
-    y = torch.tensor(np.array([list(word) for word in y]).T.astype(int))
+    y = torch.tensor(np.array([list(word) for word in y]).T.astype(int), device=device)
 
     return X, y
 
