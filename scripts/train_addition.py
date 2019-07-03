@@ -42,7 +42,7 @@ parser.add_argument("--batchmix", action="store_true", default=False,
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 
-parser.add_argument("--examples", type=int, default=10**9,
+parser.add_argument("--examples", type=int, default=3 * 10**9,
                     help="number of training examples (default: 10e9) -- auto-stop though if success everywhere")
 parser.add_argument("--max-patience", type=int, default=3,
                     help="if model reaches perfect accuracy in all validation tasks this # of times in a row, stop !")
@@ -139,7 +139,9 @@ elif args.curriculum is not None:
     # Instantiate the learning progress estimator
     estimate_lp = {
         "Online": penv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
+        "Naive": penv.NaiveLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
         "Window": penv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
+        "Sampling": penv.SamplingLpEstimator(return_hists, args.lp_est_K),
         "Linreg": penv.LinregLpEstimator(return_hists, args.lp_est_K),
         "None": None
     }[args.lp_est]
@@ -246,7 +248,7 @@ while num_examples < args.examples and patience < args.max_patience:
 
     # Update patience
     measure_of_success = per_number_ac_test if args.curriculum is None else min(list(zip(* test_results.values()))[1])
-    patience = (patience + 1) if measure_of_success == 1. else 0
+    patience = (patience + 1) if measure_of_success >= .99 else 0
 
     # Print logs
 
