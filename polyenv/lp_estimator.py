@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy
 
+
 class LpEstimator(ABC):
     """A learning progress estimator.
 
@@ -11,7 +12,7 @@ class LpEstimator(ABC):
         self.return_hists = return_hists
 
         self.num_envs = len(self.return_hists)
-        self.lps = numpy.zeros((self.num_envs))
+        self.lps = numpy.zeros(self.num_envs)
 
     def __call__(self):
         for env_id in range(self.num_envs):
@@ -21,6 +22,7 @@ class LpEstimator(ABC):
     @abstractmethod
     def _estimate_lp(self, env_id):
         pass
+
 
 class TSLpEstimator(LpEstimator):
     """A learning progress estimator for Teacher-Student
@@ -44,6 +46,7 @@ class TSLpEstimator(LpEstimator):
         if lp is not None:
             self.lps[env_id] = self.α * lp + (1 - self.α) * self.lps[env_id]
 
+
 class OnlineLpEstimator(TSLpEstimator):
     """The online learning progress estimator from the Teacher-Student
     paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))."""
@@ -52,6 +55,22 @@ class OnlineLpEstimator(TSLpEstimator):
         _, returns = self.return_hists[env_id][-2:]
         if len(returns) >= 2:
             return returns[-1] - returns[-2]
+
+
+class NaiveLpEstimator(TSLpEstimator):
+    """The window learning progress estimator from the Teacher-Student
+        paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))."""
+
+    def __init__(self, return_hists, α, K):
+        super().__init__(return_hists, α)
+
+        self.K = K
+
+    def _estimate_immediate_lp(self, env_id):
+        steps, returns = self.return_hists[env_id][-self.K:]
+        if len(steps) >= 2:
+            return numpy.polyfit(list(range(len(returns))), returns, 1)[0]
+
 
 class WindowLpEstimator(TSLpEstimator):
     """The window learning progress estimator from the Teacher-Student
@@ -66,6 +85,26 @@ class WindowLpEstimator(TSLpEstimator):
         steps, returns = self.return_hists[env_id][-self.K:]
         if len(steps) >= 2:
             return numpy.polyfit(steps, returns, 1)[0]
+
+
+class SamplingLpEstimator(LpEstimator):
+    """The sampling learning progress estimator from the Teacher-Student
+    paper ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183)).
+    Should be used with Argmax converter"""
+
+    def __init__(self, return_hists, K):
+        super().__init__(return_hists)
+
+        self.K = K
+
+    def _estimate_lp(self, env_id):
+        steps, returns = self.return_hists[env_id][- (self.K + 1):]
+        returns = numpy.array(returns)
+        if len(returns) >= 2:
+            self.lps[env_id] = numpy.random.choice(returns[1:] - returns[:-1])
+        else:
+            self.lps[env_id] = 1.
+
 
 class LinregLpEstimator(LpEstimator):
     """A learning progress estimator using the immediate learning progress.

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy
 
+
 class DistConverter(ABC):
     """A distribution converter.
 
@@ -10,6 +11,7 @@ class DistConverter(ABC):
     @abstractmethod
     def __call__(self, values):
         pass
+
 
 class GreedyAmaxDistConverter(DistConverter):
     """A greedy argmax-based distribution converter.
@@ -28,6 +30,7 @@ class GreedyAmaxDistConverter(DistConverter):
         dist[value_id] += 1-self.ε
         return dist
 
+
 class PropDistConverter(DistConverter):
     """A proportionality-based distribution converter.
 
@@ -41,6 +44,7 @@ class PropDistConverter(DistConverter):
 
         values = values + self.ρ
         return values/numpy.sum(values)
+
 
 class GreedyPropDistConverter(PropDistConverter):
     """A greedy proportionality-based distribution converter.
@@ -56,6 +60,7 @@ class GreedyPropDistConverter(PropDistConverter):
         dist = super().__call__(values)
         uniform = numpy.ones(len(values))/len(values)
         return (1-self.ε)*dist + self.ε*uniform
+
 
 class BoltzmannDistConverter(DistConverter):
     """A Boltzmann-based distribution converter.
