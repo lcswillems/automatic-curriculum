@@ -46,8 +46,8 @@ parser.add_argument("--examples", type=int, default=3 * 10**9,
                     help="number of training examples (default: 10e9) -- auto-stop though if success everywhere")
 parser.add_argument("--max-patience", type=int, default=3,
                     help="if model reaches perfect accuracy in all validation tasks this # of times in a row, stop !")
-parser.add_argument("--batch-size", type=int, default=4096,
-                    help="batch size (default: 4096)")
+parser.add_argument("--batch-size", type=int, default=128,
+                    help="batch size (default: 128)")
 parser.add_argument("--epoch-length", type=int, default=10,
                     help="number of batches per epoch (data generated on the fly -> this is meaningless) (default: 10)")
 
