@@ -13,10 +13,52 @@ from model import ACModel
 # Parse arguments
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+
+## General parameters
 parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
+parser.add_argument("--model", default=None,
+                    help="name of the model (default: {ENV}_{ALGO}_{TIME})")
+parser.add_argument("--seed", type=int, default=1,
+                    help="random seed (default: 1)")
+parser.add_argument("--log-interval", type=int, default=1,
+                    help="number of updates between two logs (default: 1)")
+parser.add_argument("--save-interval", type=int, default=0,
+                    help="number of updates between two saves (default: 0, 0 means no saving)")
+parser.add_argument("--procs", type=int, default=16,
+                    help="number of processes (default: 16)")
+parser.add_argument("--frames", type=int, default=10**7,
+                    help="number of frames of training (default: 10e7)")
+
+## Parameters for training algorithms
+parser.add_argument("--epochs", type=int, default=4,
+                    help="number of epochs (default: 4)")
+parser.add_argument("--batch-size", type=int, default=256,
+                    help="batch size (default: 256)")
+parser.add_argument("--frames-per-proc", type=int, default=128,
+                    help="number of frames per process before update (default: 128)")
+parser.add_argument("--discount", type=float, default=0.99,
+                    help="discount factor (default: 0.99)")
+parser.add_argument("--lr", type=float, default=7e-4,
+                    help="learning rate (default: 7e-4)")
+parser.add_argument("--gae-tau", type=float, default=0.95,
+                    help="tau coefficient in GAE formula (default: 0.95, 1 means no gae)")
+parser.add_argument("--entropy-coef", type=float, default=0.01,
+                    help="entropy term coefficient (default: 0.01)")
+parser.add_argument("--value-loss-coef", type=float, default=0.5,
+                    help="value loss term coefficient (default: 0.5)")
+parser.add_argument("--max-grad-norm", type=float, default=0.5,
+                    help="maximum norm of gradient (default: 0.5)")
+parser.add_argument("--recurrence", type=int, default=1,
+                    help="number of time-steps gradient is backpropagated (default: 1)")
+parser.add_argument("--optim-eps", type=float, default=1e-5,
+                    help="Adam optimizer epsilon (default: 1e-5)")
+parser.add_argument("--clip-eps", type=float, default=0.2,
+                    help="clipping epsilon (default: 0.2)")
+
+## Parameters for curriculum learning algorithms
 parser.add_argument("--ret-K", type=int, default=10,
                     help="window size for averaging returns (default: 10)")
 parser.add_argument("--lp-est", default="Linreg",
@@ -41,44 +83,7 @@ parser.add_argument("--dist-cp-pred-tr", type=float, default=0.2,
                     help="attention transfer rate to predecessors for the MR distribution computer (default: 0.2)")
 parser.add_argument("--dist-cp-succ-tr", type=float, default=0.05,
                     help="attention transfer rate to predecessors for the MR distribution computer (default: 0.05)")
-parser.add_argument("--model", default=None,
-                    help="name of the model (default: {ENV}_{ALGO}_{TIME})")
-parser.add_argument("--seed", type=int, default=1,
-                    help="random seed (default: 1)")
-parser.add_argument("--procs", type=int, default=16,
-                    help="number of processes (default: 16)")
-parser.add_argument("--frames", type=int, default=10**7,
-                    help="number of frames of training (default: 10e7)")
-parser.add_argument("--log-interval", type=int, default=1,
-                    help="number of updates between two logs (default: 1)")
-parser.add_argument("--save-interval", type=int, default=0,
-                    help="number of updates between two saves (default: 0, 0 means no saving)")
-parser.add_argument("--frames-per-proc", type=int, default=128,
-                    help="number of frames per process before update (default: 128)")
-parser.add_argument("--discount", type=float, default=0.99,
-                    help="discount factor (default: 0.99)")
-parser.add_argument("--lr", type=float, default=7e-4,
-                    help="learning rate (default: 7e-4)")
-parser.add_argument("--gae-tau", type=float, default=0.95,
-                    help="tau coefficient in GAE formula (default: 0.95, 1 means no gae)")
-parser.add_argument("--entropy-coef", type=float, default=0.01,
-                    help="entropy term coefficient (default: 0.01)")
-parser.add_argument("--value-loss-coef", type=float, default=0.5,
-                    help="value loss term coefficient (default: 0.5)")
-parser.add_argument("--max-grad-norm", type=float, default=0.5,
-                    help="maximum norm of gradient (default: 0.5)")
-parser.add_argument("--recurrence", type=int, default=1,
-                    help="number of time-steps gradient is backpropagated (default: 1)")
-parser.add_argument("--optim-eps", type=float, default=1e-5,
-                    help="Adam and RMSprop optimizer epsilon (default: 1e-5)")
-parser.add_argument("--optim-alpha", type=float, default=0.99,
-                    help="RMSprop optimizer apha (default: 0.99)")
-parser.add_argument("--clip-eps", type=float, default=0.2,
-                    help="clipping epsilon (default: 0.2)")
-parser.add_argument("--epochs", type=int, default=4,
-                    help="number of epochs (default: 4)")
-parser.add_argument("--batch-size", type=int, default=256,
-                    help="batch size (default: 256)")
+
 args = parser.parse_args()
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
