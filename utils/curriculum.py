@@ -14,16 +14,21 @@ def load_curriculum(curriculum_id):
 
     init_min_returns = []
     init_max_returns = []
-    for env_key in G.nodes:
-        init_min_returns.append(json_G["nodes"][env_key]["min"])
-        init_max_returns.append(json_G["nodes"][env_key]["max"])
+    for node in G.nodes:
+        init_min_returns.append(json_G["nodes"][node]["min"])
+        init_max_returns.append(json_G["nodes"][node]["max"])
 
     mapping = {}
-    for env_key in G.nodes:
-        mapping[env_key] = json_G["nodes"][env_key]["id"]
+    for node in G.nodes:
+        mapping[node] = json_G["nodes"][node]["id"]
     G = nx.relabel_nodes(G, mapping)
 
     return G, init_min_returns, init_max_returns
+
+
+def idify_curriculum(G):
+    mapping = {node: id for id, node in enumerate(G.nodes)}
+    return nx.relabel_nodes(G, mapping)
 
 
 def make_envs_from_curriculum(G, seed):
@@ -39,8 +44,3 @@ def make_mixed_addition_env_from_curriculum(G, seq_len, seed):
     max_len = max(G.nodes)
     assert sorted(G.nodes) == list(range(min_len, max_len + 1)), "graph should be contiguous"
     return utils.make_addition_env(seq_len, (min_len, max_len), seed)
-
-
-def idify_curriculum(G):
-    mapping = {env_key: env_id for env_id, env_key in enumerate(G.nodes)}
-    return nx.relabel_nodes(G, mapping)
