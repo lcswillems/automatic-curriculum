@@ -1,6 +1,7 @@
 import argparse
 import time
 import datetime
+import numpy as np
 import torch
 import torch_ac
 import tensorboardX
@@ -112,13 +113,9 @@ logger.info("{}\n".format(args))
 
 utils.seed(args.seed)
 
-# Generate environments
+# Define distribution computer
 
-if args.env is not None:
-    envs = []
-    for i in range(args.procs):
-        envs.append(utils.make_env(args.env, args.seed + 10000 * i))
-elif args.curriculum is not None:
+if args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
     G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)
     G_with_ids = utils.idify_curriculum(G)
@@ -152,6 +149,13 @@ elif args.curriculum is not None:
         "None": None
     }[args.dist_cp]
 
+# Generate environments
+
+if args.env is not None:
+    envs = []
+    for i in range(args.procs):
+        envs.append(utils.make_env(args.env, args.seed + 10000 * i))
+elif args.curriculum is not None:
     # Instantiate the head of the polymorph environments
     penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
 
@@ -216,15 +220,17 @@ while num_frames < args.frames:
     # Print logs
 
     if update % args.log_interval == 0:
-        fps = logs["num_frames"]/(update_end_time - update_start_time)
+        fps = logs["num_frames"] / (update_end_time - update_start_time)
         duration = int(time.time() - total_start_time)
+        logger.info("U {} | F {} | FPS {} | D {}".format(update, num_frames, fps, duration))
 
-        logger.info("U {}".format(update))
+        header = []
+        data = []
 
-        header = ["frames"]
-        data = [num_frames]
-
-        if args.curriculum is not None:
+        if args.env is not None:
+            header += ["return"]
+            data += [np.mean(logs["return_per_episode"])]
+        elif args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
                 header += ["proba/{}".format(env_key)]
                 data += [penv_head.dist[env_id]]

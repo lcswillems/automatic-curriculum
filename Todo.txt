@@ -1,0 +1,18 @@
+- model.py :
+    - enlever device
+    - enlever initHidden
+    - changer nom fonction initialize_parameters
+- supprimer compute_stats.py
+- renommer le repo
+- adapter les scripts rl / sl
+- mettre le modèle sur cuda
+- save state dict
+- sortir l'optimizer (dans torch_ac, rl-starter-files)
+- mettre mêmes fonctionnalités dans train_rl et train_addition (e.g. save config)
+- rl-starter-files (mettre aussi dans curri) :
+    - define run dir
+    - sortir optimizer et enregistrer
+    - ajouter les f-string
+    - sufix -> date
+    - enregistrer quand créé
+- tester train_rl avec un env, avec un curriculum

@@ -3,6 +3,7 @@ import random
 import numpy
 import torch
 
+from .addition import *
 from .agent import *
 from .env import *
 from .format import *

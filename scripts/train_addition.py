@@ -2,69 +2,52 @@ import argparse
 import time
 import datetime
 import torch
+from torch import optim
 import tensorboardX
 import sys
 
-import torch.nn as nn
-
-from torch import optim
-
-from model import AdditionModel
-
 import utils
 import polyenv as penv
+from model import AdditionModel
+
 
 # Parse arguments
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument("--seq-len", type=int, default=9,
-                    help="length of each number in the input string (default: 9)")
 
-parser.add_argument("--num-digits", type=int, default=None,
-                    help="number of non-zero digits in each input (REQUIRED or --curriculum REQUIRED)")
+## General parameters
+parser.add_argument("--num-len", type=int, default=None,
+                    help="number length, i.e. name of the task to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
-
-parser.add_argument("--valid-examples", type=int, default=None,
-                    help="number of examples (of each 'type' if curriculum is not None) to validate model on")
-
-parser.add_argument("--min-digits-valid", type=int, default=1,
-                    help="if curriculum learning: evaluate on numbers of length >= this")
-parser.add_argument("--max-digits-valid", type=int, default=None,
-                    help="if curriculum learning: evaluate on numbers of length <= this")
-
 parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{ALGO}_{TIME})")
-
-parser.add_argument("--batchmix", action="store_true", default=False,
-                    help="mix examples in the batch according to the current prob. distribution")
-
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
-
-parser.add_argument("--examples", type=int, default=3 * 10**9,
-                    help="number of training examples (default: 10e9) -- auto-stop though if success everywhere")
-parser.add_argument("--max-patience", type=int, default=3,
-                    help="if model reaches perfect accuracy in all validation tasks this # of times in a row, stop !")
-parser.add_argument("--batch-size", type=int, default=128,
-                    help="batch size (default: 128)")
-parser.add_argument("--epoch-length", type=int, default=10,
-                    help="number of batches per epoch (data generated on the fly -> this is meaningless) (default: 10)")
-
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--save-interval", type=int, default=10,
                     help="number of epochs between two saves (default: 10, 0 means no saving)")
+parser.add_argument("--examples", type=int, default=3 * 10**9,
+                    help="number of training examples (default: 3e9) -- auto-stop if success everywhere")
+parser.add_argument("--max-con-successes", type=int, default=3,
+                    help="number of consecutive times models has to reach perfect accuracy to stop (default: 3)")
 
+## Parameters for training algorithms
+parser.add_argument("--batch-size", type=int, default=256,
+                    help="batch size (default: 256)")
+parser.add_argument("--batches", type=int, default=10,
+                    help="number of batches per training step (default: 10)")
 parser.add_argument("--lr", type=float, default=1e-3,
                     help="learning rate (default: 1e-3)")
 parser.add_argument("--optim-eps", type=float, default=1e-8,
                     help="Adam optimizer epsilon (default: 1e-8)")
 parser.add_argument("--optim-beta1", type=float, default=0.9,
-                    help="Adam optimizer apha (default: 0.9)")
+                    help="Adam optimizer beta1 (default: 0.9)")
 parser.add_argument("--optim-beta2", type=float, default=0.999,
                     help="Adam optimizer beta2 (default: 0.999)")
 
+## Parameters for curriculum learning algorithms
 parser.add_argument("--ret-K", type=int, default=10,
                     help="window size for averaging returns (default: 10)")
 parser.add_argument("--lp-est", default="Linreg",
@@ -90,20 +73,21 @@ parser.add_argument("--dist-cp-pred-tr", type=float, default=0.2,
 parser.add_argument("--dist-cp-succ-tr", type=float, default=0.05,
                     help="attention transfer rate to predecessors for the MR distribution computer (default: 0.05)")
 
-
 args = parser.parse_args()
 
 assert args.num_digits is not None or args.curriculum is not None, "--num-digits or --curriculum must be specified."
 
 # Define the configuration of the arguments
 
+# TODO: review ce code
 config_hash = utils.save_config(args)
 
 # Define run dir
 
-suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_Addition{}_seed{}_{}_{}".format(args.num_digits or args.curriculum,
-                                                         args.seq_len, args.seed, config_hash, suffix)
+name = f"Addition{args.num_digits}" or args.curriculum
+date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+default_model_name = f"{name}_seed{args.seed}_{config_hash}_{date}"
+
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
 
@@ -117,17 +101,16 @@ tb_writer = tensorboardX.SummaryWriter(model_dir)
 
 logger.info("{}\n".format(" ".join(sys.argv)))
 logger.info("{}\n".format(args))
+# TODO: review ce code
 logger.info("{}\n".format(config_hash))
 
 # Set seed for all randomness sources
 
 utils.seed(args.seed)
 
-# Generate environment
+# Define distribution computer
 
-if args.num_digits is not None:
-    env = utils.make_addition_env(args.seq_len, args.num_digits, args.seed)
-elif args.curriculum is not None:
+if args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
     G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)
     G_with_ids = utils.idify_curriculum(G)
@@ -164,125 +147,82 @@ elif args.curriculum is not None:
         "None": None
     }[args.dist_cp]
 
-    if args.batchmix:
-        envs = utils.make_mixed_addition_env_from_curriculum(G, args.seq_len, args.seed)
-    else:
-        envs = utils.make_addition_envs_from_curriculum(G, args.seq_len, args.seed)
-    env = penv.PolySupervisedEnv(envs, args.seed, compute_dist)
-
-else:
-    raise NotImplementedError
-
 # Load training status
 
 try:
     status = utils.load_status(model_dir)
 except OSError:
-    status = {"num_examples": 0, "epoch_update": 0, "patience": 0}
+    status = {"num_examples": 0, "update": 0, "con_successes": 0}
 
-
-# Define model
+# Define addition model
 
 try:
-    model = utils.load_model(model_dir)
-    logger.info('Model loaded\n')
+    addmodel = utils.load_model(model_dir)
+    logger.info("Model successfully loaded\n")
 except OSError:
-    model = AdditionModel(output_seq_len=args.seq_len + 1)
-    logger.info('Model created\n')
-logger.info("{}\n".format(model))
+    addmodel = AdditionModel()
+    logger.info("Model successfully created\n")
+logger.info("{}\n".format(addmodel))
 
 if torch.cuda.is_available():
-    model.cuda()
+    addmodel.cuda()
 logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
+# Define optimizer
 
-# Define optimizers
-
-encoder_optimizer = optim.Adam(model.encoder.parameters(), args.lr,
-                               (args.optim_beta1, args.optim_beta2), args.optim_eps)
-decoder_optimizer = optim.Adam(model.decoder.parameters(), args.lr,
-                               (args.optim_beta1, args.optim_beta2), args.optim_eps)
-optimizers = {'encoder_optimizer': encoder_optimizer, 'decoder_optimizer': decoder_optimizer}
-criterion = nn.NLLLoss()
+optimizer = optim.Adam(addmodel.encoder.parameters(), args.lr,
+                       (args.optim_beta1, args.optim_beta2), args.optim_eps)
 
 try:
-    utils.load_optimizers(optimizers, model_dir)
-    logger.info("Optimizers loaded\n")
+    utils.load_optimizer(optimizer, model_dir)
+    logger.info("Optimizer successfully loaded\n")
 except FileNotFoundError:
-    logger.info("New optimizers created\n")
+    logger.info("Optimizer successfully created\n")
 
-# Saving model, optimizers and status
-utils.save_model(model, model_dir)
-utils.save_optimizers(optimizers, model_dir)
-utils.save_status(status, model_dir)
+# Define addition data generator
+
+if args.num_length is not None:
+    data_generator = utils.FixedLenAdditionDataGenerator(args.num_len, args.seed)
+elif args.curriculum is not None:
+    data_generator = utils.DistAdditionDataGenerator(compute_dist, args.seed)
+
+# Define addition trainer
+
+trainer = utils.AdditionTrainer(addmodel, optimizer, args.batch_size)
 
 # Train model
 
 num_examples = status["num_examples"]
 total_start_time = time.time()
-update = status["epoch_update"]
-patience = status["patience"]
+update = status["update"]
+con_successes = status["con_successes"]
 
-
-while num_examples < args.examples and patience < args.max_patience:
+while num_examples < args.examples and con_successes < args.max_con_successes:
+    # Update model parameters
 
     update_start_time = time.time()
-
-    if args.num_digits is not None:
-        results = env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
-                                  args.batch_size, validate_using=args.valid_examples)
-    elif args.curriculum is not None:
-        dist = env.dist
-        results = env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, args.epoch_length,
-                                  args.batch_size,
-                                  (args.min_digits_valid, args.max_digits_valid or args.seq_len, args.valid_examples))
-    else:
-        raise NotImplementedError
-
+    update_num_examples = args.batch_size * args.batches
+    X, Y = data_generator.generate(update_num_examples)
+    loss, accs = trainer.train(X, Y)
+    if args.curriculum is not None:
+        data_generator.update_dist(accs["valid_per_number"])
     update_end_time = time.time()
 
-    num_examples += args.batch_size * args.epoch_length
+    num_examples += update_num_examples
     update += 1
-
-    loss, per_digit_ac, per_number_ac, per_digit_ac_test, per_number_ac_test, test_results = results
-
-    # Update patience
-    measure_of_success = per_number_ac_test if args.curriculum is None else min(list(zip(* test_results.values()))[1])
-    patience = (patience + 1) if measure_of_success >= .99 else 0
+    con_successes = con_successes + 1 if min(logs["accuracies"].values()) >= .99 else 0
 
     # Print logs
 
-    if update % args.log_interval == 0 or patience == args.max_patience:
-        fps = (args.batch_size * args.epoch_length) / (update_end_time - update_start_time)
+    if update % args.log_interval == 0 or con_successes == args.max_con_successes:
+        fps = logs["num_examples"] / (update_end_time - update_start_time)
         duration = int(time.time() - total_start_time)
+        logger.info("U {} | F {} | FPS {} | D {}".format(update, num_examples, fps, duration))
 
-        data = [update, duration, fps, num_examples, env.number_of_digits,
-                loss, 100 * per_digit_ac, 100 * per_number_ac]
-        log_string = "E {}, D{}, FPS {:.1f}, Ex {}, # {}, L {:.5f}, TA: {:.3f} %, {:.3f} %, ".format(*data)
+        header = ["con_successes"]
+        data = [con_successes]
 
-        header = ["update", "duration", "fps", "examples", "number_of_digits", "training_loss",
-                  "training_accuracy_per_digit", "training_accuracy_per_operation"]
-
-        if args.curriculum is None:
-            header += ["val_accuracy_per_digit", "val_accuracy_per_operation"]
-            data += [per_digit_ac_test, per_number_ac_test]
-            log_string += "VA: {:.3f} %, {:.3f} %".format(100 * per_digit_ac_test, 100 * per_number_ac_test)
-        else:
-            header += ["val_accuracy_length_{}".format(i) for i in
-                       range(args.min_digits_valid, 1 + (args.max_digits_valid or args.seq_len))]
-            header += ["dist_before_epoch_env_{}".format(i) for i in range(env.num_envs)]
-            new_data = [test_results[i][1] for i in range(args.min_digits_valid,
-                                                          1 + (args.max_digits_valid or args.seq_len))]
-            data += new_data
-            data += list(dist)
-            log_string += "results: " + ', '.join(["{:.3f} %".format(100 * value) for value in new_data])
-            log_string += ", dist: " + ', '.join(["{:.1f} %".format(100 * value) for value in dist])
-
-        header += ['patience']
-        data += [patience]
-
-        log_string += ", patience {}".format(patience)
-        logger.info(log_string)
+        # TODO: cas env et cas curriculum
 
         if status["num_examples"] == 0:
             csv_writer.writerow(header)
@@ -293,18 +233,17 @@ while num_examples < args.examples and patience < args.max_patience:
             if value is not None:
                 tb_writer.add_scalar(field, value, num_examples)
 
-        status = {"num_examples": num_examples, "epoch_update": update, "patience": patience}
+        status = {"num_examples": num_examples, "update": update, "con_successes": con_successes}
         utils.save_status(status, model_dir)
 
     # Save model
 
-    if args.save_interval > 0 and (update % args.save_interval == 0 or patience == args.max_patience):
-
-        utils.save_model(model, model_dir)
+    if args.save_interval > 0 and (update % args.save_interval == 0 or con_successes == args.max_con_successes):
+        utils.save_optimizer(optimizer, model_dir)
+        logger.info("Optimizer successfully saved")
+        if torch.cuda.is_available():
+            addmodel.cpu()
+        utils.save_model(addmodel, model_dir)
         logger.info("Model successfully saved")
-
-        utils.save_optimizers(optimizers, model_dir)
-        logger.info("Optimizers successfully saved")
-
-        # TODO: note that if training interrupts before a model is saved (i.e. not right just after it, mismatch will happen between status and model)
-
+        if torch.cuda.is_available():
+            addmodel.cuda()

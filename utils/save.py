@@ -15,8 +15,8 @@ def get_model_path(model_dir):
     return os.path.join(model_dir, "model.pt")
 
 
-def get_optimizers_path(model_dir):
-    return os.path.join(model_dir, "optimizers.pt")
+def get_optimizer_path(model_dir):
+    return os.path.join(model_dir, "optimizer.pt")
 
 
 def load_model(model_dir):
@@ -35,17 +35,17 @@ def save_model(model, model_dir):
         model.cuda()
 
 
-def save_optimizers(optimizers_dict, model_dir):
-    path = get_optimizers_path(model_dir)
-    state_dicts = {optimizer_name: optimizer.state_dict() for optimizer_name, optimizer in optimizers_dict.items()}
+def save_optimizer(optimizer_dict, model_dir):
+    path = get_optimizer_path(model_dir)
+    state_dicts = {optimizer_name: optimizer.state_dict() for optimizer_name, optimizer in optimizer_dict.items()}
     torch.save(state_dicts, path)
 
 
-def load_optimizers(optimizers_dict, model_dir):
-    path = get_optimizers_path(model_dir)
+def load_optimizer(optimizer_dict, model_dir):
+    path = get_optimizer_path(model_dir)
     checkpoint = torch.load(path)
-    for optimizer_name in optimizers_dict.keys():
-        optimizers_dict[optimizer_name].load_state_dict(checkpoint[optimizer_name])
+    for optimizer_name in optimizer_dict.keys():
+        optimizer_dict[optimizer_name].load_state_dict(checkpoint[optimizer_name])
 
 
 def get_status_path(model_dir):
@@ -101,6 +101,7 @@ def save_config(args):
     :param args: arguments passed to a train script
     :return: a hash of those arguments to be added to the model name (and writes to the csv config what the hash means)
     """
+
     csv_path = utils.get_csv_config_path()
     utils.create_folders_if_necessary(csv_path)
 
@@ -133,9 +134,9 @@ def save_config(args):
         header = ['hash'] + list(args_dict.keys())
         writer.writerow(header)
 
-    hash_value = hashlib.md5(pickle.dumps(list(args_dict.values()))).hexdigest()[:10]
-    writer.writerow([hash_value] + list(args_dict.values()))
+    config_hash = hashlib.md5(pickle.dumps(list(args_dict.values()))).hexdigest()[:10]
+    writer.writerow([config_hash] + list(args_dict.values()))
 
     csv_file.close()
 
-    return hash_value
+    return config_hash
