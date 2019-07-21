@@ -103,7 +103,7 @@ class SamplingLpEstimator(LpEstimator):
         if len(returns) >= 2:
             self.lps[env_id] = numpy.random.choice(returns[1:] - returns[:-1])
         else:
-            self.lps[env_id] = 1.
+            self.lps[env_id] = 1
 
 
 class LinregLpEstimator(LpEstimator):
