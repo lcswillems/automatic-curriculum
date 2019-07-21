@@ -98,7 +98,7 @@ class SamplingLpEstimator(LpEstimator):
         self.K = K
 
     def _estimate_lp(self, env_id):
-        steps, returns = self.return_hists[env_id][- (self.K + 1):]
+        _, returns = self.return_hists[env_id][- (self.K + 1):]
         returns = numpy.array(returns)
         if len(returns) >= 2:
             self.lps[env_id] = numpy.random.choice(returns[1:] - returns[:-1])
