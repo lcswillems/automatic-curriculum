@@ -90,8 +90,10 @@ assert args.env is not None or args.curriculum is not None, "--env or --curricul
 
 # Define run dir
 
-suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_seed{}_{}".format(args.env or args.curriculum, args.seed, suffix)
+name = args.env or args.curriculum
+date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+default_model_name = f"{name}_seed{args.seed}_{date}"
+
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
 
