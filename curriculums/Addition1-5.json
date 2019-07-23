@@ -1,0 +1,15 @@
+{
+    "nodes": {
+        "Addition1": {"id": 1, "min": 0, "max": 1},
+        "Addition2": {"id": 2, "min": 0, "max": 1},
+        "Addition3": {"id": 3, "min": 0, "max": 1},
+        "Addition4": {"id": 4, "min": 0, "max": 1},
+        "Addition5": {"id": 5, "min": 0, "max": 1}
+    },
+    "edges": [
+        ["Addition1", "Addition2"],
+        ["Addition2", "Addition3"],
+        ["Addition3", "Addition4"],
+        ["Addition4", "Addition5"]
+    ]
+}

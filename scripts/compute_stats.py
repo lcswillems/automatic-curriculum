@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import utils
 
+
 # Parse arguments
 
 parser = argparse.ArgumentParser()

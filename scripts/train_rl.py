@@ -1,6 +1,7 @@
 import argparse
 import time
 import datetime
+import numpy as np
 import torch
 import torch_ac
 import tensorboardX
@@ -10,9 +11,10 @@ import utils
 import polyenv as penv
 from model import ACModel
 
+
 # Parse arguments
 
-parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+parser = argparse.ArgumentParser()
 
 ## General parameters
 parser.add_argument("--env", default=None,
@@ -25,14 +27,14 @@ parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
-parser.add_argument("--save-interval", type=int, default=0,
-                    help="number of updates between two saves (default: 0, 0 means no saving)")
+parser.add_argument("--save-interval", type=int, default=10,
+                    help="number of updates between two saves (default: 10, 0 means no saving)")
 parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
 parser.add_argument("--frames", type=int, default=10**7,
                     help="number of frames of training (default: 1e7)")
 
-## Parameters for training algorithms
+## Parameters for main algorithm
 parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
@@ -41,8 +43,8 @@ parser.add_argument("--frames-per-proc", type=int, default=128,
                     help="number of frames per process before update (default: 128)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--lr", type=float, default=7e-4,
-                    help="learning rate (default: 7e-4)")
+parser.add_argument("--lr", type=float, default=0.001,
+                    help="learning rate (default: 0.001)")
 parser.add_argument("--gae-tau", type=float, default=0.95,
                     help="tau coefficient in GAE formula (default: 0.95, 1 means no gae)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
@@ -53,8 +55,8 @@ parser.add_argument("--max-grad-norm", type=float, default=0.5,
                     help="maximum norm of gradient (default: 0.5)")
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1)")
-parser.add_argument("--optim-eps", type=float, default=1e-5,
-                    help="Adam optimizer epsilon (default: 1e-5)")
+parser.add_argument("--adam-eps", type=float, default=1e-8,
+                    help="Adam optimizer epsilon (default: 1e-8)")
 parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon (default: 0.2)")
 
@@ -97,30 +99,26 @@ default_model_name = f"{name}_seed{args.seed}_{date}"
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
 
-# Define logger, CSV writer and Tensorboard writer
+# Define loggers and Tensorboard writer
 
-logger = utils.get_logger(model_dir)
-csv_file, csv_writer = utils.get_csv_writer(model_dir)
+txt_logger = utils.get_txt_logger(model_dir)
+csv_file, csv_logger = utils.get_csv_logger(model_dir)
 tb_writer = tensorboardX.SummaryWriter(model_dir)
 
 # Log command and all script arguments
 
-logger.info("{}\n".format(" ".join(sys.argv)))
-logger.info("{}\n".format(args))
+txt_logger.info("{}\n".format(" ".join(sys.argv)))
+txt_logger.info("{}\n".format(args))
 
 # Set seed for all randomness sources
 
 utils.seed(args.seed)
 
-# Generate environments
+# Define distribution computer
 
-if args.env is not None:
-    envs = []
-    for i in range(args.procs):
-        envs.append(utils.make_env(args.env, args.seed + 10000 * i))
-elif args.curriculum is not None:
+if args.curriculum is not None:
     # Load the curriculum, IDify it and compute the number of environments
-    G, init_min_returns, init_max_returns = utils.load_curriculum(args.curriculum)
+    G, init_min_returns, init_max_returns = utils.get_curriculum(args.curriculum)
     G_with_ids = utils.idify_curriculum(G)
     num_envs = len(G.nodes)
 
@@ -152,6 +150,13 @@ elif args.curriculum is not None:
         "None": None
     }[args.dist_cp]
 
+# Generate environments
+
+if args.env is not None:
+    envs = []
+    for i in range(args.procs):
+        envs.append(utils.make_env(args.env, args.seed + 10000 * i))
+elif args.curriculum is not None:
     # Instantiate the head of the polymorph environments
     penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
 
@@ -163,41 +168,42 @@ elif args.curriculum is not None:
 
 # Define obss preprocessor
 
-obs_space, preprocess_obss = utils.get_obss_preprocessor(args.env, envs[0].observation_space, model_dir)
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space)
 
 # Load training status
 
 try:
-    status = utils.load_status(model_dir)
+    status = utils.get_status(model_dir)
 except OSError:
-    status = {"num_frames": 0, "update": 0}
+    status = {"num_frames": 0, "update": 0, "model_state": None, "optimizer_state": None}
 
 # Define actor-critic model
 
-try:
-    acmodel = utils.load_model(model_dir)
-    logger.info("Model successfully loaded\n")
-except OSError:
-    acmodel = ACModel(obs_space, envs[0].action_space)
-    logger.info("Model successfully created\n")
-logger.info("{}\n".format(acmodel))
+acmodel = ACModel(obs_space, envs[0].action_space)
+if status["model_state"] is not None:
+    acmodel.load_state_dict(status["model_state"])
+txt_logger.info("Model loaded\n")
+txt_logger.info("{}\n".format(acmodel))
 
 if torch.cuda.is_available():
     acmodel.cuda()
-logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
+txt_logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Define actor-critic algo
 
 algo = torch_ac.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                        args.optim_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
+                        args.adam_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)
+if status["optimizer_state"] is not None:
+    algo.optimizer.load_state_dict(status["optimizer_state"])
+txt_logger.info("Optimizer loaded\n")
 
 # Train model
 
 num_frames = status["num_frames"]
-total_start_time = time.time()
 update = status["update"]
+start_time = time.time()
 
 while num_frames < args.frames:
     # Update model parameters
@@ -216,15 +222,17 @@ while num_frames < args.frames:
     # Print logs
 
     if update % args.log_interval == 0:
-        fps = logs["num_frames"]/(update_end_time - update_start_time)
-        duration = int(time.time() - total_start_time)
+        fps = logs["num_frames"] / (update_end_time - update_start_time)
+        duration = int(time.time() - start_time)
+        txt_logger.info("U {} | F {} | FPS {:04.0f} | D {}".format(update, num_frames, fps, duration))
 
-        logger.info("U {}".format(update))
+        header = []
+        data = []
 
-        header = ["frames"]
-        data = [num_frames]
-
-        if args.curriculum is not None:
+        if args.env is not None:
+            header += ["return"]
+            data += [np.mean(logs["return_per_episode"])]
+        elif args.curriculum is not None:
             for env_id, env_key in enumerate(G.nodes):
                 header += ["proba/{}".format(env_key)]
                 data += [penv_head.dist[env_id]]
@@ -252,23 +260,18 @@ while num_frames < args.frames:
                     data += [compute_dist.pre_attentions[env_id]]
 
         if status["num_frames"] == 0:
-            csv_writer.writerow(header)
-        csv_writer.writerow(data)
+            csv_logger.writerow(header)
+        csv_logger.writerow(data)
         csv_file.flush()
 
         for field, value in zip(header, data):
             if value is not None:
                 tb_writer.add_scalar(field, value, num_frames)
 
-        status = {"num_frames": num_frames, "update": update}
-        utils.save_status(status, model_dir)
-
-    # Save model
+    # Save status
 
     if args.save_interval > 0 and update % args.save_interval == 0:
-        if torch.cuda.is_available():
-            acmodel.cpu()
-        utils.save_model(acmodel, model_dir)
-        logger.info("Model successfully saved")
-        if torch.cuda.is_available():
-            acmodel.cuda()
+        status = {"num_frames": num_frames, "update": update,
+                  "model_state": acmodel.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
+        utils.save_status(status, model_dir)
+        txt_logger.info("Status saved")

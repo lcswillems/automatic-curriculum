@@ -1,7 +1,6 @@
 import csv
 import os
 import torch
-import json
 import logging
 import sys
 import hashlib
@@ -11,66 +10,43 @@ from collections import OrderedDict
 import utils
 
 
-def get_model_path(model_dir):
-    return os.path.join(model_dir, "model.pt")
+def create_folders_if_necessary(path):
+    dirname = os.path.dirname(path)
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
 
 
-def get_optimizers_path(model_dir):
-    return os.path.join(model_dir, "optimizers.pt")
+def get_storage_dir():
+    if "SOPH_CURRI_STORAGE" in os.environ:
+        return os.environ["SOPH_CURRI_STORAGE"]
+    return "storage"
 
 
-def load_model(model_dir):
-    path = get_model_path(model_dir)
-    model = torch.load(path)
-    return model
-
-
-def save_model(model, model_dir):
-    path = get_model_path(model_dir)
-    utils.create_folders_if_necessary(path)
-    if torch.cuda.is_available():
-        model.cpu()
-    torch.save(model, path)
-    if torch.cuda.is_available():
-        model.cuda()
-
-
-def save_optimizers(optimizers_dict, model_dir):
-    path = get_optimizers_path(model_dir)
-    state_dicts = {optimizer_name: optimizer.state_dict() for optimizer_name, optimizer in optimizers_dict.items()}
-    torch.save(state_dicts, path)
-
-
-def load_optimizers(optimizers_dict, model_dir):
-    path = get_optimizers_path(model_dir)
-    checkpoint = torch.load(path)
-    for optimizer_name in optimizers_dict.keys():
-        optimizers_dict[optimizer_name].load_state_dict(checkpoint[optimizer_name])
+def get_model_dir(model_name):
+    return os.path.join(get_storage_dir(), "models", model_name, "")
 
 
 def get_status_path(model_dir):
-    return os.path.join(model_dir, "status.json")
+    return os.path.join(model_dir, "status.pt")
 
 
-def load_status(model_dir):
+def get_status(model_dir):
     path = get_status_path(model_dir)
-    with open(path) as file:
-        return json.load(file)
+    return torch.load(path)
 
 
 def save_status(status, model_dir):
     path = get_status_path(model_dir)
     utils.create_folders_if_necessary(path)
-    with open(path, "w") as file:
-        json.dump(status, file)
+    torch.save(status, path)
 
 
-def get_log_path(model_dir):
-    return os.path.join(model_dir, "log.txt")
+def get_model_state(model_dir):
+    return get_status(model_dir)["model_state"]
 
 
-def get_logger(model_dir):
-    path = get_log_path(model_dir)
+def get_txt_logger(model_dir):
+    path = os.path.join(model_dir, "log.txt")
     utils.create_folders_if_necessary(path)
 
     logging.basicConfig(
@@ -85,12 +61,8 @@ def get_logger(model_dir):
     return logging.getLogger()
 
 
-def get_csv_path(model_dir):
-    return os.path.join(model_dir, "log.csv")
-
-
-def get_csv_writer(model_dir):
-    csv_path = get_csv_path(model_dir)
+def get_csv_logger(model_dir):
+    csv_path = os.path.join(model_dir, "log.csv")
     utils.create_folders_if_necessary(csv_path)
     csv_file = open(csv_path, "a")
     return csv_file, csv.writer(csv_file)
@@ -101,13 +73,14 @@ def save_config(args):
     :param args: arguments passed to a train script
     :return: a hash of those arguments to be added to the model name (and writes to the csv config what the hash means)
     """
-    csv_path = utils.get_csv_config_path()
+
+    csv_path = os.path.join(get_storage_dir(), "config.csv")
     utils.create_folders_if_necessary(csv_path)
 
     try:
         csv_file = open(csv_path, "r")
     except FileNotFoundError:
-        # create the file first
+        # Create the file first
         open(csv_path, "a").close()
         csv_file = open(csv_path, "r")
 
@@ -133,9 +106,9 @@ def save_config(args):
         header = ['hash'] + list(args_dict.keys())
         writer.writerow(header)
 
-    hash_value = hashlib.md5(pickle.dumps(list(args_dict.values()))).hexdigest()[:10]
-    writer.writerow([hash_value] + list(args_dict.values()))
+    config_hash = hashlib.md5(pickle.dumps(list(args_dict.values()))).hexdigest()[:10]
+    writer.writerow([config_hash] + list(args_dict.values()))
 
     csv_file.close()
 
-    return hash_value
+    return config_hash

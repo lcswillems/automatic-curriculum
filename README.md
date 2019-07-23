@@ -15,7 +15,11 @@ TODO: Images + graph
 ## Training
 
 ```
-python -m scripts.train_rl --curriculum BlockedUnlockPickup --model BlockedUnlockPickup --save-interval 10 --epochs 1000
+python -m scripts.train_addition --curriculum Addition1-3  --model Addition1-3
+```
+
+```
+python -m scripts.train_rl --curriculum BlockedUnlockPickup --model BlockedUnlockPickup
 ```
 
 ```
@@ -25,16 +29,15 @@ tensorboard --logdir=storage/models/BlockedUnlockPickup
 ## Evaluate
 
 ```
-python -m scripts.evaluate --env MiniGrid-BlockedUnlockPickup-v0 --model BlockedUnlockPickup
+python -m scripts.evaluate_addition --num-len 3 --model Addition1-3
+```
+
+```
+python -m scripts.evaluate_rl --env MiniGrid-BlockedUnlockPickup-v0 --model BlockedUnlockPickup
 ```
 
 ## Visualize
 
 ```
-python -m scripts.visualize --env MiniGrid-BlockedUnlockPickup-v0 --model BlockedUnlockPickup
-```
-
-## supervised learning tasks:
-```
-python -m scripts.train_addition --curriculum Addition9 --batch-size 128
+python -m scripts.visualize_rl --env MiniGrid-BlockedUnlockPickup-v0 --model BlockedUnlockPickup
 ```

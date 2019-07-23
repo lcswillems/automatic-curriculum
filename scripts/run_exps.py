@@ -3,6 +3,7 @@ import time
 import itertools
 import argparse
 
+
 # Parse arguments
 
 parser = argparse.ArgumentParser()

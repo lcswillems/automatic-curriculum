@@ -24,46 +24,49 @@ class PolyEnvHead:
 
     This class centralizes the distribution of the polymorph environments."""
 
-    def __init__(self, num_penvs, num_envs, compute_dist=None):
+    def __init__(self, num_penvs, num_envs, compute_dist):
         self.num_penvs = num_penvs
         self.num_envs = num_envs
         self.compute_dist = compute_dist
 
         self._init_connections()
+        self._init_dist()
         self._reset_returns()
-        self.dist = numpy.ones(self.num_envs)/self.num_envs
-        self.update_dist()
+
+    @property
+    def dist(self):
+        return self._dist
+
+    @dist.setter
+    def dist(self, dist):
+        self._dist = dist
+        for local in self.locals:
+            local.send(self.dist)
 
     def _init_connections(self):
         self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_penvs)])
 
+    def _init_dist(self):
+        self.dist = self.compute_dist({})
+
     def _reset_returns(self):
-        self.returns = {env_id: [] for env_id in range(self.num_envs)}
+        self.returns = {}
 
     def _recv_returns(self):
         data = recv_conns(self.locals)
         for env_id, returnn in data:
+            if env_id not in self.returns:
+                self.returns[env_id] = []
             self.returns[env_id].append(returnn)
 
     def _synthesize_returns(self):
-        self.synthesized_returns = {}
-        for env_id, returnn in self.returns.items():
-            if len(returnn) > 0:
-                self.synthesized_returns[env_id] = numpy.mean(returnn)
-
-    def _send_dist(self):
-        for local in self.locals:
-            local.send(self.dist)
+        self.synthesized_returns = {env_id: numpy.mean(returnn) for env_id, returnn in self.returns.items()}
+        self._reset_returns()
 
     def update_dist(self):
         self._recv_returns()
         self._synthesize_returns()
-        self._reset_returns()
-
-        if self.compute_dist is not None:
-            self.dist = self.compute_dist(self.synthesized_returns)
-
-        self._send_dist()
+        self.dist = self.compute_dist(self.synthesized_returns)
 
 
 class PolyEnv:
@@ -112,52 +115,3 @@ class PolyEnv:
 
     def render(self, mode="human"):
         return self.env.render(mode)
-
-
-class PolySupervisedEnv:
-    """Standalone implementation of polymorph environment without any multiprocessing whatsoever"""
-    def __init__(self, envs, seed=None, compute_dist=None):
-        self.envs = envs
-        self.rng = numpy.random.RandomState(seed)
-        self.compute_dist = compute_dist
-
-        self.use_batch = not isinstance(envs, list)
-        self.num_envs = (envs.number_of_digits[1] - envs.number_of_digits[0] + 1) if self.use_batch else len(envs)
-        # self.returns = {}
-        self.dist = numpy.ones(self.num_envs) / self.num_envs
-
-        self._select_env()
-
-    def __getattr__(self, key):
-        return getattr(self.env, key)
-
-    def update_dist(self):
-        if self.compute_dist is not None:
-            self.dist = self.compute_dist(self.synthesized_returns)
-
-    def _select_env(self):
-        if self.use_batch:
-            self.env = self.envs
-            self.env.probs = self.dist
-            self.number_of_digits = -1
-        else:
-            self.env_id = self.rng.choice(range(self.num_envs), p=self.dist)
-            self.env = self.envs[self.env_id]
-            self.number_of_digits = self.env.number_of_digits
-
-    def train_epoch(self, model, encoder_optimizer, decoder_optimizer, criterion, epoch_length=10, batch_size=4096,
-                    eval_everything=None, validate_using=None):
-        results = self.env.train_epoch(model, encoder_optimizer, decoder_optimizer, criterion, epoch_length,
-                                       batch_size, eval_everything, validate_using)
-        _, _, _, _, per_number_ac_test, test_results = results
-        # self.returnn = per_number_ac_test
-        self.test_results = test_results
-        self.reset()
-        return results
-
-    def reset(self):
-        # self.synthesized_returns = {self.env_id: self.returnn}
-        self.synthesized_returns = {index: self.test_results[key][1] for index, key in enumerate(self.test_results)}
-        self.update_dist()
-        self._select_env()
-
