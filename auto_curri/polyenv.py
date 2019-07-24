@@ -72,9 +72,9 @@ class PolyEnvHead:
 class PolyEnv:
     """A polymorph environment.
 
-    It simulates different environments: it receives a distribution
-    from its head, samples an environment from it, simulates it and
-    then sends a (env_id, return) tuple to its head."""
+    It simulates different environments: it receives a distribution from
+    its head, samples an environment from it, simulates it and then sends
+    a (env_id, return) tuple to its head."""
 
     def __init__(self, envs, head_conn, seed=None):
         self.envs = envs

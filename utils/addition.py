@@ -38,41 +38,6 @@ class AdditionsGenerator:
         return get_addition_accuracy(addmodel(X), Y)
 
 
-class MixedAdditionsGenerator:
-    def __init__(self, adds_gens, compute_dist, seed=None):
-        self.adds_gens = adds_gens
-        self.compute_dist = compute_dist
-        self.rng = np.random.RandomState(seed)
-
-        self._init_dist()
-
-    def _init_dist(self):
-        self.update_dist({})
-
-    def update_dist(self, accuracies):
-        self.dist = self.compute_dist(accuracies)
-
-    def generate(self, num_additions):
-        num_additionss = np.around(self.dist * num_additions).astype(int)
-
-        Xs, Ys = zip(*[
-            adds_gens.generate(num_additions)
-            for adds_gens, num_additions in zip(self.adds_gens, num_additionss)
-        ])
-        X, Y = torch.cat(Xs), torch.cat(Ys)
-
-        perm = self.rng.permutation(X.size(0))
-
-        return X[perm], Y[perm]
-
-    def evaluate(self, addmodel, num_additions_per_gen):
-        accuracies = {}
-        for i, adds_gen in enumerate(self.adds_gens):
-            X, Y = adds_gen.generate(num_additions_per_gen)
-            accuracies[i] = get_addition_accuracy(addmodel(X), Y)
-        return accuracies
-
-
 def get_addition_accuracy(pred_Y, Y):
     greedy_Y = pred_Y.argmax(dim=2)
     return (greedy_Y == Y).float().min(dim=1)[0].mean().item()

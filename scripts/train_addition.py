@@ -122,7 +122,7 @@ elif args.curriculum is not None:
                         args.a2d, args.a2d_eps, args.a2d_tau)
 
     # Make additions generator
-    adds_gen = utils.MixedAdditionsGenerator(utils.make_adds_gens_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
+    adds_gen = ac.PolyGen(utils.make_adds_gens_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
 
 # Load training status
 

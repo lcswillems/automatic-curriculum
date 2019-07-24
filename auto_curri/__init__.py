@@ -4,6 +4,7 @@ from .dist_computer import *
 from .lp_estimator import *
 from .perf_history import *
 from .polyenv import *
+from .polygen import *
 
 
 def make_dist_computer(num_tasks, lpe="Linreg", lpe_alpha=0.1, lpe_K=10,
