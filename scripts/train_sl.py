@@ -76,10 +76,9 @@ args = parser.parse_args()
 
 assert args.gen is not None or args.curriculum is not None, "--gen or --curriculum must be specified."
 
-# Define the configuration of the arguments
+# Save the arguments in a table
 
-# TODO: review ce code
-config_hash = utils.save_config(args)
+config_hash = utils.save_config_in_table(args, "config_sl")
 
 # Define run dir
 
@@ -100,7 +99,6 @@ tb_writer = tensorboardX.SummaryWriter(model_dir)
 
 txt_logger.info("{}\n".format(" ".join(sys.argv)))
 txt_logger.info("{}\n".format(args))
-# TODO: review ce code
 txt_logger.info("Config hash: {}\n".format(config_hash))
 
 # Set seed for all randomness sources

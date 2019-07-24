@@ -68,47 +68,38 @@ def get_csv_logger(model_dir):
     return csv_file, csv.writer(csv_file)
 
 
-def save_config(args):
-    """
-    :param args: arguments passed to a train script
-    :return: a hash of those arguments to be added to the model name (and writes to the csv config what the hash means)
-    """
+def save_config_in_table(args, name=None):
+    """Save arguments passed to a train script in a CSV table and return a hash."""
 
-    csv_path = os.path.join(get_storage_dir(), "config.csv")
+    csv_path = os.path.join(get_storage_dir(), f"{name or 'config'}.csv")
     utils.create_folders_if_necessary(csv_path)
+    if not os.path.isfile(csv_path):
+        with open(csv_path, "w"): pass
 
-    try:
-        csv_file = open(csv_path, "r")
-    except FileNotFoundError:
-        # Create the file first
-        open(csv_path, "a").close()
-        csv_file = open(csv_path, "r")
+    # Get current CSV header
 
-    reader = csv.reader(csv_file)
+    with open(csv_path) as csv_file:
+        csv_reader = csv.reader(csv_file)
 
-    args_dict = OrderedDict(sorted(vars(args).items(), key=lambda t: t[0]))
+        csv_header = None
+        for row in csv_reader:
+            csv_header = row
+            break
 
-    number_of_columns = None
-    for row in reader:
-        number_of_columns = len(row) - 1
-        break
+    # Write config (and header)
 
-    write_header = False
-    if number_of_columns is None:
-        write_header = True
-    else:
-        assert number_of_columns == len(args_dict.keys()), "The number of arguments changed - please use a new csv file"
+    args = OrderedDict(sorted(vars(args).items(), key=lambda t: t[0]))
 
-    csv_file = open(csv_path, "a")
-    writer = csv.writer(csv_file)
+    with open(csv_path, "a") as csv_file:
+        csv_writer = csv.writer(csv_file)
 
-    if write_header:
-        header = ['hash'] + list(args_dict.keys())
-        writer.writerow(header)
+        args_header = ["hash"] + list(args.keys())
+        if csv_header is None:
+            csv_writer.writerow(args_header)
+        else:
+            assert csv_header == args_header, "Argument names have changed. Please change the name of the current config table."
 
-    config_hash = hashlib.md5(pickle.dumps(list(args_dict.values()))).hexdigest()[:10]
-    writer.writerow([config_hash] + list(args_dict.values()))
-
-    csv_file.close()
+        config_hash = hashlib.md5(pickle.dumps(list(args.values()))).hexdigest()[:10]
+        csv_writer.writerow([config_hash] + list(args.values()))
 
     return config_hash
