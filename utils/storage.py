@@ -17,8 +17,8 @@ def create_folders_if_necessary(path):
 
 
 def get_storage_dir():
-    if "SOPH_CURRI_STORAGE" in os.environ:
-        return os.environ["SOPH_CURRI_STORAGE"]
+    if "AUTO_CURRI_STORAGE" in os.environ:
+        return os.environ["AUTO_CURRI_STORAGE"]
     return "storage"
 
 
