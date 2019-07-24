@@ -90,11 +90,15 @@ args = parser.parse_args()
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
+# Save the arguments in a table
+
+config_hash = utils.save_config_in_table(args, "config_rl")
+
 # Define run dir
 
 name = args.env or args.curriculum
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = f"{name}_seed{args.seed}_{date}"
+default_model_name = f"{name}_seed{args.seed}_{config_hash}_{date}"
 
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
@@ -109,6 +113,7 @@ tb_writer = tensorboardX.SummaryWriter(model_dir)
 
 txt_logger.info("{}\n".format(" ".join(sys.argv)))
 txt_logger.info("{}\n".format(args))
+txt_logger.info("Config hash: {}\n".format(config_hash))
 
 # Set seed for all randomness sources
 
@@ -139,16 +144,16 @@ elif args.curriculum is not None:
         seed = args.seed + 10000 * i
         envs.append(ac.PolyEnv(utils.make_envs_from_curriculum(env_ids, seed), penv_head.remotes[i], seed))
 
-# Define obss preprocessor
-
-obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space)
-
 # Load training status
 
 try:
     status = utils.get_status(model_dir)
 except OSError:
     status = {"num_frames": 0, "update": 0, "model_state": None, "optimizer_state": None}
+
+# Define obss preprocessor
+
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space)
 
 # Define actor-critic model
 

@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Generate environment
+# Make environments
 
 envs = []
 for i in range(args.procs):

@@ -22,7 +22,7 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Generate additions generator
+# Make generator
 
 gen = utils.make_gen(args.gen)
 
@@ -31,6 +31,7 @@ gen = utils.make_gen(args.gen)
 model_dir = utils.get_model_dir(args.model)
 model = AdditionModel()
 model.load_state_dict(utils.get_model_state(model_dir))
+print("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Evaluate the model
 
