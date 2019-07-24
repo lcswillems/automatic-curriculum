@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-
 import argparse
 import time
 
 import utils
+
 
 # Parse arguments
 
@@ -26,7 +25,7 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Generate environment
+# Make environment
 
 env = utils.make_env(args.env, args.seed)
 for _ in range(args.shift):
@@ -35,7 +34,7 @@ for _ in range(args.shift):
 # Define agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(args.env, env.observation_space, model_dir, args.argmax)
+agent = utils.Agent(env.observation_space, env.action_space, model_dir, args.argmax)
 
 # Run the agent
 

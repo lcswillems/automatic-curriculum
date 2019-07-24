@@ -3,12 +3,10 @@ import glob
 import os
 import numpy
 import pandas as pd
-from subprocess import check_output
-import json
 import matplotlib.pyplot as plt
-import re
 
 import utils
+
 
 # Parse arguments
 

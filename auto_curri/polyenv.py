@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import numpy
 
+
 def recv_conns(conns):
     """Receives the data coming from all the connections."""
 
@@ -12,6 +13,7 @@ def recv_conns(conns):
         wconns = mp.connection.wait(conns, timeout=.0)
     return data
 
+
 class PolyEnvHead:
     """The head of polymorph environments.
 
@@ -22,53 +24,57 @@ class PolyEnvHead:
 
     This class centralizes the distribution of the polymorph environments."""
 
-    def __init__(self, num_penvs, num_envs, compute_dist=None):
+    def __init__(self, num_penvs, num_envs, compute_dist):
         self.num_penvs = num_penvs
         self.num_envs = num_envs
         self.compute_dist = compute_dist
 
         self._init_connections()
+        self._init_dist()
         self._reset_returns()
-        self.dist = numpy.ones((self.num_envs))/self.num_envs
-        self.update_dist()
+
+    @property
+    def dist(self):
+        return self._dist
+
+    @dist.setter
+    def dist(self, dist):
+        self._dist = dist
+        for local in self.locals:
+            local.send(self.dist)
 
     def _init_connections(self):
         self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_penvs)])
 
+    def _init_dist(self):
+        self.dist = self.compute_dist({})
+
     def _reset_returns(self):
-        self.returns = {env_id: [] for env_id in range(self.num_envs)}
+        self.returns = {}
 
     def _recv_returns(self):
         data = recv_conns(self.locals)
         for env_id, returnn in data:
+            if env_id not in self.returns:
+                self.returns[env_id] = []
             self.returns[env_id].append(returnn)
 
     def _synthesize_returns(self):
-        self.synthesized_returns = {}
-        for env_id, returnn in self.returns.items():
-            if len(returnn) > 0:
-                self.synthesized_returns[env_id] = numpy.mean(returnn)
-
-    def _send_dist(self):
-        for local in self.locals:
-            local.send(self.dist)
+        self.synthesized_returns = {env_id: numpy.mean(returnn) for env_id, returnn in self.returns.items()}
+        self._reset_returns()
 
     def update_dist(self):
         self._recv_returns()
         self._synthesize_returns()
-        self._reset_returns()
+        self.dist = self.compute_dist(self.synthesized_returns)
 
-        if self.compute_dist is not None:
-            self.dist = self.compute_dist(self.synthesized_returns)
-
-        self._send_dist()
 
 class PolyEnv:
     """A polymorph environment.
 
-    It simulates different environments: it receives a distribution
-    from its head, samples an environment from it, simulates it and
-    then sends a (env_id, return) tuple to its head."""
+    It simulates different environments: it receives a distribution from
+    its head, samples an environment from it, simulates it and then sends
+    a (env_id, return) tuple to its head."""
 
     def __init__(self, envs, head_conn, seed=None):
         self.envs = envs

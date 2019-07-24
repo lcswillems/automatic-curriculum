@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import time
 import torch
@@ -7,11 +5,12 @@ from torch_ac.utils.penv import ParallelEnv
 
 import utils
 
+
 # Parse arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
-                    help="name of the environment to be run (REQUIRED)")
+                    help="name of the environment (REQUIRED)")
 parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED)")
 parser.add_argument("--episodes", type=int, default=100,
@@ -30,18 +29,19 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Generate environment
+# Make environments
 
 envs = []
 for i in range(args.procs):
-    env = utils.make_env(args.env, args.seed + 10000*i)
+    env = utils.make_env(args.env, args.seed + 10000 * i)
     envs.append(env)
 env = ParallelEnv(envs)
 
 # Define agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(args.env, env.observation_space, model_dir, args.argmax, args.procs)
+agent = utils.Agent(env.observation_space, env.action_space, model_dir, args.argmax, args.procs)
+
 print("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Initialize logs
