@@ -2,16 +2,21 @@
 
 This repository contains:
 
-- several curriculum algorithms (in `auto_curri`), i.e.:
+- **curriculum algorithms** (in `auto_curri`), i.e.:
   - the ones introduced in the ["Teacher-Student Curriculum Learning" paper](https://arxiv.org/abs/1707.00183)
   - the ones introduced in the "Mastering Rate based Curriculum Learning" paper
-- several curriculums (in `curriculums`), i.e.:
+- **curriculums** (in `curriculums`), i.e.:
   - 3 SL curriculums: `Addition3`, `Addition5`, `Addition9`
   - 3 RL curriculums: `BlockedUnlockPickup`, `KeyCorridor`, `ObstructedMaze`
-- several scripts (in `scripts`) to easily:
+- **scripts** (in `scripts`) to easily:
   - train a model, using the curriculms and curriculum algorithms of the repository
   - evaluate it
   - visualize it (for RL only)
+
+## Installation
+
+1. Clone this repository.
+2. Execute: `pip install requirements.txt`
 
 ## Curriculums
 
