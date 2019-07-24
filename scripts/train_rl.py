@@ -8,7 +8,7 @@ import tensorboardX
 import sys
 
 import utils
-import polyenv as penv
+import auto_curri as ac
 from model import ACModel
 
 
@@ -61,30 +61,30 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon (default: 0.2)")
 
 ## Parameters for curriculum learning algorithms
-parser.add_argument("--ret-K", type=int, default=10,
-                    help="window size for averaging returns (default: 10)")
-parser.add_argument("--lp-est", default="Linreg",
+parser.add_argument("--lpe", default="Linreg",
                     help="name of the learning progress estimator (default: Linreg)")
-parser.add_argument("--lp-est-alpha", type=float, default=0.1,
-                    help="learning rate for TS learning progress estimators (default: 0.1)")
-parser.add_argument("--lp-est-K", type=int, default=10,
+parser.add_argument("--lpe-alpha", type=float, default=0.1,
+                    help="learning rate for some learning progress estimators (default: 0.1)")
+parser.add_argument("--lpe-K", type=int, default=10,
                     help="window size for some learning progress estimators (default: 10)")
-parser.add_argument("--dist-cv", default="Prop",
-                    help="name of the distribution converter (default: Prop)")
-parser.add_argument("--dist-cv-eps", type=float, default=0.1,
-                    help="exploration coefficient for some distribution converters (default: 0.1)")
-parser.add_argument("--dist-cv-tau", type=float, default=4e-4,
-                    help="temperature for Boltzmann distribution converter (default: 4e-4)")
-parser.add_argument("--dist-cp", default="MR",
-                    help="name of the distribution computer (default: MR)")
-parser.add_argument("--dist-cp-power", type=int, default=6,
-                    help="power of the ancestor mastering rate for the MR distribution computer (default: 6)")
-parser.add_argument("--dist-cp-prop", type=float, default=0.5,
-                    help="potential proportion for the MR distribution computer (default: 0.5)")
-parser.add_argument("--dist-cp-pred-tr", type=float, default=0.2,
-                    help="attention transfer rate to predecessors for the MR distribution computer (default: 0.2)")
-parser.add_argument("--dist-cp-succ-tr", type=float, default=0.05,
-                    help="attention transfer rate to predecessors for the MR distribution computer (default: 0.05)")
+parser.add_argument("--acp", default="MR",
+                    help="name of the attention computer (default: MR)")
+parser.add_argument("--acp-MR-K", type=int, default=10,
+                    help="window size of the performance averaging in the MR attention computer (default: 10)")
+parser.add_argument("--acp-MR-power", type=int, default=6,
+                    help="power of the ancestor mastering rate for the MR attention computer (default: 6)")
+parser.add_argument("--acp-MR-pot-prop", type=float, default=0.5,
+                    help="potential proportion for the MR attention computer (default: 0.5)")
+parser.add_argument("--acp-MR-att-pred", type=float, default=0.2,
+                    help="ratio of pre-attention given to predecessors for the MR attention computer (default: 0.2)")
+parser.add_argument("--acp-MR-att-succ", type=float, default=0.05,
+                    help="ratio of pre-attention given to successors for the MR attention computer (default: 0.05)")
+parser.add_argument("--a2d", default="Prop",
+                    help="name of the attention-to-distribution converter (default: Prop)")
+parser.add_argument("--a2d-eps", type=float, default=0.1,
+                    help="exploration coefficient for some A2D converters (default: 0.1)")
+parser.add_argument("--a2d-tau", type=float, default=4e-4,
+                    help="temperature for Boltzmann A2D converter (default: 4e-4)")
 
 args = parser.parse_args()
 
@@ -114,57 +114,32 @@ txt_logger.info("{}\n".format(args))
 
 utils.seed(args.seed)
 
-# Define distribution computer
-
-if args.curriculum is not None:
-    # Load the curriculum, IDify it and compute the number of environments
-    G, init_min_returns, init_max_returns = utils.get_curriculum(args.curriculum)
-    G_with_ids = utils.idify_curriculum(G)
-    num_envs = len(G.nodes)
-
-    # Instantiate the return history for each environment
-    return_hists = [penv.ReturnHistory() for _ in range(num_envs)]
-
-    # Instantiate the learning progress estimator
-    estimate_lp = {
-        "Online": penv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
-        "Window": penv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
-        "Linreg": penv.LinregLpEstimator(return_hists, args.lp_est_K),
-        "None": None
-    }[args.lp_est]
-
-    # Instantiate the distribution converter
-    convert_into_dist = {
-        "GreedyAmax": penv.GreedyAmaxDistConverter(args.dist_cv_eps),
-        "Prop": penv.PropDistConverter(),
-        "GreedyProp": penv.GreedyPropDistConverter(args.dist_cv_eps),
-        "Boltzmann": penv.BoltzmannDistConverter(args.dist_cv_tau),
-        "None": None
-    }[args.dist_cv]
-
-    # Instantiate the distribution computer
-    compute_dist = {
-        "LP": penv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
-        "MR": penv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
-                                  estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop, args.dist_cp_pred_tr, args.dist_cp_succ_tr),
-        "None": None
-    }[args.dist_cp]
-
-# Generate environments
+# Make environments
 
 if args.env is not None:
     envs = []
     for i in range(args.procs):
         envs.append(utils.make_env(args.env, args.seed + 10000 * i))
+
 elif args.curriculum is not None:
+    # Load the curriculum
+    G, env_ids, init_min_returns, init_max_returns = utils.get_curriculum(args.curriculum)
+
+    # Make the distribution computer
+    compute_dist = ac.make_dist_computer(
+                        len(env_ids), args.lpe, args.lpe_alpha, args.lpe_K,
+                        args.acp, G, init_min_returns, init_max_returns, args.acp_MR_K, args.acp_MR_power,
+                        args.acp_MR_pot_prop, args.acp_MR_att_pred, args.acp_MR_att_succ,
+                        args.a2d, args.a2d_eps, args.a2d_tau)
+
     # Instantiate the head of the polymorph environments
-    penv_head = penv.PolyEnvHead(args.procs, num_envs, compute_dist)
+    penv_head = ac.PolyEnvHead(args.procs, len(env_ids), compute_dist)
 
     # Instantiate all the polymorph environments
     envs = []
     for i in range(args.procs):
-        seed = args.seed + 10000*i
-        envs.append(penv.PolyEnv(utils.make_envs_from_curriculum(G, seed), penv_head.remotes[i], seed))
+        seed = args.seed + 10000 * i
+        envs.append(ac.PolyEnv(utils.make_envs_from_curriculum(env_ids, seed), penv_head.remotes[i], seed))
 
 # Define obss preprocessor
 
@@ -230,34 +205,34 @@ while num_frames < args.frames:
         data = []
 
         if args.env is not None:
-            header += ["return"]
+            header += ["perf"]
             data += [np.mean(logs["return_per_episode"])]
         elif args.curriculum is not None:
-            for env_id, env_key in enumerate(G.nodes):
-                header += ["proba/{}".format(env_key)]
-                data += [penv_head.dist[env_id]]
-                header += ["return/{}".format(env_key)]
+            for i, env_id in enumerate(env_ids):
+                header += ["proba/{}".format(env_id)]
+                data += [penv_head.dist[i]]
+                header += ["perf/{}".format(env_id)]
                 data += [None]
-                if env_id in penv_head.synthesized_returns.keys():
-                    data[-1] = penv_head.synthesized_returns[env_id]
-                if args.dist_cp in ["LP", "MR"]:
-                    header += ["lp/{}".format(env_key)]
-                    data += [compute_dist.lps[env_id]]
-                    header += ["attention/{}".format(env_key)]
-                    data += [compute_dist.attentions[env_id]]
-                if args.dist_cp in ["MR"]:
-                    header += ["maxrt/{}".format(env_key)]
-                    data += [compute_dist.max_returns[env_id]]
-                    header += ["na_lp/{}".format(env_key)]
-                    data += [compute_dist.na_lps[env_id]]
-                    header += ["mr/{}".format(env_key)]
-                    data += [compute_dist.mrs[env_id]]
-                    header += ["anc_mr/{}".format(env_key)]
-                    data += [compute_dist.anc_mrs[env_id]]
-                    header += ["learning_state/{}".format(env_key)]
-                    data += [compute_dist.learning_states[env_id]]
-                    header += ["pre_attention/{}".format(env_key)]
-                    data += [compute_dist.pre_attentions[env_id]]
+                if i in penv_head.synthesized_returns.keys():
+                    data[-1] = penv_head.synthesized_returns[i]
+                if args.acp in ["LP", "MR"]:
+                    header += ["lp/{}".format(env_id)]
+                    data += [compute_dist.compute_att.lps[i]]
+                    header += ["attention/{}".format(env_id)]
+                    data += [compute_dist.compute_att.atts[i]]
+                if args.acp in ["MR"]:
+                    header += ["max_perf/{}".format(env_id)]
+                    data += [compute_dist.compute_att.max_perfs[i]]
+                    header += ["na_lp/{}".format(env_id)]
+                    data += [compute_dist.compute_att.na_lps[i]]
+                    header += ["mr/{}".format(env_id)]
+                    data += [compute_dist.compute_att.mrs[i]]
+                    header += ["anc_mr/{}".format(env_id)]
+                    data += [compute_dist.compute_att.anc_mrs[i]]
+                    header += ["learning_state/{}".format(env_id)]
+                    data += [compute_dist.compute_att.learning_states[i]]
+                    header += ["pre_attention/{}".format(env_id)]
+                    data += [compute_dist.compute_att.pre_atts[i]]
 
         if status["num_frames"] == 0:
             csv_logger.writerow(header)

@@ -12,29 +12,25 @@ def get_curriculum(curriculum_id):
         G = nx.DiGraph()
         G.add_edges_from(json_G["edges"])
 
-    init_min_returns = []
-    init_max_returns = []
-    for env_key in G.nodes:
-        init_min_returns.append(json_G["nodes"][env_key]["min"])
-        init_max_returns.append(json_G["nodes"][env_key]["max"])
+    node_mapping = {}
+    task_ids = []
+    init_min_perfs = []
+    init_max_perfs = []
+    for i, node_name in enumerate(G.nodes):
+        node_mapping[node_name] = i
+        task_ids.append(json_G["nodes"][node_name]["id"])
+        init_min_perfs.append(json_G["nodes"][node_name]["min"])
+        init_max_perfs.append(json_G["nodes"][node_name]["max"])
 
-    mapping = {}
-    for env_key in G.nodes:
-        mapping[env_key] = json_G["nodes"][env_key]["id"]
-    G = nx.relabel_nodes(G, mapping)
+    G = nx.relabel_nodes(G, node_mapping)
 
-    return G, init_min_returns, init_max_returns
-
-
-def idify_curriculum(G):
-    mapping = {env_key: env_id for env_id, env_key in enumerate(G.nodes)}
-    return nx.relabel_nodes(G, mapping)
+    return G, task_ids, init_min_perfs, init_max_perfs
 
 
-def make_envs_from_curriculum(G, seed):
-    return [utils.make_env(env_key, seed) for env_key in G.nodes]
+def make_envs_from_curriculum(env_ids, seed):
+    return [utils.make_env(env_id, seed) for env_id in env_ids]
 
 
-def make_adds_gens_from_curriculum(G, seed):
-    max_num_len = max(G.nodes)
-    return [utils.make_adds_gen(num_len, max_num_len, seed) for num_len in G.nodes]
+def make_adds_gens_from_curriculum(gen_ids, seed):
+    max_num_len = max(gen_ids)
+    return [utils.make_adds_gen(num_len, max_num_len, seed) for num_len in gen_ids]

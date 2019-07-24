@@ -6,7 +6,7 @@ import tensorboardX
 import sys
 
 import utils
-import polyenv as penv
+import auto_curri as ac
 from model import AdditionModel
 
 
@@ -45,30 +45,30 @@ parser.add_argument("--adam-eps", type=float, default=1e-8,
                     help="Adam optimizer epsilon (default: 1e-8)")
 
 ## Parameters for curriculum learning algorithms
-parser.add_argument("--ret-K", type=int, default=10,
-                    help="window size for averaging returns (default: 10)")
-parser.add_argument("--lp-est", default="Linreg",
+parser.add_argument("--lpe", default="Linreg",
                     help="name of the learning progress estimator (default: Linreg)")
-parser.add_argument("--lp-est-alpha", type=float, default=0.1,
-                    help="learning rate for TS learning progress estimators (default: 0.1)")
-parser.add_argument("--lp-est-K", type=int, default=10,
+parser.add_argument("--lpe-alpha", type=float, default=0.1,
+                    help="learning rate for some learning progress estimators (default: 0.1)")
+parser.add_argument("--lpe-K", type=int, default=10,
                     help="window size for some learning progress estimators (default: 10)")
-parser.add_argument("--dist-cv", default="Prop",
-                    help="name of the distribution converter (default: Prop)")
-parser.add_argument("--dist-cv-eps", type=float, default=0.1,
-                    help="exploration coefficient for some distribution converters (default: 0.1)")
-parser.add_argument("--dist-cv-tau", type=float, default=4e-4,
-                    help="temperature for Boltzmann distribution converter (default: 4e-4)")
-parser.add_argument("--dist-cp", default="MR",
-                    help="name of the distribution computer (default: MR)")
-parser.add_argument("--dist-cp-power", type=int, default=6,
-                    help="power of the ancestor mastering rate for the MR distribution computer (default: 6)")
-parser.add_argument("--dist-cp-prop", type=float, default=0.5,
-                    help="potential proportion for the MR distribution computer (default: 0.5)")
-parser.add_argument("--dist-cp-pred-tr", type=float, default=0.2,
-                    help="attention transfer rate to predecessors for the MR distribution computer (default: 0.2)")
-parser.add_argument("--dist-cp-succ-tr", type=float, default=0.05,
-                    help="attention transfer rate to predecessors for the MR distribution computer (default: 0.05)")
+parser.add_argument("--acp", default="MR",
+                    help="name of the attention computer (default: MR)")
+parser.add_argument("--acp-MR-K", type=int, default=10,
+                    help="window size of the performance averaging in the MR attention computer (default: 10)")
+parser.add_argument("--acp-MR-power", type=int, default=6,
+                    help="power of the ancestor mastering rate for the MR attention computer (default: 6)")
+parser.add_argument("--acp-MR-pot-prop", type=float, default=0.5,
+                    help="potential proportion for the MR attention computer (default: 0.5)")
+parser.add_argument("--acp-MR-att-pred", type=float, default=0.2,
+                    help="ratio of pre-attention given to predecessors for the MR attention computer (default: 0.2)")
+parser.add_argument("--acp-MR-att-succ", type=float, default=0.05,
+                    help="ratio of pre-attention given to successors for the MR attention computer (default: 0.05)")
+parser.add_argument("--a2d", default="Prop",
+                    help="name of the attention-to-distribution converter (default: Prop)")
+parser.add_argument("--a2d-eps", type=float, default=0.1,
+                    help="exploration coefficient for some A2D converters (default: 0.1)")
+parser.add_argument("--a2d-tau", type=float, default=4e-4,
+                    help="temperature for Boltzmann A2D converter (default: 4e-4)")
 
 args = parser.parse_args()
 
@@ -105,51 +105,24 @@ txt_logger.info("Config hash: {}\n".format(config_hash))
 
 utils.seed(args.seed)
 
-# Define distribution computer
-
-if args.curriculum is not None:
-    # Load the curriculum, IDify it and compute the number of environments
-    G, init_min_returns, init_max_returns = utils.get_curriculum(args.curriculum)
-    G_with_ids = utils.idify_curriculum(G)
-    num_envs = len(G.nodes)
-
-    # Instantiate the return history for each environment
-    return_hists = [penv.ReturnHistory() for _ in range(num_envs)]
-
-    # Instantiate the learning progress estimator
-    estimate_lp = {
-        "Online": penv.OnlineLpEstimator(return_hists, args.lp_est_alpha),
-        "Naive": penv.NaiveLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
-        "Window": penv.WindowLpEstimator(return_hists, args.lp_est_alpha, args.lp_est_K),
-        "Sampling": penv.SamplingLpEstimator(return_hists, args.lp_est_K),
-        "Linreg": penv.LinregLpEstimator(return_hists, args.lp_est_K),
-        "None": None
-    }[args.lp_est]
-
-    # Instantiate the distribution converter
-    convert_into_dist = {
-        "GreedyAmax": penv.GreedyAmaxDistConverter(args.dist_cv_eps),
-        "Prop": penv.PropDistConverter(),
-        "GreedyProp": penv.GreedyPropDistConverter(args.dist_cv_eps),
-        "Boltzmann": penv.BoltzmannDistConverter(args.dist_cv_tau),
-        "None": None
-    }[args.dist_cv]
-
-    # Instantiate the distribution computer
-    compute_dist = {
-        "LP": penv.LpDistComputer(return_hists, estimate_lp, convert_into_dist),
-        "MR": penv.MrDistComputer(return_hists, init_min_returns, init_max_returns, args.ret_K,
-                                  estimate_lp, convert_into_dist, G_with_ids, args.dist_cp_power, args.dist_cp_prop,
-                                  args.dist_cp_pred_tr, args.dist_cp_succ_tr),
-        "None": None
-    }[args.dist_cp]
-
 # Define additions generator
 
 if args.num_len is not None:
     adds_gen = utils.AdditionsGenerator(args.num_len, seed=args.seed)
+
 elif args.curriculum is not None:
-    adds_gen = utils.MixedAdditionsGenerator(utils.make_adds_gens_from_curriculum(G, args.seed), compute_dist, args.seed)
+    # Load the curriculum
+    G, gen_ids, init_min_accuracies, init_max_accuracies = utils.get_curriculum(args.curriculum)
+
+    # Make the distribution computer
+    compute_dist = ac.make_dist_computer(
+                        len(gen_ids), args.lpe, args.lpe_alpha, args.lpe_K,
+                        args.acp, G, init_min_accuracies, init_max_accuracies, args.acp_MR_K, args.acp_MR_power,
+                        args.acp_MR_pot_prop, args.acp_MR_att_pred, args.acp_MR_att_succ,
+                        args.a2d, args.a2d_eps, args.a2d_tau)
+
+    # Make the additions generator
+    adds_gen = utils.MixedAdditionsGenerator(utils.make_adds_gens_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
 
 # Load training status
 
@@ -216,34 +189,34 @@ while num_examples < args.examples and con_successes < args.max_con_successes:
         data = [con_successes]
 
         if args.num_len is not None:
-            header += ["accuracy"]
+            header += ["perf"]
             data += [accuracy]
         elif args.curriculum is not None:
-            for env_id, env_key in enumerate(G.nodes):
-                header += ["proba/{}".format(env_key)]
-                data += [adds_gen.dist[env_id]]
-                header += ["return/{}".format(env_key)]
+            for i, gen_id in enumerate(gen_ids):
+                header += ["proba/{}".format(gen_id)]
+                data += [adds_gen.dist[i]]
+                header += ["perf/{}".format(gen_id)]
                 data += [None]
-                if env_id in accuracies.keys():
-                    data[-1] = accuracies[env_id]
-                if args.dist_cp in ["LP", "MR"]:
-                    header += ["lp/{}".format(env_key)]
-                    data += [compute_dist.lps[env_id]]
-                    header += ["attention/{}".format(env_key)]
-                    data += [compute_dist.attentions[env_id]]
-                if args.dist_cp in ["MR"]:
-                    header += ["maxrt/{}".format(env_key)]
-                    data += [compute_dist.max_returns[env_id]]
-                    header += ["na_lp/{}".format(env_key)]
-                    data += [compute_dist.na_lps[env_id]]
-                    header += ["mr/{}".format(env_key)]
-                    data += [compute_dist.mrs[env_id]]
-                    header += ["anc_mr/{}".format(env_key)]
-                    data += [compute_dist.anc_mrs[env_id]]
-                    header += ["learning_state/{}".format(env_key)]
-                    data += [compute_dist.learning_states[env_id]]
-                    header += ["pre_attention/{}".format(env_key)]
-                    data += [compute_dist.pre_attentions[env_id]]
+                if i in accuracies.keys():
+                    data[-1] = accuracies[i]
+                if args.acp in ["LP", "MR"]:
+                    header += ["lp/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.lps[i]]
+                    header += ["attention/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.atts[i]]
+                if args.acp in ["MR"]:
+                    header += ["max_perf/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.max_perfs[i]]
+                    header += ["na_lp/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.na_lps[i]]
+                    header += ["mr/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.mrs[i]]
+                    header += ["anc_mr/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.anc_mrs[i]]
+                    header += ["learning_state/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.learning_states[i]]
+                    header += ["pre_attention/{}".format(gen_id)]
+                    data += [compute_dist.compute_att.pre_atts[i]]
 
         if status["num_examples"] == 0:
             csv_logger.writerow(header)
