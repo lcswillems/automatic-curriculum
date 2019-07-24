@@ -122,20 +122,18 @@ if args.env is not None:
         envs.append(utils.make_env(args.env, args.seed + 10000 * i))
 
 elif args.curriculum is not None:
-    # Load the curriculum
+    # Load curriculum
     G, env_ids, init_min_returns, init_max_returns = utils.get_curriculum(args.curriculum)
 
-    # Make the distribution computer
+    # Make distribution computer
     compute_dist = ac.make_dist_computer(
                         len(env_ids), args.lpe, args.lpe_alpha, args.lpe_K,
                         args.acp, G, init_min_returns, init_max_returns, args.acp_MR_K, args.acp_MR_power,
                         args.acp_MR_pot_prop, args.acp_MR_att_pred, args.acp_MR_att_succ,
                         args.a2d, args.a2d_eps, args.a2d_tau)
 
-    # Instantiate the head of the polymorph environments
+    # Make polymorph environments
     penv_head = ac.PolyEnvHead(args.procs, len(env_ids), compute_dist)
-
-    # Instantiate all the polymorph environments
     envs = []
     for i in range(args.procs):
         seed = args.seed + 10000 * i

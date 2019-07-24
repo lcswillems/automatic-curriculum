@@ -111,17 +111,17 @@ if args.num_len is not None:
     adds_gen = utils.AdditionsGenerator(args.num_len, seed=args.seed)
 
 elif args.curriculum is not None:
-    # Load the curriculum
+    # Load curriculum
     G, gen_ids, init_min_accuracies, init_max_accuracies = utils.get_curriculum(args.curriculum)
 
-    # Make the distribution computer
+    # Make distribution computer
     compute_dist = ac.make_dist_computer(
                         len(gen_ids), args.lpe, args.lpe_alpha, args.lpe_K,
                         args.acp, G, init_min_accuracies, init_max_accuracies, args.acp_MR_K, args.acp_MR_power,
                         args.acp_MR_pot_prop, args.acp_MR_att_pred, args.acp_MR_att_succ,
                         args.a2d, args.a2d_eps, args.a2d_tau)
 
-    # Make the additions generator
+    # Make additions generator
     adds_gen = utils.MixedAdditionsGenerator(utils.make_adds_gens_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
 
 # Load training status
