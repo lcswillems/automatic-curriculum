@@ -15,7 +15,7 @@ TODO: Images + graph
 ## Training
 
 ```
-python -m scripts.train_addition --curriculum Addition1-3  --model Addition1-3
+python -m scripts.train_sl --curriculum Addition3  --model Addition3
 ```
 
 ```
@@ -29,7 +29,7 @@ tensorboard --logdir=storage/models/BlockedUnlockPickup
 ## Evaluate
 
 ```
-python -m scripts.evaluate_addition --num-len 3 --model Addition1-3
+python -m scripts.evaluate_sl --gen Addition3 --model Addition3
 ```
 
 ```

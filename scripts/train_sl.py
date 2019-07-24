@@ -2,12 +2,14 @@ import argparse
 import time
 import datetime
 import torch
+import torch.nn.functional as F
 import tensorboardX
 import sys
 
 import utils
 import auto_curri as ac
 from model import AdditionModel
+from sl_algo import SLAlgo
 
 
 # Parse arguments
@@ -15,10 +17,10 @@ from model import AdditionModel
 parser = argparse.ArgumentParser()
 
 ## General parameters
-parser.add_argument("--num-len", type=int, default=None,
-                    help="number length (REQUIRED or --curriculum REQUIRED)")
+parser.add_argument("--gen", type=int, default=None,
+                    help="name of the data generator (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
-                    help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
+                    help="name of the curriculum to train on (REQUIRED or --gen REQUIRED)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{ALGO}_{TIME})")
 parser.add_argument("--seed", type=int, default=1,
@@ -38,7 +40,7 @@ parser.add_argument("--batch-size", type=int, default=256,
 parser.add_argument("--batches", type=int, default=10,
                     help="number of batches per training step (default: 10)")
 parser.add_argument("--eval-num-examples", type=int, default=100,
-                    help="number of examples to evaluate on an additions generator (default: 100)")
+                    help="number of examples to evaluate on a generator (default: 100)")
 parser.add_argument("--lr", type=float, default=0.001,
                     help="learning rate (default: 0.001)")
 parser.add_argument("--adam-eps", type=float, default=1e-8,
@@ -72,7 +74,7 @@ parser.add_argument("--a2d-tau", type=float, default=4e-4,
 
 args = parser.parse_args()
 
-assert args.num_len is not None or args.curriculum is not None, "--num-digits or --curriculum must be specified."
+assert args.gen is not None or args.curriculum is not None, "--gen or --curriculum must be specified."
 
 # Define the configuration of the arguments
 
@@ -81,7 +83,7 @@ config_hash = utils.save_config(args)
 
 # Define run dir
 
-name = args.curriculum or f"Addition{args.num_len}"
+name = args.gen or args.curriculum
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 default_model_name = f"{name}_seed{args.seed}_{config_hash}_{date}"
 
@@ -105,10 +107,10 @@ txt_logger.info("Config hash: {}\n".format(config_hash))
 
 utils.seed(args.seed)
 
-# Define additions generator
+# Make generator
 
-if args.num_len is not None:
-    adds_gen = utils.AdditionsGenerator(args.num_len, seed=args.seed)
+if args.gen is not None:
+    gen = utils.make_gen(args.gen, args.seed)
 
 elif args.curriculum is not None:
     # Load curriculum
@@ -121,8 +123,8 @@ elif args.curriculum is not None:
                         args.acp_MR_pot_prop, args.acp_MR_att_pred, args.acp_MR_att_succ,
                         args.a2d, args.a2d_eps, args.a2d_tau)
 
-    # Make additions generator
-    adds_gen = ac.PolyGen(utils.make_adds_gens_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
+    # Make polymorph generator
+    gen = ac.PolyGen(utils.make_gen_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
 
 # Load training status
 
@@ -131,22 +133,23 @@ try:
 except OSError:
     status = {"num_examples": 0, "update": 0, "con_successes": 0, "model_state": None, "optimizer_state": None}
 
-# Define addition model
+# Define model
 
-addmodel = AdditionModel()
+model = AdditionModel()
 if status["model_state"] is not None:
-    addmodel.load_state_dict(status["model_state"])
+    model.load_state_dict(status["model_state"])
 txt_logger.info("Model loaded\n")
-txt_logger.info("{}\n".format(addmodel))
+txt_logger.info("{}\n".format(model))
 
 if torch.cuda.is_available():
-    addmodel.cuda()
+    model.cuda()
 txt_logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
-# Define addition trainer
+# Define supervised learning algo
 
-algo = utils.AdditionAlgo(addmodel, adds_gen, args.lr, args.adam_eps,
-                          args.batch_size, args.batches, args.eval_num_examples)
+criterion = lambda model_Y, Y: F.nll_loss(model_Y.transpose(1, 2), Y)
+algo = SLAlgo(gen, model, criterion, args.lr, args.adam_eps,
+              args.batch_size, args.batches, args.eval_num_examples)
 if status["optimizer_state"] is not None:
     algo.optimizer.load_state_dict(status["optimizer_state"])
 txt_logger.info("Optimizer loaded\n")
@@ -162,15 +165,15 @@ while num_examples < args.examples and con_successes < args.max_con_successes:
     # Update model parameters
 
     update_start_time = time.time()
-    (X, Y), logs1 = algo.generate_additions()
+    (X, Y), logs1 = algo.generate_data()
     logs2 = algo.update_parameters(X, Y)
     logs = {**logs1, **logs2}
-    if args.num_len is not None:
+    if args.gen is not None:
         accuracy = algo.evaluate()
         success = accuracy >= .99
     elif args.curriculum is not None:
         accuracies = algo.evaluate()
-        adds_gen.update_dist(accuracies)
+        gen.update_dist(accuracies)
         success = min(accuracies.values()) >= .99
     update_end_time = time.time()
 
@@ -188,13 +191,13 @@ while num_examples < args.examples and con_successes < args.max_con_successes:
         header = ["con_successes"]
         data = [con_successes]
 
-        if args.num_len is not None:
+        if args.gen is not None:
             header += ["perf"]
             data += [accuracy]
         elif args.curriculum is not None:
             for i, gen_id in enumerate(gen_ids):
                 header += ["proba/{}".format(gen_id)]
-                data += [adds_gen.dist[i]]
+                data += [gen.dist[i]]
                 header += ["perf/{}".format(gen_id)]
                 data += [None]
                 if i in accuracies.keys():
@@ -231,6 +234,6 @@ while num_examples < args.examples and con_successes < args.max_con_successes:
 
     if args.save_interval > 0 and (update % args.save_interval == 0 or con_successes == args.max_con_successes):
         status = {"num_examples": num_examples, "update": update, "con_successes": con_successes,
-                  "model_state": addmodel.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
+                  "model_state": model.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
         utils.save_status(status, model_dir)
         txt_logger.info("Status saved")

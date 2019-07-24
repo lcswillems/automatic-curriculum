@@ -10,7 +10,7 @@ import utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
-                    help="name of the environment to be run (REQUIRED)")
+                    help="name of the environment (REQUIRED)")
 parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED)")
 parser.add_argument("--episodes", type=int, default=100,

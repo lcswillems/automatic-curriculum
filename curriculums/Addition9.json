@@ -1,0 +1,23 @@
+{
+    "nodes": {
+        "Addition1": {"id": "Addition1m9", "min": 0, "max": 1},
+        "Addition2": {"id": "Addition2m9", "min": 0, "max": 1},
+        "Addition3": {"id": "Addition3m9", "min": 0, "max": 1},
+        "Addition4": {"id": "Addition4m9", "min": 0, "max": 1},
+        "Addition5": {"id": "Addition5m9", "min": 0, "max": 1},
+        "Addition6": {"id": "Addition6m9", "min": 0, "max": 1},
+        "Addition7": {"id": "Addition7m9", "min": 0, "max": 1},
+        "Addition8": {"id": "Addition8m9", "min": 0, "max": 1},
+        "Addition9": {"id": "Addition9m9", "min": 0, "max": 1}
+    },
+    "edges": [
+        ["Addition1", "Addition2"],
+        ["Addition2", "Addition3"],
+        ["Addition3", "Addition4"],
+        ["Addition4", "Addition5"],
+        ["Addition5", "Addition6"],
+        ["Addition6", "Addition7"],
+        ["Addition7", "Addition8"],
+        ["Addition8", "Addition9"]
+    ]
+}

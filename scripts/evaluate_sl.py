@@ -1,18 +1,15 @@
 import argparse
 import torch
-import os
 
-import utils
 from model import AdditionModel
+import utils
 
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num-len", type=int, required=True,
-                    help="number length (REQUIRED)")
-parser.add_argument("--max-num-len", type=int, default=None,
-                    help="maximum number length")
+parser.add_argument("--gen", required=True,
+                    help="name of the data generator (REQUIRED)")
 parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED)")
 parser.add_argument("--examples", type=int, default=1000,
@@ -27,7 +24,7 @@ utils.seed(args.seed)
 
 # Generate additions generator
 
-adds_gen = utils.make_adds_gen(args.num_len, args.max_num_len)
+gen = utils.make_gen(args.gen)
 
 # Define model
 
@@ -37,5 +34,4 @@ model.load_state_dict(utils.get_model_state(model_dir))
 
 # Evaluate the model
 
-X, Y = adds_gen.generate(args.examples)
-print("Accuracy: {}".format(utils.get_addition_accuracy(model(X), Y)))
+print("Accuracy: {}".format(gen.evaluate(model, args.examples)))

@@ -31,13 +31,10 @@ class Agent:
         else:
             actions = dist.sample()
 
-        if torch.cuda.is_available():
-            actions = actions.cpu().numpy()
-
-        return actions
+        return actions.cpu().numpy()
 
     def get_action(self, obs):
-        return self.get_actions([obs]).item()
+        return self.get_actions([obs])[0]
 
     def analyze_feedbacks(self, rewards, dones):
         pass

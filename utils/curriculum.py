@@ -31,6 +31,5 @@ def make_envs_from_curriculum(env_ids, seed):
     return [utils.make_env(env_id, seed) for env_id in env_ids]
 
 
-def make_adds_gens_from_curriculum(gen_ids, seed):
-    max_num_len = max(gen_ids)
-    return [utils.make_adds_gen(num_len, max_num_len, seed) for num_len in gen_ids]
+def make_gen_from_curriculum(gen_ids, seed):
+    return [utils.make_gen(gen_id, seed) for gen_id in gen_ids]
