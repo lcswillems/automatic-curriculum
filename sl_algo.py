@@ -4,11 +4,12 @@ import torch
 class SLAlgo:
     """A supervised learning algorithm."""
 
-    def __init__(self, gen, model, criterion, lr=0.001, adam_eps=1e-8,
+    def __init__(self, gen, model, criterion, device=None, lr=0.001, adam_eps=1e-8,
                  batch_size=256, num_batches=10, eval_num_examples=100):
         self.gen = gen
         self.model = model
         self.criterion = criterion
+        self.device = device
         self.batch_size = batch_size
         self.num_batches = num_batches
         self.eval_num_examples = eval_num_examples
@@ -16,8 +17,10 @@ class SLAlgo:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr, eps=adam_eps)
         self.num_examples = self.batch_size * self.num_batches
 
+        self.model.to(self.device)
+
     def generate_data(self):
-        X, Y = self.gen.generate(self.num_examples)
+        X, Y = self.gen.generate(self.num_examples, device=self.device)
 
         logs = {
             "num_examples": self.num_examples
@@ -51,4 +54,4 @@ class SLAlgo:
         return logs
 
     def evaluate(self):
-        return self.gen.evaluate(self.model, self.eval_num_examples)
+        return self.gen.evaluate(self.model, self.eval_num_examples, device=self.device)

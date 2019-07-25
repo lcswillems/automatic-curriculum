@@ -37,12 +37,15 @@ for i in range(args.procs):
     envs.append(env)
 env = ParallelEnv(envs)
 
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}\n")
+
 # Define agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(env.observation_space, env.action_space, model_dir, args.argmax, args.procs)
-
-print("CUDA available: {}\n".format(torch.cuda.is_available()))
+agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax, args.procs)
 
 # Initialize logs
 
@@ -55,16 +58,16 @@ start_time = time.time()
 obss = env.reset()
 
 log_done_counter = 0
-log_episode_return = torch.zeros(args.procs, device=agent.device)
-log_episode_num_frames = torch.zeros(args.procs, device=agent.device)
+log_episode_return = torch.zeros(args.procs, device=device)
+log_episode_num_frames = torch.zeros(args.procs, device=device)
 
 while log_done_counter < args.episodes:
     actions = agent.get_actions(obss)
     obss, rewards, dones, _ = env.step(actions)
     agent.analyze_feedbacks(rewards, dones)
 
-    log_episode_return += torch.tensor(rewards, device=agent.device, dtype=torch.float)
-    log_episode_num_frames += torch.ones(args.procs, device=agent.device)
+    log_episode_return += torch.tensor(rewards, device=device, dtype=torch.float)
+    log_episode_num_frames += torch.ones(args.procs, device=device)
 
     for i, done in enumerate(dones):
         if done:
@@ -72,7 +75,7 @@ while log_done_counter < args.episodes:
             logs["return_per_episode"].append(log_episode_return[i].item())
             logs["num_frames_per_episode"].append(log_episode_num_frames[i].item())
 
-    mask = 1 - torch.tensor(dones, device=agent.device, dtype=torch.float)
+    mask = 1 - torch.tensor(dones, device=device, dtype=torch.float)
     log_episode_return *= mask
     log_episode_num_frames *= mask
 

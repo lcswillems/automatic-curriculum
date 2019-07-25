@@ -21,11 +21,11 @@ class PolyGen:
     def update_dist(self, accuracies):
         self.dist = self.compute_dist(accuracies)
 
-    def generate(self, num_examples):
+    def generate(self, num_examples, device=None):
         num_exampless = numpy.around(self.dist * num_examples).astype(int)
 
         Xs, Ys = zip(*[
-            gen.generate(num_examples)
+            gen.generate(num_examples, device=device)
             for gen, num_examples in zip(self.gens, num_exampless)
         ])
         X, Y = torch.cat(Xs), torch.cat(Ys)
@@ -34,8 +34,8 @@ class PolyGen:
 
         return X[perm], Y[perm]
 
-    def evaluate(self, model, num_examples_per_gen):
+    def evaluate(self, model, num_examples_per_gen, device=None):
         accuracies = {}
         for i, gen in enumerate(self.gens):
-            accuracies[i] = gen.evaluate(model, num_examples_per_gen)
+            accuracies[i] = gen.evaluate(model, num_examples_per_gen, device=device)
         return accuracies

@@ -155,21 +155,23 @@ except OSError:
 
 obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space)
 
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}\n")
+
 # Define actor-critic model
 
 acmodel = ACModel(obs_space, envs[0].action_space)
 if status["model_state"] is not None:
     acmodel.load_state_dict(status["model_state"])
+acmodel.to(device)
 txt_logger.info("Model loaded\n")
 txt_logger.info("{}\n".format(acmodel))
 
-if torch.cuda.is_available():
-    acmodel.cuda()
-txt_logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
-
 # Define actor-critic algo
 
-algo = torch_ac.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                         args.adam_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)

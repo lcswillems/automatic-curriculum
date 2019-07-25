@@ -131,22 +131,24 @@ try:
 except OSError:
     status = {"num_examples": 0, "update": 0, "con_successes": 0, "model_state": None, "optimizer_state": None}
 
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}\n")
+
 # Define model
 
 model = AdditionModel()
 if status["model_state"] is not None:
     model.load_state_dict(status["model_state"])
+model.to(device)
 txt_logger.info("Model loaded\n")
 txt_logger.info("{}\n".format(model))
-
-if torch.cuda.is_available():
-    model.cuda()
-txt_logger.info("CUDA available: {}\n".format(torch.cuda.is_available()))
 
 # Define supervised learning algo
 
 criterion = lambda model_Y, Y: F.nll_loss(model_Y.transpose(1, 2), Y)
-algo = SLAlgo(gen, model, criterion, args.lr, args.adam_eps,
+algo = SLAlgo(gen, model, criterion, device, args.lr, args.adam_eps,
               args.batch_size, args.batches, args.eval_num_examples)
 if status["optimizer_state"] is not None:
     algo.optimizer.load_state_dict(status["optimizer_state"])

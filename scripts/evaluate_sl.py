@@ -26,16 +26,18 @@ utils.seed(args.seed)
 
 gen = utils.make_gen(args.gen)
 
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}\n")
+
 # Define model
 
 model_dir = utils.get_model_dir(args.model)
 model = AdditionModel()
 model.load_state_dict(utils.get_model_state(model_dir))
-
-if torch.cuda.is_available():
-    model.cuda()
-print("CUDA available: {}\n".format(torch.cuda.is_available()))
+model.to(device)
 
 # Evaluate the model
 
-print("Accuracy: {}".format(gen.evaluate(model, args.examples)))
+print("Accuracy: {}".format(gen.evaluate(model, args.examples, device=device)))

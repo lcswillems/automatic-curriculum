@@ -20,11 +20,9 @@ class AdditionsGenerator:
         self.max_num_len = max_num_len or self.num_len
         self.rng = numpy.random.RandomState(seed)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def generate(self, num_additions):
-        X = torch.zeros(num_additions, 2 * self.max_num_len + 1, self.one_hot_len, device=self.device)
-        Y = torch.zeros(num_additions, self.max_num_len + 1, dtype=torch.long, device=self.device)
+    def generate(self, num_additions, device=None):
+        X = torch.zeros(num_additions, 2 * self.max_num_len + 1, self.one_hot_len, device=device)
+        Y = torch.zeros(num_additions, self.max_num_len + 1, dtype=torch.long, device=device)
 
         for i in range(num_additions):
             nums_to_add = [self.rng.randint(10 ** (self.num_len - 1), 10 ** self.num_len) for _ in range(2)]
@@ -39,8 +37,8 @@ class AdditionsGenerator:
 
         return X, Y
 
-    def evaluate(self, model, num_additions):
-        X, Y = self.generate(num_additions)
+    def evaluate(self, model, num_additions, device=None):
+        X, Y = self.generate(num_additions, device=device)
         with torch.no_grad():
             pred_Y = model(X)
         pred_Y = pred_Y.argmax(dim=2)

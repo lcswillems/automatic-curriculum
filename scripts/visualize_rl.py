@@ -1,5 +1,6 @@
 import argparse
 import time
+import torch
 
 import utils
 
@@ -31,10 +32,15 @@ env = utils.make_env(args.env, args.seed)
 for _ in range(args.shift):
     env.reset()
 
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}\n")
+
 # Define agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(env.observation_space, env.action_space, model_dir, args.argmax)
+agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax)
 
 # Run the agent
 
