@@ -4,8 +4,8 @@ import utils
 from model import ACModel
 
 
-class RLAgent:
-    """A RL agent.
+class Agent:
+    """An agent.
 
     It is able:
     - to choose an action given an observation,
