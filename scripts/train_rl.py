@@ -53,8 +53,6 @@ parser.add_argument("--value-loss-coef", type=float, default=0.5,
                     help="value loss term coefficient (default: 0.5)")
 parser.add_argument("--max-grad-norm", type=float, default=0.5,
                     help="maximum norm of gradient (default: 0.5)")
-parser.add_argument("--recurrence", type=int, default=1,
-                    help="number of time-steps gradient is backpropagated (default: 1)")
 parser.add_argument("--adam-eps", type=float, default=1e-8,
                     help="Adam optimizer epsilon (default: 1e-8)")
 parser.add_argument("--clip-eps", type=float, default=0.2,
@@ -176,7 +174,7 @@ txt_logger.info("{}\n".format(acmodel))
 # Load algo
 
 algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_lambda,
-                        args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
+                        args.entropy_coef, args.value_loss_coef, args.max_grad_norm, 1,
                         args.adam_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)
 if status["optimizer_state"] is not None:
