@@ -41,7 +41,7 @@ print("Environment loaded\n")
 # Load agent
 
 model_dir = utils.get_model_dir(args.model)
-agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax)
+agent = utils.RLAgent(env.observation_space, env.action_space, model_dir, device, args.argmax)
 print("Agent loaded\n")
 
 # Run the agent

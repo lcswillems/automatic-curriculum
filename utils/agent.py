@@ -4,8 +4,10 @@ import utils
 from model import ACModel
 
 
-class Agent:
-    """An abstraction of the behavior of an agent. The agent is able:
+class RLAgent:
+    """A RL agent.
+
+    It is able:
     - to choose an action given an observation,
     - to analyze the feedback (i.e. reward and done state) of its action."""
 
