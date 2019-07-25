@@ -4,7 +4,7 @@ import torch_ac
 
 
 def get_obss_preprocessor(obs_space):
-    obs_space = {"image": obs_space.spaces['image'].shape}
+    obs_space = {"image": obs_space.spaces["image"].shape}
 
     def preprocess_obss(obss, device=None):
         return torch_ac.DictList({

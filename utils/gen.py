@@ -12,7 +12,7 @@ def make_gen(gen_id, seed=None):
 
 
 class AdditionsGenerator:
-    char_to_one_hot_index = {c: i for i, c in enumerate(list('0123456789+'))}
+    char_to_one_hot_index = {c: i for i, c in enumerate(list("0123456789+"))}
     one_hot_len = 11
 
     def __init__(self, num_len, max_num_len=None, seed=None):
@@ -27,7 +27,7 @@ class AdditionsGenerator:
         for i in range(num_additions):
             nums_to_add = [self.rng.randint(10 ** (self.num_len - 1), 10 ** self.num_len) for _ in range(2)]
 
-            x = '+'.join([str(num).zfill(self.max_num_len) for num in nums_to_add])
+            x = "+".join([str(num).zfill(self.max_num_len) for num in nums_to_add])
             for j, c in enumerate(x):
                 X[i, j, self.char_to_one_hot_index[c]] = 1
 
