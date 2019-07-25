@@ -45,8 +45,8 @@ parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--lr", type=float, default=0.001,
                     help="learning rate (default: 0.001)")
-parser.add_argument("--gae-tau", type=float, default=0.95,
-                    help="tau coefficient in GAE formula (default: 0.95, 1 means no gae)")
+parser.add_argument("--gae-lambda", type=float, default=0.95,
+                    help="lambda coefficient in GAE formula (default: 0.95, 1 means no gae)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
                     help="entropy term coefficient (default: 0.01)")
 parser.add_argument("--value-loss-coef", type=float, default=0.5,
@@ -175,7 +175,7 @@ txt_logger.info("{}\n".format(acmodel))
 
 # Load algo
 
-algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_lambda,
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                         args.adam_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)
