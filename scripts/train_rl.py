@@ -1,7 +1,6 @@
 import argparse
 import time
 import datetime
-import numpy
 import torch
 import torch_ac
 import tensorboardX
@@ -213,7 +212,7 @@ while num_frames < args.frames:
 
         if args.env is not None:
             header += ["perf"]
-            data += [numpy.mean(logs["return_per_episode"])]
+            data += [utils.synthesize(logs["return_per_episode"])["mean"]]
         elif args.curriculum is not None:
             for i, env_id in enumerate(env_ids):
                 header += ["proba/{}".format(env_id)]
