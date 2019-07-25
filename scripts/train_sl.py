@@ -136,13 +136,13 @@ txt_logger.info("Generator loaded\n")
 try:
     status = utils.get_status(model_dir)
 except OSError:
-    status = {"num_examples": 0, "update": 0, "con_successes": 0, "model_state": None, "optimizer_state": None}
+    status = {"num_examples": 0, "update": 0, "con_successes": 0}
 txt_logger.info("Training status loaded\n")
 
 # Load model
 
 model = AdditionModel()
-if status["model_state"] is not None:
+if "model_state" in status:
     model.load_state_dict(status["model_state"])
 model.to(device)
 txt_logger.info("Model loaded\n")
@@ -153,7 +153,7 @@ txt_logger.info("{}\n".format(model))
 criterion = lambda model_Y, Y: F.nll_loss(model_Y.transpose(1, 2), Y)
 algo = SLAlgo(gen, model, criterion, device, args.lr, args.adam_eps, args.batch_size,
               args.batches, args.eval_num_examples)
-if status["optimizer_state"] is not None:
+if "optimizer_state" in status:
     algo.optimizer.load_state_dict(status["optimizer_state"])
 txt_logger.info("Optimizer loaded\n")
 

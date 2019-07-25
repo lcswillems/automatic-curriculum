@@ -153,7 +153,7 @@ txt_logger.info("Environments loaded\n")
 try:
     status = utils.get_status(model_dir)
 except OSError:
-    status = {"num_frames": 0, "update": 0, "model_state": None, "optimizer_state": None}
+    status = {"num_frames": 0, "update": 0}
 txt_logger.info("Training status loaded\n")
 
 # Load observations preprocessor
@@ -164,7 +164,7 @@ txt_logger.info("Observations preprocessor loaded")
 # Load model
 
 acmodel = ACModel(obs_space, envs[0].action_space)
-if status["model_state"] is not None:
+if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)
 txt_logger.info("Model loaded\n")
@@ -176,7 +176,7 @@ algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discou
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, 1,
                         args.adam_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss,
                         utils.reshape_reward)
-if status["optimizer_state"] is not None:
+if "optimizer_state" in status:
     algo.optimizer.load_state_dict(status["optimizer_state"])
 txt_logger.info("Optimizer loaded\n")
 
