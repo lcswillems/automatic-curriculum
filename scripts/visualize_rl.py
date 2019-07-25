@@ -17,9 +17,9 @@ parser.add_argument("--seed", type=int, default=0,
 parser.add_argument("--shift", type=int, default=0,
                     help="number of times the environment is reset at the beginning (default: 0)")
 parser.add_argument("--argmax", action="store_true", default=False,
-                    help="select the action with highest probability")
+                    help="select the action with highest probability (default: False)")
 parser.add_argument("--pause", type=float, default=0.1,
-                    help="pause duration between two consequent actions of the agent")
+                    help="pause duration between two consequent actions of the agent (default: 0.1)")
 args = parser.parse_args()
 
 # Set seed for all randomness sources
