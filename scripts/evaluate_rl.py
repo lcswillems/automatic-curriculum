@@ -29,29 +29,31 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Make environments
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}\n")
+
+# Load environments
 
 envs = []
 for i in range(args.procs):
     env = utils.make_env(args.env, args.seed + 10000 * i)
     envs.append(env)
 env = ParallelEnv(envs)
+print("Environments loaded\n")
 
-# Set device
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device: {device}\n")
-
-# Define agent
+# Load agent
 
 model_dir = utils.get_model_dir(args.model)
 agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax, args.procs)
+print("Agent loaded\n")
 
 # Initialize logs
 
 logs = {"num_frames_per_episode": [], "return_per_episode": []}
 
-# Run the agent
+# Run agent
 
 start_time = time.time()
 

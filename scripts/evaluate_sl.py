@@ -22,22 +22,24 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Make generator
-
-gen = utils.make_gen(args.gen)
-
 # Set device
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device: {device}\n")
 
-# Define model
+# Load generator
+
+gen = utils.make_gen(args.gen)
+print("Generator loaded\n")
+
+# Load model
 
 model_dir = utils.get_model_dir(args.model)
 model = AdditionModel()
 model.load_state_dict(utils.get_model_state(model_dir))
 model.to(device)
+print("Model loaded\n")
 
-# Evaluate the model
+# Evaluate model
 
 print("Accuracy: {}".format(gen.evaluate(model, args.examples, device=device)))

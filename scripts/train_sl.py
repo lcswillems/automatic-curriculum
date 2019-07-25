@@ -80,7 +80,7 @@ assert args.gen is not None or args.curriculum is not None, "--gen or --curricul
 
 config_hash = utils.save_config_in_table(args, "config_sl")
 
-# Define run dir
+# Set run dir
 
 name = args.gen or args.curriculum
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
@@ -89,7 +89,7 @@ default_model_name = f"{name}_seed{args.seed}_{config_hash}_{date}"
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
 
-# Define loggers and Tensorboard writer
+# Load loggers and Tensorboard writer
 
 txt_logger = utils.get_txt_logger(model_dir)
 csv_file, csv_logger = utils.get_csv_logger(model_dir)
@@ -105,7 +105,12 @@ txt_logger.info("Config hash: {}\n".format(config_hash))
 
 utils.seed(args.seed)
 
-# Make generator
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+txt_logger.info(f"Device: {device}\n")
+
+# Load generator
 
 if args.gen is not None:
     gen = utils.make_gen(args.gen, args.seed)
@@ -124,19 +129,17 @@ elif args.curriculum is not None:
     # Make polymorph generator
     gen = ac.PolyGen(utils.make_gen_from_curriculum(gen_ids, args.seed), compute_dist, args.seed)
 
+txt_logger.info("Generator loaded\n")
+
 # Load training status
 
 try:
     status = utils.get_status(model_dir)
 except OSError:
     status = {"num_examples": 0, "update": 0, "con_successes": 0, "model_state": None, "optimizer_state": None}
+txt_logger.info("Training status loaded\n")
 
-# Set device
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device: {device}\n")
-
-# Define model
+# Load model
 
 model = AdditionModel()
 if status["model_state"] is not None:
@@ -145,11 +148,11 @@ model.to(device)
 txt_logger.info("Model loaded\n")
 txt_logger.info("{}\n".format(model))
 
-# Define supervised learning algo
+# Load algo
 
 criterion = lambda model_Y, Y: F.nll_loss(model_Y.transpose(1, 2), Y)
-algo = SLAlgo(gen, model, criterion, device, args.lr, args.adam_eps,
-              args.batch_size, args.batches, args.eval_num_examples)
+algo = SLAlgo(gen, model, criterion, device, args.lr, args.adam_eps, args.batch_size,
+              args.batches, args.eval_num_examples)
 if status["optimizer_state"] is not None:
     algo.optimizer.load_state_dict(status["optimizer_state"])
 txt_logger.info("Optimizer loaded\n")

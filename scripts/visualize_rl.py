@@ -26,21 +26,23 @@ args = parser.parse_args()
 
 utils.seed(args.seed)
 
-# Make environment
-
-env = utils.make_env(args.env, args.seed)
-for _ in range(args.shift):
-    env.reset()
-
 # Set device
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device: {device}\n")
 
-# Define agent
+# Load environment
+
+env = utils.make_env(args.env, args.seed)
+for _ in range(args.shift):
+    env.reset()
+print("Environment loaded\n")
+
+# Load agent
 
 model_dir = utils.get_model_dir(args.model)
 agent = utils.Agent(env.observation_space, env.action_space, model_dir, device, args.argmax)
+print("Agent loaded\n")
 
 # Run the agent
 

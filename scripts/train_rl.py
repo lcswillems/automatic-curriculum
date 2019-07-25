@@ -94,7 +94,7 @@ assert args.env is not None or args.curriculum is not None, "--env or --curricul
 
 config_hash = utils.save_config_in_table(args, "config_rl")
 
-# Define run dir
+# Set run dir
 
 name = args.env or args.curriculum
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
@@ -103,7 +103,7 @@ default_model_name = f"{name}_seed{args.seed}_{config_hash}_{date}"
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
 
-# Define loggers and Tensorboard writer
+# Load loggers and Tensorboard writer
 
 txt_logger = utils.get_txt_logger(model_dir)
 csv_file, csv_logger = utils.get_csv_logger(model_dir)
@@ -119,7 +119,12 @@ txt_logger.info("Config hash: {}\n".format(config_hash))
 
 utils.seed(args.seed)
 
-# Make environments
+# Set device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+txt_logger.info(f"Device: {device}\n")
+
+# Load environments
 
 if args.env is not None:
     envs = []
@@ -144,23 +149,22 @@ elif args.curriculum is not None:
         seed = args.seed + 10000 * i
         envs.append(ac.PolyEnv(utils.make_envs_from_curriculum(env_ids, seed), penv_head.remotes[i], seed))
 
+txt_logger.info("Environments loaded\n")
+
 # Load training status
 
 try:
     status = utils.get_status(model_dir)
 except OSError:
     status = {"num_frames": 0, "update": 0, "model_state": None, "optimizer_state": None}
+txt_logger.info("Training status loaded\n")
 
-# Define obss preprocessor
+# Load observations preprocessor
 
 obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space)
+txt_logger.info("Observations preprocessor loaded")
 
-# Set device
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device: {device}\n")
-
-# Define actor-critic model
+# Load model
 
 acmodel = ACModel(obs_space, envs[0].action_space)
 if status["model_state"] is not None:
@@ -169,7 +173,7 @@ acmodel.to(device)
 txt_logger.info("Model loaded\n")
 txt_logger.info("{}\n".format(acmodel))
 
-# Define actor-critic algo
+# Load algo
 
 algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                         args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
